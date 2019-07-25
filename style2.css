@@ -1,0 +1,184 @@
+
+#container {
+  margin: 0 auto;
+  width: 80%;
+  overflow: auto;
+  /*padding-bottom: 40px;*/
+}
+
+#menu-icon {
+
+	display: none;
+  height: 30px;
+  width: 30px;
+  margin: 20px 20px 20px 20px;
+
+}
+
+.w3-half, .fullScrn {margin: 0px 0px 60px 0px;}
+
+/*.halfScrn {
+  width: 45%;
+  padding-top: 130%;
+  max-width: 500px;
+  max-height: 675px;
+  display: inline-block;
+  margin: 40px 0px 100px 20px;
+  position: relative;
+}*/
+
+.fullScrn {
+  width: 100%;
+  max-width: 1200px;
+  max-height: 675px;
+  display: inline-block;
+  position: relative;
+  float: left;
+}
+
+.tilePic {
+  max-width: 90%;
+  max-height: 90%;
+  display: block;
+  /*position: absolute;
+  top:0;
+  left: 0;
+  right: 0;
+  bottom:0;*/
+  margin: auto;
+  box-shadow: 7px 7px #404040;
+  border: 1px solid black;
+}
+
+header {
+  margin-top: 20px;
+  width: 98%;
+  height: 70px;
+  vertical-align: middle;
+}
+
+nav {
+  float: right;
+  margin-right: 20px;
+}
+
+nav a {
+  font-size: 18px;
+  text-decoration: none;
+}
+
+nav a:hover {
+  text-decoration: underline;
+}
+
+.foot {
+  clear: both;
+  width: 98%
+  margin-bottom: 40px;
+}
+
+h1, h3 {
+  padding-left: 10px;
+}
+
+h3 {
+  margin: 40px 0px 40px 0px;
+}
+
+p {
+  text-align: center;
+}
+
+
+
+header, footer, .tilePic, .foot, .text {
+  box-shadow: 7px 7px #404040;
+  border: 1px solid black;
+}
+
+
+
+
+
+
+
+a:hover#menu-icon {
+
+	background-color: #444;
+
+}
+
+
+li {
+
+	display: inline-block;
+	float: left;
+	padding: 10px
+
+}
+
+.current {
+
+	color: red;
+
+}
+
+
+/*MEDIA QUERY*/
+@media only screen and (max-width : 840px) {
+
+	/*header {
+
+		position: absolute;
+
+	}*/
+
+#menu-icon {
+
+    float: right;
+		display: block;
+
+	}
+
+  nav {
+    margin-right: 0px;
+  }
+
+	nav ul, nav:active ul {
+
+		display: none;
+		position: absolute;
+		padding: 20px;
+		background: #fff;
+		border: 1px solid #000;
+		right: 20px;
+		top: 60px;
+		width: 30%;
+    text-align: right;
+
+	}
+
+
+	nav:hover ul {
+
+		display: block;
+
+	}
+}
+
+@media screen and (max-width : 600px) {
+
+  header h1 {
+    font-size: 20px;
+    padding-top: 10px;
+  }
+
+}
+
+@media screen and (max-width : 355px) {
+
+  header {
+    width: 270px;
+  }
+
+}
