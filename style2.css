@@ -15,7 +15,14 @@
 
 }
 
-.w3-half, .fullScrn {margin: 0px 0px 60px 0px;}
+#headshot {
+  padding-left: 50px;
+  padding-right: 50px;
+}
+
+.w3-half, .w3-third, .fullScrn {margin: 0px 0px 60px 0px;}
+
+#menu.w3-third {margin: 0px;}
 
 /*.halfScrn {
   width: 45%;
@@ -85,8 +92,13 @@ h3 {
   margin: 40px 0px 40px 0px;
 }
 
-p {
+h4 {
   text-align: center;
+}
+
+p {
+  text-align: left;
+  padding: 15px;
 }
 
 
@@ -125,6 +137,15 @@ li {
 
 
 /*MEDIA QUERY*/
+
+@media screen and (max-width : 1100px) {
+
+  #headshot {
+    padding: 50px 0px 0px 0px;
+  }
+}
+
+
 @media only screen and (max-width : 840px) {
 
 	/*header {
@@ -157,7 +178,6 @@ li {
     text-align: right;
 
 	}
-
 
 	nav:hover ul {
 
