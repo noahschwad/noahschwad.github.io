@@ -16,11 +16,11 @@
 }
 
 #headshot {
-  padding-left: 50px;
-  padding-right: 50px;
+  padding-right: 60px;
+  padding-left: 60px;
 }
 
-.w3-half, .w3-third, .fullScrn {margin: 0px 0px 60px 0px;}
+.w3-half, .fullScrn {margin: 0px 0px 30px 0px;}
 
 #menu.w3-third {margin: 0px;}
 
@@ -53,8 +53,11 @@
   right: 0;
   bottom:0;*/
   margin: auto;
+
+  /* for animations */
   box-shadow: 7px 7px #404040;
-  border: 1px solid black;
+  padding: 0px;
+  transition: .7s;
 }
 
 header {
@@ -74,7 +77,7 @@ nav a {
   text-decoration: none;
 }
 
-nav a:hover {
+a:hover, header h1:hover {
   text-decoration: underline;
 }
 
@@ -94,13 +97,20 @@ h3 {
 
 h4 {
   text-align: center;
+  padding-top: 20px;
+  padding-bottom: 20px;
 }
 
 p {
   text-align: left;
   padding: 15px;
+  margin: 0px;
 }
 
+a {
+  text-decoration: none;
+  color: blue;
+}
 
 
 header, footer, .tilePic, .foot, .text {
@@ -141,7 +151,7 @@ li {
 @media screen and (max-width : 1100px) {
 
   #headshot {
-    padding: 50px 0px 0px 0px;
+    padding: 0px 0px 0px 0px;
   }
 }
 
@@ -201,4 +211,43 @@ li {
     width: 270px;
   }
 
+}
+
+
+/* ----  animations: ---- */
+
+@keyframes example {
+  from {box-shadow: 7px 7px #404040;}
+  to {box-shadow: 0px 0px #2e2e2e;}
+}
+
+a .tilePic:hover {
+  /* animation-name: example;
+  animation-duration: .7s;
+  animation-timing-function: linear; */
+  box-shadow: 0px 0px #2e2e2e;
+  transform:scale(.99);
+}
+
+
+
+/* ------- for masonry ------- */
+
+#masonry {
+  /* Prevent vertical gaps */
+  line-height: 0;
+
+  -webkit-column-count: 3;
+  -webkit-column-gap:   20px;
+  -moz-column-count:    3;
+  -moz-column-gap:      20px;
+  column-count:         3;
+  column-gap:           20px;
+}
+
+#masonry .gallery {
+  /* Just in case there are inline attributes */
+  width: 100% !important;
+  height: auto !important;
+  margin-bottom: 37px !important;
 }
