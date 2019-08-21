@@ -4,7 +4,7 @@ var rate = 5; ////
 var fr = 30;
 var maxGridWidth = 500;
 // if (document.getElementById("sketch-holder").offsetWidth < maxGridWidth) {
-  var tileSize = (document.getElementById("sketch-holder1")/3) - 5;
+  var tileSize = (document.getElementById("sketch-holder1").offsetWidth/3) - 5;
 //   console.log(document.getElementById("sketch-holder").offsetWidth); // /6 because it was originally /3 but I want it half screen
 // } else {
 //   var tileSize = (maxGridWidth-20)/3;

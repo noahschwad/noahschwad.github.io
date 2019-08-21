@@ -118,6 +118,6 @@ function tile() {
     this.mouthAsymChg = random(-10, 10);
     this.scalpChg = random(-200,400);
     this.scalpAsymChg = random(-10,10);
-    this.tileColorChg = [random()*255, random()*255, random()*255]
+    this.tileColorChg = [random()*255, random()*255, random()*255];
   }
 }

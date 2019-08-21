@@ -41,7 +41,7 @@ function setup() {
   // song 2
   mallet1 = new mallet(16,
                        1,
-                       ["E2", "E2", "G2", "G2", "E2", "E2", "a3", "a3"],
+                       ["E2", "E2", "G4", "G2", "E2", "E2", "a3", "a3"],
                        "16n",
                        -10,
                        "#ffffff");
@@ -94,6 +94,7 @@ function draw() {
   // mallet3.show();
 
   mallet2.randNote();
+  mallet1.randNote();
 
 
 }

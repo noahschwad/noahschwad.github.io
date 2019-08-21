@@ -3,7 +3,7 @@
     <link rel="stylesheet" type="text/css" href="style2.css">
     <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.6.0/p5.js"></script>
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+    <script src="assets/js/jquery.js"></script>
 
     <style>
 
@@ -56,16 +56,7 @@
         <input id="activate"
                type="button"
                value="activate"
-               onclick="
-                          $.getScript("assets/js/Tone.js");
-                          $.getScript("assets/js/sketch2.js");
-                          $.getScript("assets/js/mallet.js");
-               "
-               style=""/>
-        <!-- for synth -->
-        <!-- <script src="assets/js/Tone.js"></script>
-        <script src="assets/js/sketch2.js"></script>
-        <script src="assets/js/mallet.js"></script> -->
+               onclick="activateOther();"/>
 
 
       <div class="w3-row" style="margin-bottom: 30px;">
@@ -81,6 +72,7 @@
                                        border-color: #89AA9B;
                                        background-color: #89AA9B;">
         </div>
+        <script> document.getElementById('sketch-holder2').style.height = document.getElementById("sketch-holder2").offsetWidth; </script>
       </div>
 
       <div class="w3-half tilepic">
@@ -136,6 +128,8 @@
     <!-- for smile tiles -->
     <script src="assets/js/sketch1.js"></script>
     <script src='assets/js/tile.js'></script>
+    <script src='assets/js/activateOther.js'></script>
+
 
   </body>
 
