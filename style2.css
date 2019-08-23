@@ -81,6 +81,10 @@ a:hover, header h1:hover {
   text-decoration: underline;
 }
 
+#content {
+  min-height: calc(75vh);
+}
+
 .foot {
   clear: both;
   width: 98%
