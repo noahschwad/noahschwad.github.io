@@ -160,7 +160,7 @@ li {
 }
 
 
-@media only screen and (max-width : 840px) {
+@media only screen and (min-width: 100px) and (max-width : 840px) {
 
 	/*header {
 
@@ -198,6 +198,13 @@ li {
 		display: block;
 
 	}
+
+  #masonry {
+    -webkit-column-count: 2 !important;
+    -moz-column-count:    2 !important;
+    column-count:         2 !important;
+  }
+
 }
 
 @media screen and (max-width : 600px) {
@@ -250,7 +257,7 @@ a .tilePic:hover {
 }
 
 #masonry .gallery {
-  /* Just in case there are inline attributes */
+  /* Just in case there are inline attributes*/
   width: 100% !important;
   height: auto !important;
   margin-bottom: 37px !important;
