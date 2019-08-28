@@ -24,6 +24,7 @@
 
 #menu.w3-third {margin: 0px;}
 
+
 /*.halfScrn {
   width: 45%;
   padding-top: 130%;
@@ -44,15 +45,15 @@
 }
 
 .tilePic {
-  max-width: 90%;
-  max-height: 90%;
+  max-width: calc(100% - 7px);
+  max-height: 100%;
   display: block;
   /*position: absolute;
   top:0;
   left: 0;
   right: 0;
   bottom:0;*/
-  margin: auto;
+  margin-right: 7px;
 
   /* for animations */
   box-shadow: 7px 7px #404040;
@@ -62,9 +63,14 @@
 
 header {
   margin-top: 20px;
-  width: 98%;
+  width: calc(100% - 7px);
   height: 70px;
   vertical-align: middle;
+}
+
+.foot {
+  margin: 0px 0px 30px 0px !important;
+  width: calc(100% - 7px) !important;
 }
 
 nav {
@@ -82,7 +88,7 @@ a:hover, header h1:hover {
 }
 
 #content {
-  min-height: calc(75vh);
+  min-height: calc(73vh);
 }
 
 .foot {
@@ -102,7 +108,7 @@ h3 {
 h4 {
   text-align: center;
   padding-top: 20px;
-  padding-bottom: 20px;
+  padding-bottom: 15px;
 }
 
 p {
@@ -122,24 +128,50 @@ header, footer, .tilePic, .foot, .text {
   border: 1px solid black;
 }
 
+/* social icons */
 
-
-
-
-
-
-a:hover#menu-icon {
-
-	background-color: #444;
-
+.fa {
+  padding: 20px;
+  font-size: 50px;
+  width: 50px;
+  text-align: center;
+  text-decoration: none;
+  margin: 5px 2px;
 }
+
+.fa:hover {
+    opacity: 0.7;
+    text-decoration: none;
+}
+
+.fa-twitter {
+  background: #55ACEE;
+  color: white;
+}
+
+.fa-linkedin {
+  background: #007bb5;
+  color: white;
+}
+
+.fa-instagram {
+  background: #125688;
+  color: white;
+}
+
+.fa-youtube {
+  background: #bb0000;
+  color: white;
+}
+
 
 
 li {
 
 	display: inline-block;
 	float: left;
-	padding: 10px
+	padding: 10px;
+  font-family: "Segoe UI",Arial,sans-serif;
 
 }
 
@@ -162,13 +194,11 @@ li {
 
 @media only screen and (min-width: 100px) and (max-width : 840px) {
 
-	/*header {
+  #container {
+    width: 95%;
+  }
 
-		position: absolute;
-
-	}*/
-
-#menu-icon {
+  #menu-icon {
 
     float: right;
 		display: block;
@@ -199,19 +229,23 @@ li {
 
 	}
 
-  #masonry {
-    -webkit-column-count: 2 !important;
-    -moz-column-count:    2 !important;
-    column-count:         2 !important;
-  }
-
 }
 
 @media screen and (max-width : 600px) {
 
   header h1 {
-    font-size: 20px;
-    padding-top: 10px;
+    font-size: 6vw;
+    /* padding-top: .5vw; */
+    line-height: 53px;
+  }
+
+  #activate {font-size: 20px !important;}
+
+  #masonry {
+    -webkit-column-count: 1 !important;
+    -moz-column-count:    1 !important;
+    column-count:         1 !important;
+    column-gap:           0px !important;
   }
 
 }
@@ -248,11 +282,11 @@ a .tilePic:hover {
   /* Prevent vertical gaps */
   line-height: 0;
 
-  -webkit-column-count: 3;
+  -webkit-column-count: 2;
   -webkit-column-gap:   20px;
-  -moz-column-count:    3;
+  -moz-column-count:    2;
   -moz-column-gap:      20px;
-  column-count:         3;
+  column-count:         2;
   column-gap:           20px;
 }
 

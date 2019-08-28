@@ -1,8 +1,11 @@
 document.write('\
 \
   </div>\
-  <div class="foot" style="margin: 0px 0px 30px 0px; width: 98%;">\
-    <h3>hope ya like my damn site!</h3>\
+  <div class="foot">\
+    <a href="#" class="fa fa-instagram"></a>\
+    <a href="#" class="fa fa-twitter"></a>\
+    <a href="#" class="fa fa-linkedin"></a>\
+    <a href="#" class="fa fa-youtube"></a>\
   </div>\
 \
 ');
