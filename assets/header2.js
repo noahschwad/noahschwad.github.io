@@ -7,9 +7,8 @@ document.write('\
 \
     <ul>\
 \
-    <li><a href="index.html">home</a></li>\
-    <li><a href="about.html">about</a></li>\
-    <li><a href="contact.html">contact</a></li>\
+    <li><a href="index.html">work</a></li>\
+    <li><a href="about.html">info</a></li>\
 \
     </ul>\
 \
