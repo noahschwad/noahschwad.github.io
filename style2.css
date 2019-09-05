@@ -54,6 +54,7 @@
   right: 0;
   bottom:0;*/
   margin-right: 7px;
+  margin-bottom: 7px;
 
   /* for animations */
   box-shadow: 7px 7px #404040;
@@ -69,11 +70,25 @@
   padding-left: 10px;
 }
 
+.shirts {
+  display: flex;
+  height: auto;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+}
+
 header {
   margin-top: 20px;
   width: calc(100% - 7px);
   height: 70px;
   vertical-align: middle;
+}
+
+#title {
+  padding-left: 10px;
+  float: left;
+  font-style: normal;
 }
 
 .foot {
@@ -91,7 +106,7 @@ nav a {
   text-decoration: none;
 }
 
-a:hover, header h1:hover {
+a:hover, #title:hover {
   text-decoration: underline;
 }
 
@@ -105,12 +120,14 @@ a:hover, header h1:hover {
   margin-bottom: 40px;
 }
 
-h1, h3 {
-  padding-left: 10px;
+h1 {
+  text-align: center;
+  font-family: "DM Sans" !important;
 }
 
 h3 {
   margin: 40px 0px 40px 0px;
+  padding-left: 10px;
 }
 
 h4 {
@@ -239,10 +256,23 @@ li {
 
 @media screen and (max-width : 600px) {
 
-  header h1 {
+  #title {
     font-size: 6vw;
     /* padding-top: .5vw; */
     line-height: 53px;
+  }
+
+  h1 {
+
+  }
+
+  .shirts {
+    display: block;
+  }
+
+  .flex {
+    width: 100% !important;
+    margin-bottom: 40px;
   }
 
   .left {
@@ -266,9 +296,9 @@ li {
 
 @media screen and (max-width : 355px) {
 
-  header {
+  /* header {
     width: 270px;
-  }
+  } */
 
 }
 
@@ -294,14 +324,13 @@ a .tilePic:hover {
 
 #masonry {
   /* Prevent vertical gaps */
-  line-height: 0;
-
   -webkit-column-count: 2;
   -webkit-column-gap:   20px;
   -moz-column-count:    2;
   -moz-column-gap:      20px;
   column-count:         2;
   column-gap:           20px;
+  padding-bottom:       10px;
 }
 
 #masonry .gallery {

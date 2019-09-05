@@ -1,7 +1,7 @@
 document.write('\
 \
   <header>\
-    <a href="index.html"><h1 style="float: left;">  NoahDesigns4u.com</h1></a>\
+    <a href="index.html"><h1 id="title">  NoahDesigns4u.com</h1></a>\
     <nav>\
     <img id="menu-icon" src="assets/menu-icon.svg">\
 \

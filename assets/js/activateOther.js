@@ -2,7 +2,7 @@ var active = 1;
 var numSwitches = 0;
 
 scripts = [ ['assets/js/sketch1.js', 'assets/js/tile.js'],
-            ['assets/js/Tone.js', 'assets/js/sketch2.js', 'assets/js/mallet.js'] ];
+            [/*'assets/js/Tone.js',*/ 'assets/js/sketch2.js', 'assets/js/mallet.js'] ];
 
 
 
