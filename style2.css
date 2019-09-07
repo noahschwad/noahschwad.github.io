@@ -20,10 +20,7 @@
   padding-left: 60px;
 }
 
-.w3-half, .fullScrn {margin: 0px 0px 20px 0px;}
-
-#menu.w3-third {margin: 0px;}
-
+.w3-half, .fullScrn, .w3-third {margin: 0px 0px 20px 0px;}
 
 /*.halfScrn {
   width: 45%;
@@ -37,8 +34,7 @@
 
 .fullScrn {
   width: 100%;
-  max-width: 1200px;
-  max-height: 675px;
+
   display: inline-block;
   position: relative;
   float: left;
@@ -70,12 +66,55 @@
   padding-left: 10px;
 }
 
+.center {
+  padding-right: 10px;
+  padding-left: 10px;
+}
+
+.evenRow {
+  display: flex;
+  height: auto;
+  width: 100%;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
 .shirts {
   display: flex;
   height: auto;
+  /* width: 100%; */
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
+  flex-wrap: wrap;
   margin-bottom: 30px;
+}
+
+.categories {
+  text-align: left;
+  margin-left: 20px;
+  margin-right: 20px;
+}
+
+.description {
+  margin-left: 20px;
+  margin-right: 20px;
+}
+
+h1.pageTitle {
+  margin: 10px 20px 20px 20px !important;
+  font-size: 46px;
+  text-align: left;
+  line-height: 45px;
+}
+
+.mobile {
+  display: none;
+}
+
+.notMobile {
+
 }
 
 header {
@@ -86,9 +125,10 @@ header {
 }
 
 #title {
-  padding-left: 10px;
+  padding-left: 15px;
   float: left;
   font-style: normal;
+  margin-top: 8px !important;
 }
 
 .foot {
@@ -102,8 +142,9 @@ nav {
 }
 
 nav a {
-  font-size: 18px;
+  font-size: 24px;
   text-decoration: none;
+  line-height: 26px;
 }
 
 a:hover, #title:hover {
@@ -123,27 +164,41 @@ a:hover, #title:hover {
 h1 {
   text-align: center;
   font-family: "DM Sans" !important;
+  margin-top: 0px !important;
+}
+
+h2 {
+  font-family: "DM Sans" !important;
+
 }
 
 h3 {
   margin: 40px 0px 40px 0px;
   padding-left: 10px;
+  font-family: "DM Sans" !important;
 }
 
 h4 {
   text-align: center;
-  padding-top: 5px;
+  padding-top: 0px;
+  margin-bottom: 0px !important;
+  font-size: 24px !important;
+  font-family: "DM Sans" !important;
 }
 
 p {
   text-align: left;
-  padding: 15px;
   margin: 0px;
+  font-family: "DM Sans" !important;
+  font-size: 16px !important;
+  margin-bottom: 10px;
 }
 
 a {
   text-decoration: none;
   color: blue;
+  font-family: "DM Sans" !important;
+
 }
 
 
@@ -157,9 +212,15 @@ li {
 	display: inline-block;
 	float: left;
 	padding: 10px;
-  font-family: "Segoe UI",Arial,sans-serif;
-
 }
+
+.text {
+  padding: 10px;
+  margin-right: 7px;
+  margin-bottom: 27px;
+}
+
+
 
 /* social icons */
 
@@ -203,10 +264,6 @@ li {
 
 @media screen and (max-width : 1100px) {
 
-  #headshot {
-    padding: 0px 0px 0px 0px;
-  }
-
   #container {
     width: 93%;
   }
@@ -215,7 +272,9 @@ li {
 
 @media only screen and (max-width : 840px) {
 
-
+  #headshot {
+    padding: 0px 0px 0px 10px;
+  }
 
   #menu-icon {
 
@@ -236,7 +295,7 @@ li {
 		background: #fff;
 		border: 1px solid #000;
 		right: 20px;
-		top: 60px;
+		top: 20px;
 		width: 120px;
     text-align: left;
 
@@ -262,17 +321,17 @@ li {
     line-height: 53px;
   }
 
-  h1 {
-
+  h1.pageTitle {
+    font-size: 34;
   }
 
-  .shirts {
+  .shirts .evenRow {
     display: block;
   }
 
   .flex {
     width: 100% !important;
-    margin-bottom: 40px;
+    margin-bottom: 30px;
   }
 
   .left {
@@ -281,6 +340,14 @@ li {
 
   .right {
     padding-left: 0px;
+  }
+
+  .mobile {
+    display: block;
+  }
+
+  .notMobile {
+    display: none;
   }
 
   #activate {font-size: 20px !important;}
