@@ -310,6 +310,20 @@ li {
 
 }
 
+@media screen and (max-width : 740px) {
+
+  .photo-slide {
+    width: 90% !important;
+    /* padding: 0 0 0 0 !important; */
+    height: auto !important;
+  }
+  .carousel {
+    margin: 0 0 0 0 !important;
+    height: 67vw !important;
+  }
+
+}
+
 @media screen and (max-width : 600px) {
 
   #title {
@@ -337,6 +351,14 @@ li {
     width: 70% !important;
     margin: auto;
     margin-bottom: 30px;
+  }
+
+  .video {
+    padding-top: 56.25% !important;
+  }
+
+  .photo-slide {
+    height: 100%; margin: auto; padding-top: 20px; padding-bottom: 20px;
   }
 
   .left {
