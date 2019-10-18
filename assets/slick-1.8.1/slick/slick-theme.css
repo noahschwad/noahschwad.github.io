@@ -117,6 +117,7 @@
 .slick-dotted.slick-slider
 {
     margin-bottom: 30px;
+    margin-left: 40px;
 }
 
 .slick-dots
@@ -128,6 +129,7 @@
 
     width: 100%;
     padding: 0;
+    margin-left: 40px;
     margin: 0;
 
     list-style: none;

@@ -3,7 +3,7 @@ $(document).ready(function(){
     responsive: [{
       breakpoint: 740,
       settings: {
-        dots: true, arrows: false, slidesToShow: 1
+        dots: true, arrows: false, slidesToShow: 1, speed: 200
       }
     }]
   });
