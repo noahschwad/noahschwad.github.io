@@ -1,7 +1,6 @@
-
 #container {
-  padding-left: calc((100% - 1100px)/2);
-  padding-right: calc((100% - 1100px)/2);
+  padding-left: calc((100% - 1600px)/2);
+  padding-right: calc((100% - 1600px)/2);
   width: 100%;
   overflow: auto;
   /*padding-bottom: 40px;*/
@@ -77,6 +76,12 @@ div.homeLink {margin-bottom: 20px;}
   justify-content: center;
 }
 
+.standardBox.menu {
+  width: calc(50% - 27px);
+  height: auto;
+  margin-bottom: 25px;
+}
+
 .slideBox {
   height: 40vw;
   display: flex;
@@ -85,8 +90,8 @@ div.homeLink {margin-bottom: 20px;}
 }
 
 .paddedPic {
-  max-width: 80%;
-  max-height: 80%;
+  max-width: 100%;
+  max-height: 100%;
 }
 
 .photo-slide {
@@ -102,6 +107,11 @@ div.homeLink {margin-bottom: 20px;}
   align-items: flex-start;
   flex-wrap: wrap;
 }
+
+.evenRow.menu {
+  width: 100%;
+}
+
 
 .shirts {
   display: flex;
@@ -167,7 +177,7 @@ header {
 }
 
 .foot {
-  margin: 0px 0px 47px 0px !important;
+  margin: 0px 0px 27px 0px !important;
   width: calc(100% - 7px) !important;
 }
 
@@ -300,12 +310,12 @@ li {
 
 /*MEDIA QUERY*/
 @media screen and (min-width : 1140px) {
-  .standardBox {
+  /* .standardBox {
     height: 490px;
-  }
+  }*/
 }
 
-@media screen and (max-width : 1140px) {
+@media screen and (max-width : 1680px) {
 
   #container {
     padding-right: 40px;
@@ -406,6 +416,10 @@ li {
     height: 80vw !important;
   }
 
+  .standardBox.menu {
+    height: auto !important;
+  }
+
   .flex {
     width: 100% !important;
     margin-bottom: 30px;
@@ -492,7 +506,7 @@ li {
   to {box-shadow: 0px 0px #2e2e2e;}
 }
 
-a .tilePic:hover {
+a .darkShadow:hover {
   /* animation-name: example;
   animation-duration: .7s;
   animation-timing-function: linear; */
@@ -512,7 +526,7 @@ a .tilePic:hover {
   -moz-column-gap:      40px;
   column-count:         2;
   column-gap:           40px;
-  padding-bottom:       20px;
+  padding-bottom:       40px;
 }
 
 #masonry .gallery {
