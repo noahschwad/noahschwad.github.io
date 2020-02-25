@@ -2,8 +2,9 @@ document.write('\
 \
   </div>\
   <div class="foot">\
-    <a href="https://www.instagram.com/bran_nu_boy/" class="fa fa-2x fa-instagram"></a>\
-    <a href="https://www.linkedin.com/in/nschwadron/" class="fa fa-2x fa-linkedin"></a>\
+    <a href="https://www.instagram.com/bran_nu_boy/" target="_blank" class="fa fa-2x fa-instagram"></a>\
+    <a href="https://www.linkedin.com/in/nschwadron/" target="_blank" class="fa fa-2x fa-linkedin"></a>\
+    <a href="mailto:noah.schwadron@gmail.com" target="_blank" class="fa fa-2x fa-envelope"></a>\
   </div>\
 \
 ');
