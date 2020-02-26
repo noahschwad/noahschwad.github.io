@@ -380,6 +380,8 @@ li {
 		top: 20px;
 		width: 120px;
     text-align: left;
+    z-index: 999999;
+    margin-right: 12px;
 
 	}
 
@@ -402,8 +404,8 @@ li {
     font-size: 16px;
     margin-right: 15px;
     margin-left:  15px;
-    text-align: justify;
-    text-justify: inter-word;
+    text-align: left;
+    text-justify: none;
     hyphens: none;
   }
 
