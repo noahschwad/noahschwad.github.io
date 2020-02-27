@@ -17,8 +17,9 @@
 
 #headshot {
   float: left;
-  padding-right: 50px;
-  padding-top: 10px;
+  padding-right: 70px;
+  padding-left:  70px;
+  padding-top: 6px;
   padding-bottom: 30px;
   max-width: calc(49%);
 }
@@ -70,9 +71,9 @@ div.homeLink {margin-bottom: 20px;}
 }
 
 .standardBox {
-  height: 45vw;
+  height: 40%;
   width: calc(50% - 20px);
-  margin-right: 7px;
+  /* margin-right: 7px; */
   margin-bottom: 40px;
   display: flex;
   align-items: center;
@@ -103,7 +104,9 @@ div.homeLink {margin-bottom: 20px;}
 
 .paddedPic {
   max-width: 100%;
-  max-height: 100%;
+  /* max-height: 100%; */
+  max-height: 600px;
+
 }
 
 .photo-slide {
@@ -116,7 +119,8 @@ div.homeLink {margin-bottom: 20px;}
   height: auto;
   width: calc(100% - 7px);
   justify-content: space-between;
-  align-items: flex-start;
+  /* align-items: flex-start; */
+  align-items: center;
   flex-wrap: wrap;
 }
 
@@ -138,6 +142,27 @@ div.homeLink {margin-bottom: 20px;}
 .flex {
   margin-bottom: 30px;
 }
+
+.flexText {
+  width: calc(50% - 20px);
+}
+
+.flexSmall {
+  margin-bottom: 30px;
+}
+
+.evenRowText {
+  align-items: center;
+  margin-top: 30px;
+  margin-bottom: 30px;
+}
+
+h2.flexText {
+  font-weight: 600;
+  margin: 0px;
+  text-align: center;
+}
+
 
 .slideFlex {
   margin-bottom: 0px;
@@ -179,6 +204,7 @@ h1.pageTitle {
 .about {
   font-size: 20px;
   margin-left: 20px;
+  margin-right: 30px;
   text-align: justify;
   text-justify: inter-word;
   hyphens: auto;
@@ -201,6 +227,7 @@ header {
   float: left;
   font-style: normal;
   margin-top: 8px !important;
+  font-weight: 400 !important;
 }
 
 .foot {
@@ -224,7 +251,7 @@ a:hover, #title:hover {
 }
 
 #content {
-  min-height: calc(75vh);
+  min-height: calc(72vh);
 }
 
 .foot {
@@ -235,13 +262,13 @@ a:hover, #title:hover {
 
 h1 {
   text-align: center;
-  font-family: "DM Sans" !important;
+  font-family: "Rubik" !important;
   font-weight: 600 !important;
   margin-top: 0px !important;
 }
 
 h2 {
-  font-family: "DM Sans" !important;
+  font-family: "Rubik" !important;
   padding-left: 20px;
 
 }
@@ -249,7 +276,7 @@ h2 {
 h3 {
   margin: 40px 0px 40px 0px;
   padding-left: 10px;
-  font-family: "DM Sans" !important;
+  font-family: "Rubik" !important;
 }
 
 h4 {
@@ -257,14 +284,14 @@ h4 {
   padding-top: 0px;
   margin-bottom: 0px !important;
   font-size: 24px !important;
-  font-family: "DM Sans" !important;
+  font-family: "Rubik" !important;
 }
 
 p {
   text-align: left;
   margin: 0px 0px 0px 0px;
-  font-family: "DM Sans" !important;
-  font-size: 16px;
+  font-family: "Rubik" !important;
+  font-size: 18px;
   /* margin-bottom: 10px; */
 }
 
@@ -300,7 +327,7 @@ li {
 	display: inline-block;
 	float: left;
 	padding: 10px;
-  font-family: "DM Sans" !important;
+  font-family: "Rubik" !important;
 }
 
 .line {
@@ -337,13 +364,32 @@ li {
 
 
 /*MEDIA QUERY*/
-@media screen and (max-width : 1140px) {
+@media screen and (max-width : 1200px) {
+
   /* .standardBox {
-    height: 490px;
-  }*/
+    width: calc(50% - 10px);
+    height: auto;
+  } */
+
+}
+
+
+@media screen and (max-width : 1140px) {
+
+
+  .standardBox.menu {
+    width: calc(50% - 20px);
+  }
+
 
   .about {
     font-size: 16px;
+    margin-right: 0px;
+  }
+
+  #headshot {
+    padding-left: 0px;
+    padding-right: 20px;
   }
 }
 
@@ -416,12 +462,19 @@ li {
   #headshot {
     float: none;
     max-width: 100%;
-    padding-left: 15%;
-    padding-right: 15%;
+    padding-left: 10%;
+    padding-right: 10%;
     padding-top: 0px;
-    padding-bottom: 15px;
+    padding-bottom: 30px;
   }
 
+  .standardBox {
+    height: auto !important;
+  }
+
+  .evenRow {
+    align-items: center;
+  }
 }
 
 @media screen and (max-width : 740px) {
@@ -461,7 +514,7 @@ li {
   }
 
   h1.pageTitle {
-    font-size: 34;
+    font-size: 40;
   }
 
   .shirts .evenRow {
@@ -485,10 +538,13 @@ li {
     margin-right: 0px !important;
   }
 
+  .flexText {
+    width: 100% !important;
+  }
+
   .flexSmall {
     width: 70% !important;
     margin: auto;
-    margin-bottom: 30px;
   }
 
   .video {
