@@ -24,6 +24,11 @@
   max-width: calc(49%);
 }
 
+a.navi {
+  font-family: "Rubik Bold", "Rubik" !important;
+  font-weight: 700;
+}
+
 .w3-half, .fullScrn, .w3-third {margin: 0px 0px 40px 0px;}
 
 div.homeLink {margin-bottom: 20px;}
@@ -71,7 +76,8 @@ div.homeLink {margin-bottom: 20px;}
 }
 
 .standardBox {
-  height: 40%;
+  /* height: 40%; */
+  height: auto;
   width: calc(50% - 20px);
   /* margin-right: 7px; */
   margin-bottom: 40px;
@@ -163,7 +169,7 @@ div.homeLink {margin-bottom: 20px;}
 }
 
 h2.flexText {
-  font-weight: 600;
+  font-weight: 700;
   padding-left: 0px;
   margin-top: 0px;
   text-align: center;
@@ -220,13 +226,16 @@ h1.pageTitle {
   font-size: 20px;
   padding-left: 20px;
   padding-right: 30px;
-  text-align: justify;
-  text-justify: inter-word;
+  text-align: justify !important;
   hyphens: auto;
 }
 
 .email {
-  margin-top: 0px; margin-bottom: 30px; text-align: center; font-weight:600;
+  margin-top: 0px;
+  margin-bottom: 30px;
+  text-align: center;
+  font-weight: 700 !important;
+  font-family: "Rubik Bold", "Rubik" !important;
 }
 
 .halfColumn {
@@ -246,7 +255,8 @@ header {
   float: left;
   font-style: normal;
   margin-top: 8px !important;
-  font-weight: 400 !important;
+  font-family: "Rubik Black", "Rubik" !important;
+  font-weight: 900 !important;
 }
 
 .foot {
@@ -262,7 +272,7 @@ nav {
 nav a {
   font-size: 24px;
   text-decoration: none;
-  line-height: 26px;
+  line-height: 20px;
 }
 
 a:hover, #title:hover {
@@ -279,15 +289,20 @@ a:hover, #title:hover {
   margin-bottom: 40px;
 }
 
+h1, h2, h3, h4 {
+  letter-spacing: 0px;
+}
+
 h1 {
   text-align: center;
   font-family: "Rubik" !important;
-  font-weight: 600 !important;
+  font-weight: 500 !important;
   margin-top: 0px !important;
 }
 
 h2 {
   font-family: "Rubik" !important;
+  font-weight: 500 !important;
   padding-left: 20px;
 
 }
@@ -296,6 +311,8 @@ h3 {
   margin: 40px 0px 40px 0px;
   padding-left: 10px;
   font-family: "Rubik" !important;
+  font-weight: 400 !important;
+
 }
 
 h4 {
@@ -304,12 +321,14 @@ h4 {
   margin-bottom: 0px !important;
   font-size: 24px !important;
   font-family: "Rubik" !important;
+  font-weight: 400 !important;
 }
 
 p {
   text-align: left;
   margin: 0px 0px 0px 0px;
-  font-family: "Rubik" !important;
+  font-family: "Rubik", Sans-Serif !important;
+  font-weight: 400;
   font-size: 18px;
   /* margin-bottom: 10px; */
 }
@@ -402,7 +421,7 @@ li {
 
 
   .about {
-    font-size: 16px;
+    font-size: 16px !important;
     margin-right: 0px;
   }
 
@@ -470,6 +489,8 @@ li {
     text-align: left;
     text-justify: none;
     hyphens: none;
+    padding-left: 20px;
+    padding-right: 20px;
   }
 
   .halfColumn {
@@ -530,7 +551,7 @@ li {
 @media screen and (max-width : 600px) {
 
   #title {
-    font-size: calc(5vw + 10px);
+    font-size: calc(3.8vw + 10px);
     /* padding-top: .5vw; */
     line-height: 53px;
   }
@@ -617,6 +638,11 @@ li {
     border-radius: 5px !important;
   }
 
+  .about {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+
   .email {
     font-size: 20px;
   }
@@ -640,9 +666,9 @@ li {
 
 @media screen and (max-width : 355px) {
 
-  /* header {
-    width: 270px;
-  } */
+  #title {
+    font-size: calc(5vw);
+  }
 
 }
 
