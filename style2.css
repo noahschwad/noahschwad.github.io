@@ -84,7 +84,7 @@ div.homeLink {margin-bottom: 20px;}
   display: flex;
   align-items: center;
   justify-content: center;
-  max-height: 600px;
+  max-height: 780px;
 }
 
 .standardBox.menu {
@@ -111,7 +111,7 @@ div.homeLink {margin-bottom: 20px;}
 .paddedPic {
   max-width: 100%;
   /* max-height: 100%; */
-  max-height: 600px;
+  max-height: 780px;
 
 }
 
@@ -183,12 +183,14 @@ h2.flexText {
   text-align: left;
   margin-left: 20px;
   margin-right: 20px;
+  margin-bottom: 0px;
   width: 30%;
 }
 
 .description {
   margin-left: 0px;
   margin-right: 20px;
+  margin-bottom: 0px;
   width: calc(60% - 10px);
 }
 
@@ -234,7 +236,7 @@ h1.pageTitle {
   margin-top: 0px;
   margin-bottom: 30px;
   text-align: center;
-  font-weight: 700 !important;
+  font-weight: 500 !important;
   font-family: "Rubik Bold", "Rubik" !important;
 }
 
@@ -291,6 +293,7 @@ a:hover, #title:hover {
 
 h1, h2, h3, h4 {
   letter-spacing: 0px;
+  color: #2e2e2e;
 }
 
 h1 {
@@ -422,7 +425,10 @@ li {
 
   .about {
     font-size: 16px !important;
-    margin-right: 0px;
+  }
+
+  h2.about {
+    font-size: 24px !important;
   }
 
   #headshot {
@@ -486,8 +492,8 @@ li {
 
   .about {
     font-size: 16px !important;
-    text-align: left;
-    text-justify: none;
+    text-align: left !important;
+    /* text-justify: none; */
     hyphens: none;
     padding-left: 20px;
     padding-right: 20px;
@@ -570,6 +576,7 @@ li {
   .standardBox {
     width: 100% !important;
     height: auto !important;
+    margin-bottom: 20px;
   }
 
   .standardBox.menu {
@@ -581,6 +588,14 @@ li {
     margin-bottom: 30px;
     margin-left: 0px !important;
     margin-right: 0px !important;
+  }
+
+  .categories {
+    margin-bottom: 30px;
+  }
+
+  .description {
+    margin-bottom: 0px;
   }
 
 
@@ -627,7 +642,7 @@ li {
   }
 
   .mobile {
-    display: block;
+    display: flex;
   }
 
   .notMobile {
@@ -636,11 +651,6 @@ li {
 
   .desktopUI {
     border-radius: 5px !important;
-  }
-
-  .about {
-    padding-left: 10px;
-    padding-right: 10px;
   }
 
   .email {
@@ -662,6 +672,14 @@ li {
     column-gap:           0px !important;
   }
 
+}
+
+@media screen and  (max-width: 450px) {
+
+  .about {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
 }
 
 @media screen and (max-width : 355px) {
