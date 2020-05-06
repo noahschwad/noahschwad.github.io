@@ -1,7 +1,7 @@
 <html lang="en">
   <head>
     <link rel="stylesheet" type="text/css" href="style2.css">
-    <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+
     <!-- <link href="https://fonts.googleapis.com/css?family=DM+Sans&display=swap" rel="stylesheet"> -->
 <link rel="icon" href="favicon.ico" type="image/ico"/>
     <link href="https://fonts.googleapis.com/css?family=Rubik:400,500,700,900" rel="stylesheet">
@@ -15,25 +15,38 @@
 
     <style>
 
-      #starter {
-        background-color: gray;
-        border: none;
-        border-radius: 0px;
-        color: white;
+      #starter, .speed2 {
+        margin-bottom: 20px;
+        border: 1px solid black;
+        background-color: white;
+        font-family: "Rubik", sans-serif;
+        font-weight: 400;
+        font-size: 20px;
+
         padding: 15px 10px;
+        display: inline-block;
+      }
+
+      #starter {
+        /* margin-right: 15px; */
+        width: 295px;
         text-align: center;
         text-decoration: none;
-        display: inline-block;
-        font-size: 16px;
         -webkit-appearance: none;
-      }
-      .speed2 {
-        background-color: gray;
-        padding: 15px 10px;
-        font-size: 16px;
-        color: white;
-        display: inline-block;
 
+      }
+
+      #starter:hover {
+        background-color: #404040;
+        color: white;
+      }
+
+      .speed2 {
+
+      }
+
+      #speed2.slider {
+        margin-left: 10px;
       }
 
     </style>
@@ -45,53 +58,58 @@
 
       <script src="assets/header2.js"></script>
 
-      <div class="w3-half left">
-        <div id="sketch-holder2" class="tilepic" align="center" style="border-width:10px;
-                                       border-style: solid;
-                                       border-color: #89AA9B;
-                                       background-color: #89AA9B;">
-        </div>
-        <script> document.getElementById('sketch-holder2').style.height = document.getElementById("sketch-holder2").offsetWidth; </script>
+      <br>
 
-      </div>
+      <div class="evenRow">
 
-      <div class="w3-half right">
+      <div class="flexText">
         <h1 style="padding: 0px; text-align: center;"> Bouncing Ball Synthesizer </h1>
-        <div class="tilePic" style="margin-left: 0px; margin-right: 0px; width: calc(100% - 7px);">
-          <div id="controls" style="">
-            <h3 style = "margin-top: 0px;
-                         float: left;
-                         font-size: 20px;
-                         padding: 0px;">
-              Press <strong>Start</strong> and then change the speed as you like. (Speed takes a moment to change)
-            </h3>
+          <div id="controls" style="display: flex;
+                                    justify-content: center;
+                                    flex-wrap: wrap;
 
-            <div style="margin-top: 20px; clear: both;">
-
-              <input id="starter"
-                     type="button"
-                     value="Start"
-                     onclick="mallet1.start();
-                              mallet2.start();
-                              this.setAttribute('onclick','Tone.Master.mute ^= true;');
-                              this.setAttribute('value','Mute');"
-                     style=""/>
-
-              <span class = "speed2">
-                Speed Synth1
-                <input id="speed2" type="range" min="2" max="5" value="3" class="slider">
-              </span>
+                                    margin-top: 20px;">
 
 
-            </div>
+
+            <input id="starter"
+                   type="button"
+                   value="Start Audio"
+                   onclick="mallet1.start();
+                            mallet2.start();
+                            this.setAttribute('onclick','Tone.Master.mute ^= true;');
+                            this.setAttribute('value','Mute');"
+                   style=""/>
+
+            <div class="break"></div>
+
+            <span class="speed2">
+              Speed Synth1
+              <input id="speed2" type="range" min="2" max="5" value="3" class="slider">
+            </span>
+
           </div>
-        </div>
-        <p class="text" style="margin-top: 20px; width: calc(100% - 7px); padding: 0px;">
-          Each ball plays a sequence of 8 notes that changes randomly. <br> You may find that controlling the speed excites you.
-        </p>
-        <a href="code-projects.html" class="nextProj"><h3>See Previous Experiment!</h3></a>
+
+          <p style = "margin-bottom: 20px;">
+            Press Start and then change the speed as you like. (Speed takes a moment to change)
+          </p>
+
+          <p style="margin-top: 20px;">
+            Each ball plays a sequence of 8 notes that changes randomly. You may find that controlling the speed excites you.
+          </p>
+          <br>
+          <a href="code-projects.html" class="nextProj"><h3>See Previous Experiment!</h3></a>
 
       </div>
+
+      <div id="sketch-holder2" class="standardBox p5sketch"
+                              style="border-width: 5px;
+                                     border-style: solid;
+                                     border-color: #89AA9B;">
+      </div>
+      <script> document.getElementById('sketch-holder2').style.height = document.getElementById("sketch-holder2").offsetWidth; </script>
+
+    </div>
 
 
       <script>

@@ -1,7 +1,6 @@
 #container {
   padding-left: calc((100% - 1600px)/2);
   padding-right: calc((100% - 1600px)/2);
-  width: 100%;
   overflow: auto;
   /*padding-bottom: 40px;*/
 }
@@ -99,6 +98,7 @@ div.homeLink {margin-bottom: 20px;}
   top: 5px;
   left: 16px;
   color: white;
+  margin-top: 10px;
 }
 
 .slideBox {
@@ -172,6 +172,7 @@ h2.flexText {
   font-weight: 700;
   padding-left: 0px;
   margin-top: 0px;
+  margin-bottom: 0px;
   text-align: center;
 }
 
@@ -228,8 +229,8 @@ h1.pageTitle {
   font-size: 20px;
   padding-left: 20px;
   padding-right: 30px;
-  text-align: justify !important;
-  hyphens: auto;
+  /* text-align: justify !important; */
+  /* hyphens: auto; */
 }
 
 .email {
@@ -238,6 +239,12 @@ h1.pageTitle {
   text-align: center;
   font-weight: 500 !important;
   font-family: "Rubik Bold", "Rubik" !important;
+
+}
+
+.break {
+  flex-basis: 100%;
+  height: 0;
 }
 
 .halfColumn {
@@ -256,7 +263,7 @@ header {
   padding-left: 15px;
   float: left;
   font-style: normal;
-  margin-top: 8px !important;
+  margin-top: 16px;
   font-family: "Rubik Black", "Rubik" !important;
   font-weight: 900 !important;
 }
@@ -300,21 +307,22 @@ h1 {
   text-align: center;
   font-family: "Rubik" !important;
   font-weight: 500 !important;
-  margin-top: 0px !important;
 }
 
 h2 {
   font-family: "Rubik" !important;
   font-weight: 500 !important;
   padding-left: 20px;
+  font-size: 36px;
 
 }
 
 h3 {
-  margin: 40px 0px 40px 0px;
+  margin: 0px 0px 40px 0px;
   padding-left: 10px;
   font-family: "Rubik" !important;
   font-weight: 400 !important;
+  font-size: 24px;
 
 }
 
@@ -332,13 +340,14 @@ p {
   margin: 0px 0px 0px 0px;
   font-family: "Rubik", Sans-Serif !important;
   font-weight: 400;
-  font-size: 18px;
+  font-size: 20px;
+  line-height: 30px;
   /* margin-bottom: 10px; */
 }
 
 a {
   text-decoration: none;
-  color: blue;
+  color: #2e2e2e;
 
 }
 
@@ -388,12 +397,11 @@ li {
 /* social icons */
 
 .fa {
-  padding: 20px;
+  padding: 20px 5px;
   font-size: 50px;
   width: 50px;
   text-align: center;
   text-decoration: none;
-  margin: 5px 2px;
 }
 
 .fa:hover {
@@ -425,6 +433,7 @@ li {
 
   .about {
     font-size: 16px !important;
+    line-height: 22px;
   }
 
   h2.about {
@@ -447,6 +456,10 @@ li {
 
 
 @media only screen and (max-width : 840px) {
+
+  .standardBox.menu {
+    margin-bottom: 27px;
+  }
 
   #menu-icon {
 
@@ -524,6 +537,10 @@ li {
     width: 100% !important;
   }
 
+  .p5sketch {
+    width: 100%;
+  }
+
 }
 
 @media screen and (max-width : 740px) {
@@ -557,8 +574,8 @@ li {
 @media screen and (max-width : 600px) {
 
   #title {
-    font-size: calc(3.8vw + 10px);
-    /* padding-top: .5vw; */
+    margin-top: 8px;
+    font-size: calc(3vw + 10px);
     line-height: 53px;
   }
 
@@ -655,6 +672,7 @@ li {
 
   .email {
     font-size: 20px;
+
   }
 
   .carbonCalc {

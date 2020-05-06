@@ -19,8 +19,8 @@ cPentatonic = ["A", "C", "E", "G"];
 // } else {
 //   var canvasSize = [maxWidth, maxWidth*.6];
 // }
-var canvasSize = [document.getElementById("sketch-holder2").offsetWidth - 20,
-                  document.getElementById("sketch-holder2").offsetWidth - 20];
+var canvasSize = [document.getElementById("sketch-holder2").offsetWidth - 10,
+                  document.getElementById("sketch-holder2").offsetWidth];
 
 var mallet1;
 var mallet2;
