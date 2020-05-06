@@ -22,6 +22,7 @@
         font-family: "Rubik", sans-serif;
         font-weight: 400;
         font-size: 20px;
+        border-radius: 0px;
 
         padding: 15px 10px;
         display: inline-block;
@@ -61,6 +62,13 @@
       <br>
 
       <div class="evenRow">
+        <div id="sketch-holder2" class="standardBox p5sketch"
+                                style="border-width: 5px;
+                                       border-style: solid;
+                                       border-color: #89AA9B;">
+        </div>
+        <script> document.getElementById('sketch-holder2').style.height = document.getElementById("sketch-holder2").offsetWidth; </script>
+
 
       <div class="flexText">
         <h1 style="padding: 0px; text-align: center;"> Bouncing Ball Synthesizer </h1>
@@ -101,14 +109,6 @@
           <a href="code-projects.html" class="nextProj"><h3>See Previous Experiment!</h3></a>
 
       </div>
-
-      <div id="sketch-holder2" class="standardBox p5sketch"
-                              style="border-width: 5px;
-                                     border-style: solid;
-                                     border-color: #89AA9B;">
-      </div>
-      <script> document.getElementById('sketch-holder2').style.height = document.getElementById("sketch-holder2").offsetWidth; </script>
-
     </div>
 
 
