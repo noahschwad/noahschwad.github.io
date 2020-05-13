@@ -1,4 +1,9 @@
-#container {
+html, body {
+  margin:0;
+  padding:0;
+}
+
+.container {
   padding-left: calc((100% - 1600px)/2);
   padding-right: calc((100% - 1600px)/2);
   overflow: auto;
@@ -14,21 +19,11 @@
 
 }
 
-#headshot {
-  float: left;
-  padding-right: 70px;
-  padding-left:  70px;
-  padding-top: 6px;
-  padding-bottom: 30px;
-  max-width: calc(49%);
-}
-
 a.navi {
   font-family: "Rubik Bold", "Rubik" !important;
   font-weight: 700;
 }
 
-.w3-half, .fullScrn, .w3-third {margin: 0px 0px 40px 0px;}
 
 div.homeLink {margin-bottom: 20px;}
 
@@ -42,12 +37,28 @@ div.homeLink {margin-bottom: 20px;}
   position: relative;
 }*/
 
+.fullBleed {
+  /* width: 100%; */
+  /* height: auto; */
+  /* margin-left: -100px;
+  margin-right: 100px; */
+  /* padding-bottom: 30px; */
+  /* margin-bottom: 20px; */
+  /* max-height: 500px; */
+  /* margin-top: -200%; */
+  /* min-height: 40vw; */
+  /* max-width: none; */
+  /* z-index: -1; */
+}
+.colorBreak {
+  padding-top: 40px;
+  padding-bottom: 40px;
+}
+
 .fullScrn {
   width: 100%;
-
-  display: inline-block;
-  position: relative;
-  float: left;
+  margin: 0px 0px 40px 0px;
+  /* position: relative; */
 }
 
 .tilePic {
@@ -227,10 +238,14 @@ h1.pageTitle {
 
 .about {
   font-size: 20px;
-  padding-left: 20px;
-  padding-right: 30px;
+  /* padding-left: 20px;
+  padding-right: 30px; */
   /* text-align: justify !important; */
   /* hyphens: auto; */
+}
+
+#headshot {
+  max-width: calc(100% - 8px);
 }
 
 .email {
@@ -253,10 +268,11 @@ h1.pageTitle {
 }
 
 header {
-  margin-top: 20px;
+  margin-top: 25px;
   width: calc(100% - 7px);
   height: 70px;
   vertical-align: middle;
+  background-color: white;
 }
 
 #title {
@@ -271,6 +287,7 @@ header {
 .foot {
   margin: 0px 0px 27px 0px !important;
   width: calc(100% - 7px) !important;
+  background-color: white;
 }
 
 nav {
@@ -432,26 +449,23 @@ li {
 
 
   .about {
-    font-size: 16px !important;
-    line-height: 22px;
+    font-size: 18px !important;
+    line-height: 25px;
   }
 
   h2.about {
     font-size: 24px !important;
   }
 
-  #headshot {
-    padding-left: 0px;
-    padding-right: 20px;
-  }
 }
 
 @media screen and (max-width : 1680px) {
 
-  #container {
+  .container {
     padding-right: 40px;
     padding-left: 40px;
   }
+
 }
 
 
@@ -503,26 +517,9 @@ li {
     padding-right: 0px !important;
   }
 
-  .about {
-    font-size: 16px !important;
-    text-align: left !important;
-    /* text-justify: none; */
-    hyphens: none;
-    padding-left: 20px;
-    padding-right: 20px;
-  }
 
   .halfColumn {
     width: 100%;
-  }
-
-  #headshot {
-    float: none;
-    max-width: 100%;
-    padding-left: 10%;
-    padding-right: 10%;
-    padding-top: 0px;
-    padding-bottom: 30px;
   }
 
   .standardBox {
@@ -538,6 +535,15 @@ li {
   }
 
   .p5sketch {
+    width: 100%;
+    margin-bottom: 0px;
+  }
+
+  /* #headshot {
+    max-width: 100%;
+  } */
+
+  .evenRow {
     width: 100%;
   }
 
@@ -563,9 +569,29 @@ li {
     max-height: 93%;
   }
 
-  #container {
+  .container {
     padding-right: 15px;
     padding-left: 15px;
+  }
+
+  p {
+    font-size: 18px;
+    line-height: 25px;
+  }
+
+  .evenRowText {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+
+  h1.pageTitle {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+
+  .about {
+    padding-left: 20px;
+    padding-right: 20px;
   }
 
 
@@ -635,11 +661,7 @@ li {
   }
 
   .tilePic.darkShadow {
-    max-width: calc(100% - 15px);
-  }
-
-  .evenRow {
-    width: 100%;
+    max-width: calc(100% - 10px);
   }
 
 
@@ -681,6 +703,16 @@ li {
     border: 0 !important;
   }
 
+  .fullBleed {
+    padding-bottom: 0px;
+  }
+
+  .colorBreak {
+    padding-top: 20px;
+    padding-bottom: 20px;
+  }
+
+
   #activate {font-size: 20px !important;}
 
   #masonry {
@@ -694,15 +726,11 @@ li {
 
 @media screen and  (max-width: 450px) {
 
-  #container {
-    padding-right: 8px;
-    padding-left: 8px;
+  .container {
+    padding-right: 12px;
+    padding-left: 12px;
   }
 
-  .about {
-    padding-left: 10px;
-    padding-right: 10px;
-  }
 }
 
 @media screen and (max-width : 355px) {

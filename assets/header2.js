@@ -16,6 +16,5 @@ document.write('\
   </header>\
   <br>\
 \
-  <div id="content">\
 ');
  //nav based on https://blog.teamtreehouse.com/create-an-absolute-basic-mobile-css-responsive-navigation-menu

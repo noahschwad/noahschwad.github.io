@@ -1,6 +1,5 @@
 document.write('\
 \
-  </div>\
   <div class="foot">\
     <div style="width: 5px; height: 20px; display: inline-block;"></div>\
     <a href="https://www.instagram.com/bran_nu_boy/" target="_blank" class="fa fa-2x fa-instagram"></a>\
