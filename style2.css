@@ -71,6 +71,7 @@ div.homeLink {margin-bottom: 20px;}
   z-index: 0;
   width: 100%;
   max-width: 1650px;
+  /* width: 60%; */
 }
 
 .headerImgHolder {
@@ -90,7 +91,7 @@ div.homeLink {margin-bottom: 20px;}
   display: flex;
   flex-wrap: wrap;
   position: fixed;
-  bottom: 30;
+  top: calc(76vh + 5vw);
   left: 0;
   right: 0;
   align-items: flex-start;
@@ -597,6 +598,18 @@ li {
     width: 100%;
   }
 
+  .headerImgHolder {
+    height: 95vh;
+  }
+
+  .headerImg.notMobile {
+    display: none;
+  }
+
+  .headerImg.Mobile {
+    display: flex;
+  }
+
 }
 
 @media screen and (max-width : 740px) {
@@ -758,8 +771,8 @@ li {
   }
 
   .colorBreak {
-    padding-top: 20px;
-    padding-bottom: 20px;
+    padding-top: 40px;
+    padding-bottom: 40px;
   }
 
 
