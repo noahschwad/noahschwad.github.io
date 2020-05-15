@@ -91,7 +91,7 @@ div.homeLink {margin-bottom: 20px;}
   display: flex;
   flex-wrap: wrap;
   position: fixed;
-  top: calc(76vh + 5vw);
+  top: calc(69vh + 9vw);
   left: 0;
   right: 0;
   align-items: flex-start;
