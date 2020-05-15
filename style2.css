@@ -7,7 +7,9 @@ html, body {
   padding-left: calc((100% - 1600px)/2);
   padding-right: calc((100% - 1600px)/2);
   overflow: auto;
-  /*padding-bottom: 40px;*/
+  background-color: white;
+  z-index: 10;
+  position: relative;
 }
 
 #menu-icon {
@@ -48,11 +50,54 @@ div.homeLink {margin-bottom: 20px;}
   /* margin-top: -200%; */
   /* min-height: 40vw; */
   /* max-width: none; */
-  /* z-index: -1; */
+  z-index: -10;
 }
+
+.fullBleedHeddr {
+  background-color: transparent;
+  height: 200px;
+  /* position: sticky !important;
+  top: 0px; */
+}
+
 .colorBreak {
-  padding-top: 40px;
-  padding-bottom: 40px;
+  padding-top: 100px;
+  padding-bottom: 100px;
+  background-color: transparent;
+}
+
+.headerImg {
+  position: fixed;
+  z-index: 0;
+  width: 100%;
+  max-width: 1650px;
+}
+
+.headerImgHolder {
+  display: flex;
+  position: fixed;
+  top: 0;
+  right:0;
+  left:0;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  background-color: transparent;
+  width: 100%;
+}
+
+.seeMore {
+  display: flex;
+  flex-wrap: wrap;
+  position: fixed;
+  bottom: 30;
+  left: 0;
+  right: 0;
+  align-items: flex-start;
+  justify-content: center;
+  background-color: transparent;
+
+
 }
 
 .fullScrn {
@@ -88,9 +133,9 @@ div.homeLink {margin-bottom: 20px;}
 .standardBox {
   /* height: 40%; */
   height: auto;
-  width: calc(50% - 20px);
+  width: calc(50% - 15px);
   /* margin-right: 7px; */
-  margin-bottom: 40px;
+  margin-bottom: 30px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -204,6 +249,8 @@ h2.flexText {
   margin-right: 20px;
   margin-bottom: 0px;
   width: calc(60% - 10px);
+  font-size: 24px;
+  line-height: 32px;
 }
 
 .nextProj {
@@ -273,7 +320,10 @@ header {
   height: 70px;
   vertical-align: middle;
   background-color: white;
+  z-index: 100;
 }
+
+
 
 #title {
   padding-left: 15px;
@@ -449,8 +499,8 @@ li {
 
 
   .about {
-    font-size: 18px !important;
-    line-height: 25px;
+    /* font-size: 18px !important;
+    line-height: 25px; */
   }
 
   h2.about {
@@ -531,7 +581,7 @@ li {
   }
 
   .flexText {
-    width: 100% !important;
+    width: auto !important;
   }
 
   .p5sketch {

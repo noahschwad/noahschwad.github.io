@@ -15,14 +15,25 @@
 
   <body>
 
-    <div class="fullBleed" style="background-color: #3D6E3D;">
+    <div class="fullBleed" style="background-color: #3D6E3D;
+                                  height: 100vh;">
 
-      <div class="container">
+      <div class="headerImgHolder">
+
+        <img class="notMobile headerImg" src="assets/posters/posters-header.png">
+        <img class="mobile headerImg" src="assets/posters/posters-header-mobile.png">
+
+        <div class="seeMore">
+          <p style="color:white;">See More</p>
+          <div style="flex-basis: 100%; height: 0;"></div>
+          <img style="width: 50px;" src="assets/down-arrow-white.png">
+        </div>
+
+      </div>
+
+      <div class="container fullBleedHeddr" style="background: transparent;">
 
         <script src="assets/header2.js"></script>
-
-        <img class="fullscrn tilePic notMobile" src="assets/posters/posters-header.png">
-        <img class="fullscrn tilepic mobile" src="assets/posters/posters-header-mobile.png">
 
       </div>
     </div>
