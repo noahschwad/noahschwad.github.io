@@ -143,6 +143,12 @@ div.homeLink {margin-bottom: 20px;}
   max-height: 780px;
 }
 
+.sbPadding {
+  max-width: 80%;
+  max-height: 80%;
+  margin-bottom: 30px;
+}
+
 .standardBox.menu {
   width: calc(50% - 27px);
   height: auto;
@@ -169,7 +175,9 @@ div.homeLink {margin-bottom: 20px;}
   max-width: 100%;
   /* max-height: 100%; */
   max-height: 780px;
-
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .photo-slide {
@@ -250,7 +258,7 @@ h2.flexText {
   margin-right: 20px;
   margin-bottom: 0px;
   width: calc(60% - 10px);
-  font-size: 24px;
+  font-size: 22px;
   line-height: 32px;
 }
 
@@ -585,6 +593,10 @@ li {
     width: auto !important;
   }
 
+  h2.flexText {
+    margin-bottom: 20px;
+  }
+
   .p5sketch {
     width: 100%;
     margin-bottom: 0px;
@@ -643,18 +655,19 @@ li {
   }
 
   .evenRowText {
-    padding-left: 20px;
-    padding-right: 20px;
+    padding-left: 10px;
+    padding-right: 10px;
   }
 
   h1.pageTitle {
-    padding-left: 20px;
-    padding-right: 20px;
+    padding-left:  10px;
+    padding-right: 10px;
   }
 
   .about {
-    padding-left: 20px;
-    padding-right: 20px;
+    padding-left: 10px;
+    padding-right: 10px;
+    font-size: 18px;
   }
 
 
@@ -673,6 +686,10 @@ li {
     margin-left: 0px;
     margin-bottom: 0px;
   }
+
+  /* .gallery {
+    margin-bottom: 20px;
+  } */
 
   .shirts .evenRow {
     width: 100% !important;
@@ -698,16 +715,13 @@ li {
 
   .categories {
     margin-bottom: 30px;
+    font-size: 16;
   }
 
   .description {
     margin-bottom: 0px;
   }
 
-
-  h2.flexText {
-    text-align: left;
-  }
 
   .flexSmall {
     width: 70% !important;
@@ -827,20 +841,20 @@ div.darkShadow:hover {
 #masonry {
   /* Prevent vertical gaps */
   -webkit-column-count: 2;
-  -webkit-column-gap:   40px;
+  -webkit-column-gap:   20px;
   -moz-column-count:    2;
-  -moz-column-gap:      40px;
+  -moz-column-gap:      20px;
   column-count:         2;
-  column-gap:           40px;
+  column-gap:           20px;
   padding-bottom:       40px;
   padding-left: 100px;
   padding-right: 100px;
 }
 
-#masonry .gallery {
+.gallery {
   /* Just in case there are inline attributes*/
   width: 100% !important;
   height: auto !important;
-  margin-bottom: 50px !important;
+  margin-bottom: 20px;
   transform: translateZ(0);
 }
