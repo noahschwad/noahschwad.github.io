@@ -1,0 +1,159 @@
+<html lang="en">
+  <head>
+    <link rel="stylesheet" type="text/css" href="style2.css">
+     
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.6.0/p5.js"></script>
+    <script src="assets/js/Tone.js"></script>
+    <script src="assets/js/jquery.js"></script>
+
+    <style>
+
+      #starter {
+        background-color: gray;
+        border: none;
+        border-radius: 0px;
+        color: white;
+        padding: 15px 10px;
+        text-align: center;
+        text-decoration: none;
+        display: inline-block;
+        font-size: 16px;
+        -webkit-appearance: none;
+      }
+      .speed2 {
+        background-color: gray;
+        padding: 15px 10px;
+        font-size: 16px;
+        color: white;
+        display: inline-block;
+
+      }
+
+    </style>
+  </head>
+
+  <body>
+
+    <div class="container">
+
+      <script src="assets/header2.js"></script>
+
+
+
+      <div class="w3-half left">
+        <div id="sketch-holder1" class="tilepic" align="center" style="padding: 5px;">
+          <!-- Our sketch will go here! -->
+        </div>
+      </div>
+
+      <div class="w3-half right" style="margin-left: 0px;">
+        <h2> Smile Tiles </h2>
+        <div style="margin-right: 10px;">
+          <p class="text">I was reading Edward Tufte's book <em>The Visual Display of Quantitative Information</em> and I was intrigued by the idea of Chernoff Faces. If you're not familiar, Chernoff Faces are a quirky way of visualizing multiple variables at once by drawing a face based on that data. A variable is mapped to the shape of the eyes, slant of the eyebrows, shape of the head, etc, and because humans are particularly good at recognizing faces, differences in the data are easy to discern. These faces, however, do not represent any meaningful data and are generated randomly!</p>
+        </div>
+      </div>
+
+
+
+
+      <div class="w3-row" style="margin-bottom: 30px;">
+        <div class="w3-col" style="width:5%; height: 20px"></div>
+
+        <a         id="activate"
+              onclick="activateOther();"
+                style="display: block;
+                       margin: 0 auto;
+                       margin-top: 11px;
+                       font-size: 24px;
+                       text-align: center;">
+
+          <div class="w3-col tilepic" style="width:90%; height: 63px; cursor: pointer;">
+                  <h2>activate other project</h2>
+          </div>
+        </a>
+
+
+        <div class="w3-col" style="width:10%; height: 20px"></div>
+      </div>
+
+
+      <div class="w3-half left">
+        <div id="sketch-holder2" class="tilepic" align="center" style="border-width:10px;
+                                       border-style: solid;
+                                       border-color: #89AA9B;
+                                       background-color: #89AA9B;">
+        </div>
+        <script> document.getElementById('sketch-holder2').style.height = document.getElementById("sketch-holder2").offsetWidth; </script>
+      </div>
+
+      <div class="w3-half right">
+        <h2> Bouncing Ball Synthesizer </h2>
+        <div class="tilePic" style="margin-left: 0px; margin-right: 0px; width: calc(100% - 7px);">
+          <div id="controls" style="visibility: hidden;">
+            <h3 style = "margin-top: 0px;
+                         float: left;
+                         font-size: 20px;">
+              Press <strong>Start</strong> and then change the speed as you like.
+            </h3>
+
+            <div style="margin-top: 20px; clear: both;">
+
+              <input id="starter"
+                     type="button"
+                     value="Start"
+                     onclick="mallet1.start();
+                              mallet2.start();
+                              this.setAttribute('onclick','Tone.Master.mute ^= true;');
+                              this.setAttribute('value','Mute');"
+                     style=""/>
+
+              <span class = "speed2">
+                Speed Synth1
+                <input id="speed2" type="range" min="2" max="5" value="3" class="slider">
+              </span>
+
+
+            </div>
+          </div>
+        </div>
+        <p class="text" style="margin-top: 20px; width: calc(100% - 7px);">
+          Each ball plays a sequence of 8 notes that changes randomly. You may find that controlling the speed excites you.
+        </p>
+      </div>
+
+      <script>
+        // work with sliders
+        // sliderX = document.getElementById("sliderX");
+        // sliderX.oninput = function() {
+        //   mallet1.crusherChange(this.value);
+        // }
+
+        speed2 = document.getElementById("speed2");
+        speed2.onchange = function() {
+          mallet2.speedChange(this.value);
+        }
+
+        // crusher3 = document.getElementById("crusher3");
+        // crusher3.oninput = function() {
+        //   mallet3.crusherChange(this.value);
+        // }
+      </script>
+
+
+
+      <script src="assets/footer.js"></script>
+
+    </div>
+    <!-- for smile tiles -->
+    <script src="assets/js/sketch1.js"></script>
+    <script src='assets/js/tile.js'></script>
+    <script src='assets/js/activateOther.js'></script>
+
+
+  </body>
+
+
+
+</html>

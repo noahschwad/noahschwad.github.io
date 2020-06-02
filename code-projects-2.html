@@ -1,147 +1,133 @@
-<html lang="en">
-  <head>
-    <link rel="stylesheet" type="text/css" href="style2.css">
-
-    <!-- <link href="https://fonts.googleapis.com/css?family=DM+Sans&display=swap" rel="stylesheet"> -->
-<link rel="icon" href="favicon.ico" type="image/ico"/>
-    <link href="https://fonts.googleapis.com/css?family=Rubik:400,500,700,900" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
-    <title>Code Experiments - NoahDesigns4u</title>
-
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.6.0/p5.js"></script>
-    <script src="assets/js/Tone.js"></script>
-
-    <style>
-
-      #starter, .speed2 {
-        margin-bottom: 20px;
-        border: 1px solid black;
-        background-color: white;
-        font-family: "Rubik", sans-serif;
-        font-weight: 400;
-        font-size: 20px;
-        border-radius: 0px;
-
-        padding: 15px 10px;
-        display: inline-block;
-      }
-
-      #starter {
-        /* margin-right: 15px; */
-        width: 295px;
-        text-align: center;
-        text-decoration: none;
-        -webkit-appearance: none;
-
-      }
-
-      #starter:hover {
-        background-color: #404040;
-        color: white;
-      }
-
-      .speed2 {
-
-      }
-
-      #speed2.slider {
-        margin-left: 10px;
-      }
-
-    </style>
-  </head>
-
-  <body>
-
-    <div class="container">
-
-      <script src="assets/header2.js"></script>
-
-      <br>
-
-      <div class="evenRow">
-        <div id="sketch-holder2" class="standardBox p5sketch"
-                                style="border-width: 5px;
-                                       border-style: solid;
-                                       border-color: #89AA9B;">
-        </div>
-        <script> document.getElementById('sketch-holder2').style.height = document.getElementById("sketch-holder2").offsetWidth; </script>
+---
+layout: default
+---
 
 
-      <div class="flexText">
-          <div id="controls" style="display: flex;
-                                    justify-content: center;
-                                    flex-wrap: wrap;
+<title>Code Experiments - NoahDesigns4u</title>
 
-                                    margin-top: 20px;">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.6.0/p5.js"></script>
+<script src="assets/js/Tone.js"></script>
+
+<style>
+
+  #starter, .speed2 {
+    margin-bottom: 20px;
+    border: 1px solid black;
+    background-color: white;
+    font-family: "Rubik", sans-serif;
+    font-weight: 400;
+    font-size: 20px;
+    border-radius: 0px;
+
+    padding: 15px 10px;
+    display: inline-block;
+  }
+
+  #starter {
+    /* margin-right: 15px; */
+    width: 295px;
+    text-align: center;
+    text-decoration: none;
+    -webkit-appearance: none;
+
+  }
+
+  #starter:hover {
+    background-color: #404040;
+    color: white;
+  }
+
+  .speed2 {
+
+  }
+
+  #speed2.slider {
+    margin-left: 10px;
+  }
+
+</style>
 
 
 
-            <input id="starter"
-                   type="button"
-                   value="Start Audio"
-                   onclick="mallet1.start();
-                            mallet2.start();
-                            this.setAttribute('onclick','Tone.Master.mute ^= true;');
-                            this.setAttribute('value','Mute');"
-                   style=""/>
+<div class="container scootFoot">
 
-            <div class="break"></div>
+  <div style="width:100%; height: 130px;"></div>
 
-            <span class="speed2">
-              Speed Synth1
-              <input id="speed2" type="range" min="2" max="5" value="3" class="slider">
-            </span>
 
-          </div>
+  <div class="evenRow">
+    <div id="sketch-holder2" class="standardBox p5sketch"
+                            style="border-width: 5px;
+                                   border-style: solid;
+                                   border-color: #89AA9B;">
+    </div>
+    <script> document.getElementById('sketch-holder2').style.height = document.getElementById("sketch-holder2").offsetWidth; </script>
 
-          <h1 style="padding: 0px; text-align: center;"> Bouncing Ball Synthesizer </h1>
 
-          <p style = "margin-bottom: 20px;">
-            Press Start and then change the speed as you like. (Speed takes a moment to change)
-          </p>
+  <div class="flexText">
+      <div id="controls" style="display: flex;
+                                justify-content: center;
+                                flex-wrap: wrap;
 
-          <p style="margin-top: 20px;">
-            Each ball plays a sequence of 8 notes that changes randomly. You may find that controlling the speed excites you.
-          </p>
-          <br>
-          <a href="code-projects.html" class="nextProj"><h3>See Previous Experiment!</h3></a>
+                                margin-top: 20px;">
+
+
+
+        <input id="starter"
+               type="button"
+               value="Start Audio"
+               onclick="mallet1.start();
+                        mallet2.start();
+                        this.setAttribute('onclick','Tone.Master.mute ^= true;');
+                        this.setAttribute('value','Mute');"
+               style=""/>
+
+        <div class="break"></div>
+
+        <span class="speed2">
+          Speed Synth1
+          <input id="speed2" type="range" min="2" max="5" value="3" class="slider">
+        </span>
 
       </div>
-    </div>
+
+      <h1 style="padding: 0px; text-align: center;"> Bouncing Ball Synthesizer </h1>
+
+      <p style = "margin-bottom: 20px;">
+        Press Start and then change the speed as you like. (Speed takes a moment to change)
+      </p>
+
+      <p style="margin-top: 20px;">
+        Each ball plays a sequence of 8 notes that changes randomly. You may find that controlling the speed excites you.
+      </p>
+      <br>
+      <a href="code-projects.html" class="nextProj"><h3>See Previous Experiment!</h3></a>
+
+  </div>
+</div>
 
 
-      <script>
-        // work with sliders
-        // sliderX = document.getElementById("sliderX");
-        // sliderX.oninput = function() {
-        //   mallet1.crusherChange(this.value);
-        // }
+  <script>
+    // work with sliders
+    // sliderX = document.getElementById("sliderX");
+    // sliderX.oninput = function() {
+    //   mallet1.crusherChange(this.value);
+    // }
 
-        speed2 = document.getElementById("speed2");
-        speed2.onchange = function() {
-          mallet2.speedChange(this.value);
-        }
+    speed2 = document.getElementById("speed2");
+    speed2.onchange = function() {
+      mallet2.speedChange(this.value);
+    }
 
-        // crusher3 = document.getElementById("crusher3");
-        // crusher3.oninput = function() {
-        //   mallet3.crusherChange(this.value);
-        // }
-      </script>
-
-
-
-      <script src="assets/footer.js"></script>
-
-    </div>
-
-    <script src="assets/js/sketch2.js"></script>
-    <script src="assets/js/mallet.js"></script>
-
-  </body>
+    // crusher3 = document.getElementById("crusher3");
+    // crusher3.oninput = function() {
+    //   mallet3.crusherChange(this.value);
+    // }
+  </script>
 
 
 
-</html>
+
+</div>
+
+<script src="assets/js/sketch2.js"></script>
+<script src="assets/js/mallet.js"></script>

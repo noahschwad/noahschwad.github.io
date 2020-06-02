@@ -1,2 +1,4 @@
 .DS_Store
 code-projects-old.html
+_site/
+.jekyll-cache/
