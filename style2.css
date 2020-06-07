@@ -351,8 +351,7 @@ h1.pageTitle {
 }
 
 header , #headerBox {
-  /* margin-top: 25px; */
-  width: 1500px;
+
   height: 70px;
   z-index: 100;
   transition: .2s;
@@ -362,6 +361,7 @@ header , #headerBox {
 }
 
 header {
+  width: 1500px;
   display: flex;
   flex-wrap: nowrap;
   justify-content: space-between;
@@ -372,9 +372,10 @@ header {
 }
 
 #headerBox {
+  width: 1493px;
   background-color: white;
   margin-left: calc((100% - 1500px)/2);
-  margin-right: calc((100% - 1500px)/2);
+  margin-right: calc((100% - 1486px)/2); /* 2x the 7px shadow */
 }
 
 .fullHeddrBox {
@@ -575,14 +576,18 @@ li {
   }
 
 
-
-  #headerBox, header {
+  header {
     width: calc(100% - 160px);
     margin-right: 80px;
     margin-left: 80px;
-  }
-
+    padding: 0px;
 }
+
+  #headerBox, header {
+    width: calc(100% - 167px);
+    margin-right: 87px;
+    margin-left: 80px;
+  }
 
 
 @media only screen and (max-width : 840px) {
@@ -600,8 +605,8 @@ li {
   }
 
   #headerBox {
-    width: calc(100% - 40px);
-    margin-right: 20px;
+    width: calc(100% - 47px);
+    margin-right: 27px;
     margin-left: 20px;
   }
 
