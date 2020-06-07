@@ -15,9 +15,9 @@ html, body {
 #menu-icon {
 
 	display: none;
-  height: 30px;
-  width: 30px;
-  margin: 20px 20px 20px 20px;
+  height: 25px;
+  width: 25px;
+  padding: 20px;
 
 }
 
@@ -53,25 +53,26 @@ div.homeLink {margin-bottom: 20px;}
   z-index: -10;
 }
 
-.fullBleedHeddr {
-  background-color: transparent;
-  height: 200px;
-  position: absolute !important;
-  top: 0px;
-  z-index: 100;
-  width: 1500px;
-  /* width: 100%; */
+.fullbleed.lander {
+  height: 98vh;
 }
 
-/* .container.fullBleedHeddr {
-  padding-left: 20px;
-  padding-right: 20px;
-} */
+.fullBleedHeddr {
+  background-color: transparent;
+  height: 50px;
+  position: absolute;
+  top: 0px;
+  z-index: 100;
+  width: 100%;
+  /* width: 100%; */
+}
 
 .colorBreak {
   padding-top: 100px;
   padding-bottom: 100px;
   background-color: transparent;
+  /* margin-top: 40px; */
+  margin-bottom: 80px;
 }
 
 .headerImg {
@@ -210,7 +211,7 @@ div.homeLink {margin-bottom: 20px;}
 .evenRow {
   display: flex;
   height: auto;
-  width: calc(100% - 7px);
+  width: 100%;
   justify-content: space-between;
   /* align-items: flex-start; */
   align-items: center;
@@ -253,6 +254,10 @@ div.homeLink {margin-bottom: 20px;}
   align-items: center;
   margin-top: 30px;
   margin-bottom: 30px;
+}
+
+.evenRowText.topAlign {
+  align-items: flex-start;
 }
 
 h2.flexText {
@@ -345,24 +350,51 @@ h1.pageTitle {
   width: 50%;
 }
 
-header {
-  margin-top: 25px;
-  width: calc(100% - 7px);
+header , #headerBox {
+  /* margin-top: 25px; */
+  width: 1500px;
   height: 70px;
-  vertical-align: middle;
-  background-color: white;
   z-index: 100;
+  transition: .2s;
+  transition-timing-function: linear;
+  position: absolute;
+  top: 25px;
+}
+
+header {
+  display: flex;
+  flex-wrap: nowrap;
+  justify-content: space-between;
+  align-items: center;
+
+  padding-left: calc((100% - 1500px)/2);
+  padding-right: calc((100% - 1500px)/2);
+}
+
+#headerBox {
+  background-color: white;
+  margin-left: calc((100% - 1500px)/2);
+  margin-right: calc((100% - 1500px)/2);
+}
+
+.fullHeddrBox {
+  top: 0px !important;
+  box-shadow: 0px 0px #2e2e2e !important;
+  border: none !important;
+  border-bottom: 1px solid black !important;
+  width: 100% !important;
+  margin: 0% !important;
+  height: 50px !important;
 }
 
 
-
 #title {
-  padding-left: 15px;
-  float: left;
-  font-style: normal;
-  margin-top: 16px;
+  padding-left: 20px;
+  margin: 1px 0px 0px 0px;;
   font-family: "Rubik Black", "Rubik" !important;
   font-weight: 900 !important;
+  text-align: left;
+  /* transition: .5s; */
 }
 
 .foot {
@@ -374,14 +406,16 @@ header {
 }
 
 nav {
-  float: right;
-  margin-right: 20px;
+  margin-right: 15px;
+  /* line-height: 20px; */
+  transition: .5s;
+  display: flex;
+  align-items: center;
 }
 
-nav a {
+.navi {
   font-size: 24px;
   text-decoration: none;
-  line-height: 20px;
 }
 
 a:hover, #title:hover {
@@ -409,7 +443,12 @@ h2 {
   font-weight: 500 !important;
   padding-left: 20px;
   font-size: 36px;
+}
 
+h2.underline {
+  border-bottom: 1px solid black;
+  margin-top: 60px;
+  padding-bottom: 10px;
 }
 
 h3 {
@@ -453,7 +492,7 @@ a {
   background-color: white;
 }
 
-header, .darkShadow {
+#headerBox, .darkShadow {
   box-shadow: 7px 7px #404040;
   border: 1px solid black;
 }
@@ -535,8 +574,12 @@ li {
     padding-left: 80px;
   }
 
-  .fullBleedHeddr {
+
+
+  #headerBox, header {
     width: calc(100% - 160px);
+    margin-right: 80px;
+    margin-left: 80px;
   }
 
 }
@@ -544,13 +587,30 @@ li {
 
 @media only screen and (max-width : 840px) {
 
+  .container {
+    padding-right: 20px;
+    padding-left: 20px;
+  }
+
+  header {
+    width: calc(100% - 40px);
+    padding-right: 20px;
+    padding-left: 20px;
+    margin: 0px;
+  }
+
+  #headerBox {
+    width: calc(100% - 40px);
+    margin-right: 20px;
+    margin-left: 20px;
+  }
+
   .standardBox.menu {
     margin-bottom: 27px;
   }
 
   #menu-icon {
 
-    float: right;
 		display: block;
 
 	}
@@ -566,8 +626,8 @@ li {
 		padding: 20px;
 		background: #fff;
 		border: 1px solid #000;
-		right: 20px;
-		top: 20px;
+		right: 0px;
+		top: 40px;
 		width: 120px;
     text-align: left;
     z-index: 999999;
@@ -662,11 +722,6 @@ li {
     max-height: 93%;
   }
 
-  .container {
-    padding-right: 20px;
-    padding-left: 20px;
-  }
-
   p {
     font-size: 18px;
     line-height: 25px;
@@ -682,15 +737,16 @@ li {
     padding-right: 10px;
   }
 
+  h2 {
+    padding-left: 0px;
+  }
+
   .about {
     padding-left: 10px;
     padding-right: 10px;
     font-size: 18px;
   }
 
-  .fullBleedHeddr {
-    width: calc(100% - 40px);
-  }
 
 }
 
@@ -698,9 +754,7 @@ li {
 
 
   #title {
-    margin-top: 8px;
     font-size: calc(3vw + 10px);
-    line-height: 56px;
   }
 
   h1.pageTitle {
@@ -842,18 +896,14 @@ li {
 
 @media screen and  (max-width: 450px) {
 
-  .container {
-    padding-right: 20px;
-    padding-left: 20px;
-  }
 
 }
 
 @media screen and (max-width : 355px) {
 
-  #title {
+  /* #title {
     font-size: calc(5vw);
-  }
+  } */
 
 }
 
