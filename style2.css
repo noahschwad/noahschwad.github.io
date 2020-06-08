@@ -651,11 +651,13 @@ li {
   nav ul {
 
 		display: none;
+    flex-direction: column;
 		position: absolute;
 		padding: 20px;
 		background: #fff;
-		border: 1px solid #000;
-		right: -5px;
+    border: 1px solid #000;
+    opacity: 0;
+    right: 13px;
 		top: 51px;
 		width: 120px;
     text-align: center !important;
@@ -666,16 +668,15 @@ li {
 
 	}
 
-   li a {
-    text-align: center !important;
-  }
 
 	nav ul.active {
 
 		display: flex;
     flex-direction: column;
     justify-content: space-between;
-    height: auto;
+    height: 95px;
+    opacity: 1;
+
 
 	}
 
