@@ -10,7 +10,7 @@ function scrollFunction() {
 
     document.getElementById("headerBox").classList.add("fullHeddrBox");
     document.getElementsByTagName("header")[0].style.top = "0px";
-    document.getElementsByTagName("header")[0].style.height = "50px";
+    document.getElementsByTagName("header")[0].style.height = "60px";
 
 
   } else {

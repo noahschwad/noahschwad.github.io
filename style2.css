@@ -385,7 +385,7 @@ header {
   border-bottom: 1px solid black !important;
   width: 100% !important;
   margin: 0% !important;
-  height: 50px !important;
+  height: 60px !important;
 }
 
 
@@ -407,7 +407,7 @@ header {
 }
 
 nav {
-  margin-right: 15px;
+  margin-right: 20px;
   /* line-height: 20px; */
   transition: .5s;
   display: flex;
@@ -459,6 +459,10 @@ h3 {
   font-weight: 400 !important;
   font-size: 24px;
 
+}
+
+h3.underline {
+  border-bottom: 1px solid black;
 }
 
 h4 {
@@ -621,7 +625,7 @@ li {
 	}
 
   nav {
-    margin-right: 0px;
+    margin-right: 5px;
   }
 
 	nav ul, nav:active ul {
@@ -631,22 +635,24 @@ li {
 		padding: 20px;
 		background: #fff;
 		border: 1px solid #000;
-		right: 0px;
-		top: 40px;
+		right: -5px;
+		top: 51px;
 		width: 120px;
-    text-align: left;
+    text-align: center !important;
     z-index: 999999;
     margin-right: 12px;
 
 	}
 
-  li {
-    text-align: left;
+   li a {
+    text-align: center !important;
   }
 
 	nav:hover ul {
 
-		display: block;
+		display: flex;
+    flex-direction: column;
+    justify-content: space-between;
 
 	}
 
