@@ -16,8 +16,6 @@ function scrollFunction() {
     document.getElementsByTagName("header")[0].style.height = "60px";
     document.getElementsByTagName("ul")[0].style.right = "-1px";
 
-
-
   } else {
 
     document.getElementById("headerBox").classList.remove("fullHeddrBox");
@@ -25,9 +23,5 @@ function scrollFunction() {
     document.getElementsByTagName("header")[0].style.top = "25px";
     document.getElementsByTagName("header")[0].style.height = "70px";
     document.getElementsByTagName("ul")[0].style.right = "13px";
-
-
-
-
   }
 }
