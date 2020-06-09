@@ -66,7 +66,7 @@ div.homeLink {margin-bottom: 20px;}
 }
 
 .fullbleed.lander {
-  height: 98vh;
+  height: 100vh;
 }
 
 .fullBleedHeddr {
@@ -305,6 +305,8 @@ h2.flexText {
 .nextProj {
   text-decoration: underline;
   text-align: center;
+  margin-top: 60px;
+  margin-bottom: 90px;
 }
 
 a h3 {
@@ -421,7 +423,7 @@ header {
 }
 
 .scootFoot {
-  min-height: 89vh;
+  min-height: 88vh;
 }
 
 nav {
@@ -439,6 +441,10 @@ nav {
 
 a:hover, #title:hover {
   text-decoration: underline;
+}
+
+a.noUl:hover {
+  text-decoration: none !important;
 }
 
 #content {
@@ -543,6 +549,12 @@ li {
   padding: 10px;
   margin-right: 7px;
   margin-bottom: 27px;
+}
+
+.middleP {
+  width: 50%;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 
@@ -844,6 +856,8 @@ li {
 
   .description {
     margin-bottom: 30px;
+    font-size: 18px;
+    line-height: 25px;
   }
 
 
@@ -907,7 +921,6 @@ li {
   .carbonCalc {
     width: 100%;
     height: 675px;
-    border: 0 !important;
   }
 
   .fullBleed {
