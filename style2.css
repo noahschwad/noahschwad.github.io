@@ -153,6 +153,8 @@ div.homeLink {margin-bottom: 20px;}
   padding-left: 10px;
 }
 
+
+
 .standardBox {
   height: auto;
   width: calc(50% - 15px);
@@ -749,6 +751,10 @@ li {
 
   .headerImg.Mobile {
     display: flex;
+  }
+
+  .musiCollage {
+    padding: 0px;
   }
 
   /* .headerImg {
