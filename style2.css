@@ -14,7 +14,7 @@ html, body {
 
 #menu-icon {
 
-	/* display: none; */
+	display: none;
   height: 25px;
   width: 25px;
   padding: 20px;
@@ -172,9 +172,9 @@ div.homeLink {margin-bottom: 20px;}
 }
 
 .standardBox.menu {
-  width: calc(50% - 20px);
+  width: calc(50% - 27px);
   height: auto;
-  margin-bottom: 35px;
+  margin-bottom: 40px;
   position: relative;
 }
 
@@ -471,13 +471,13 @@ h1, h2, h3, h4 {
 
 h1 {
   text-align: center;
-  font-family: "Rubik" !important;
-  font-weight: 500 !important;
+  font-family: "Rubik", sans-serif;
+  font-weight: 500;
 }
 
 h2 {
-  font-family: "Rubik" !important;
-  font-weight: 500 !important;
+  font-family: "Rubik", sans-serif;
+  font-weight: 500;
   padding-left: 20px;
   font-size: 36px;
 }
@@ -545,7 +545,7 @@ div.darkShadow {
 }
 
 .darkShadow {
-  box-shadow: 5px 5px #404040;
+  box-shadow: 7px 7px #404040;
   border: 1px solid black;
   padding: 0px;
   transition: .4s;
@@ -603,10 +603,6 @@ li {
 
 @media screen and (max-width : 1140px) {
 
-
-  .standardBox.menu {
-    width: calc(50% - 20px);
-  }
 
 
   .about {
@@ -671,7 +667,9 @@ li {
 
   .standardBox.menu {
     margin-bottom: 27px;
-  }
+    width: calc(50% - 20px);
+    }
+
 
   #menu-icon {
 
@@ -683,7 +681,6 @@ li {
     display: block;
   }
 
-  #
 
   nav {
     margin-right: 5px;
@@ -718,8 +715,6 @@ li {
     justify-content: space-between;
     height: 95px;
     opacity: 1;
-
-
 	}
 
   #masonry {
@@ -837,6 +832,7 @@ li {
   h1.pageTitle {
     font-size: 48;
     margin-left: 0px;
+    margin-right: 0px;
   }
 
   /* .gallery {
