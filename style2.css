@@ -17,7 +17,7 @@ html, body {
 	display: none;
   height: 25px;
   width: 25px;
-  padding: 20px;
+  padding: 20px 0px;
 
 }
 
@@ -34,8 +34,8 @@ html, body {
 }
 
 a.navi {
-  font-family: "Rubik Bold", "Rubik" !important;
-  font-weight: 700;
+  font-family: "Rubik", sans-serif;
+  font-weight: 400;
 }
 
 
@@ -129,16 +129,6 @@ div.homeLink {margin-bottom: 20px;}
   /* position: relative; */
 }
 
-.tilePic {
-  max-width: calc(100% - 7px);
-  max-height: 100%;
-  display: block;
-  /*position: absolute;
-  top:0;
-  left: 0;
-  right: 0;
-  bottom:0;*/
-}
 
 .left {
   padding-right: 20px;
@@ -201,6 +191,7 @@ div.homeLink {margin-bottom: 20px;}
   left: 16px;
   color: white;
   margin-top: 10px;
+  font-size: 24px;
 }
 
 .slideBox {
@@ -213,6 +204,7 @@ div.homeLink {margin-bottom: 20px;}
 .paddedPic {
   max-width: 100%;
   max-height: 780px;
+  width: 100%;
   display: flex;
   justify-content: center;
   object-fit: contain;
@@ -253,7 +245,7 @@ div.homeLink {margin-bottom: 20px;}
 }
 
 .flexText {
-  width: calc(50% - 20px);
+  width: calc(50% - 15px);
 }
 
 .flexSmall {
@@ -281,7 +273,6 @@ div.homeLink {margin-bottom: 20px;}
 }
 
 h2.flexText {
-  font-weight: 700;
   padding-left: 0px;
   margin-top: 0px;
   margin-bottom: 0px;
@@ -323,10 +314,10 @@ a h3 {
 
 h1.pageTitle {
   margin: 10px 20px 23px 20px;
-  margin-top: 20px !important;
   font-size: 60px;
   text-align: left;
   line-height: 1;
+  font-weight: 300;
 }
 
 .mobile {
@@ -358,7 +349,7 @@ h1.pageTitle {
   margin-top: 0px;
   margin-bottom: 30px;
   text-align: center;
-  font-weight: 500 !important;
+  font-weight: 400 !important;
   font-family: "Rubik Bold", "Rubik" !important;
   cursor: pointer;
 }
@@ -421,8 +412,9 @@ header {
 #title {
   padding-left: 20px;
   margin: 1px 0px 0px 0px;;
-  font-family: "Rubik Black", "Rubik" !important;
-  font-weight: 900 !important;
+  font-family: "Rubik", sans-serif;
+  font-weight: 300;
+  /* font-style: italic; */
   text-align: left;
 }
 
@@ -439,11 +431,12 @@ header {
 }
 
 nav {
-  margin-right: 10px;
+  margin-right: 20px;
   /* line-height: 20px; */
   /* transition: .5s; */
   display: flex;
   align-items: center;
+
 }
 
 .navi {
@@ -472,12 +465,12 @@ h1, h2, h3, h4 {
 h1 {
   text-align: center;
   font-family: "Rubik", sans-serif;
-  font-weight: 500;
+  font-weight: 300;
 }
 
 h2 {
   font-family: "Rubik", sans-serif;
-  font-weight: 500;
+  font-weight: 300;
   padding-left: 20px;
   font-size: 36px;
 }
@@ -505,16 +498,16 @@ h4 {
   text-align: center;
   padding-top: 0px;
   margin-bottom: 0px !important;
-  font-size: 24px !important;
-  font-family: "Rubik" !important;
-  font-weight: 400 !important;
+  font-size: 24px;
+  font-family: "Rubik";
+  font-weight: 400;
 }
 
 p {
   text-align: left;
   margin: 0px 0px 0px 0px;
-  font-family: "Rubik", Sans-Serif !important;
-  font-weight: 400;
+  font-family: "Rubik", Sans-Serif;
+  font-weight: 300;
   font-size: 20px;
   line-height: 30px;
   /* margin-bottom: 10px; */
@@ -601,20 +594,6 @@ li {
 
 /*MEDIA QUERY*/
 
-@media screen and (max-width : 1140px) {
-
-
-
-  .about {
-    /* font-size: 18px !important;
-    line-height: 25px; */
-  }
-
-  h2.about {
-    font-size: 24px !important;
-  }
-
-}
 
 @media screen and (max-width : 1680px) {
 
@@ -640,7 +619,18 @@ li {
 }
 
 
-@media only screen and (max-width : 840px) {
+@media screen and (max-width : 1140px) {
+
+
+
+  .about {
+    /* font-size: 18px !important;
+    line-height: 25px; */
+  }
+
+  h2.about {
+    font-size: 24px !important;
+  }
 
   .container {
     padding-right: 20px;
@@ -665,6 +655,16 @@ li {
     margin-left: 20px;
   }
 
+  /* .menuTitle {
+    font-size: calc(14px + 1vw);
+  } */
+
+}
+
+
+@media only screen and (max-width : 840px) {
+
+
   .standardBox.menu {
     margin-bottom: 27px;
     width: calc(50% - 20px);
@@ -683,7 +683,7 @@ li {
 
 
   nav {
-    margin-right: 5px;
+    margin-right: 25px;
   }
 
 	/* nav ul, nav:active ul { */
@@ -772,6 +772,17 @@ li {
     padding: 0px;
   }
 
+  .menuTitle {
+    font-size: 18px;
+  }
+
+  .wideFlex {
+    width: 100% !important;
+    margin-bottom: 30px;
+    margin-left: 0px !important;
+    margin-right: 0px !important;
+  }
+
   /* .headerImg {
     width: 70%;
   } */
@@ -835,14 +846,14 @@ li {
     margin-right: 0px;
   }
 
+
+
   /* .gallery {
     margin-bottom: 20px;
   } */
 
-  .shirts .evenRow {
-    width: 100% !important;
-    margin-right: 0px !important;
-  }
+
+
 
   .standardBox {
     width: 100% !important;
