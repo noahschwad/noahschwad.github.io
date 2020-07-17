@@ -178,7 +178,7 @@ div.homeLink {margin-bottom: 20px;}
 }
 
 .fullPaddedPic {
-  max-width: 100%
+  max-width: 100%;
 }
 
 /* .mobileGrow {
@@ -292,6 +292,7 @@ h2.flexText {
   line-height: 32px;
 }
 
+
 .description {
   margin-left: 20px;
   margin-right: 0px;
@@ -301,8 +302,17 @@ h2.flexText {
   line-height: 32px;
 }
 
+.credits, .creditsLeft {
+  font-size: 16px;
+}
+
+.creditsLeft {
+  text-align: right;
+  margin-right: 10px;
+}
+
 .nextProj {
-  text-decoration: underline;
+  /* text-decoration: underline; */
   text-align: center;
   margin-top: 60px;
   margin-bottom: 90px;
