@@ -153,6 +153,24 @@ div.homeLink {margin-bottom: 20px;}
   align-items: center;
   justify-content: center;
   max-height: 780px;
+  flex-direction: column;
+}
+
+.standardBox > p, .standardBox > h2 {
+  padding-left: 10%;
+  padding-right: 10%;
+}
+
+.standardBox > p {
+  margin-bottom: 20px;
+}
+
+.standardBox > h2 {
+  margin-top: 0px;
+}
+
+.subInfo {
+  padding: 0px 20px;
 }
 
 .sbPadding {
@@ -245,7 +263,8 @@ div.homeLink {margin-bottom: 20px;}
 }
 
 .flexText {
-  width: calc(50% - 15px);
+  width: calc(50% - 40px);
+  flex-direction: column;
 }
 
 .flexSmall {
@@ -288,8 +307,22 @@ h2.flexText {
   margin-left: 20px;
   margin-right: 20px;
   margin-bottom: 0px;
+  padding-top: 8px;
   width: 30%;
   line-height: 32px;
+}
+
+.categories > p {
+  margin-bottom: 15px;
+  padding-right: 5px;
+  display: inline-block;
+}
+
+.categories > p > span {
+  border: 1px solid;
+  border-radius: 30px;
+  padding: 5px 10px;
+  margin-bottom: 15px;
 }
 
 
@@ -487,7 +520,7 @@ h2 {
 
 h2.underline {
   border-bottom: 1px solid black;
-  margin-top: 60px;
+  margin-top: 80px;
   padding-bottom: 10px;
 }
 
@@ -669,6 +702,16 @@ li {
     font-size: calc(14px + 1vw);
   } */
 
+  .standardBox > p, .standardBox > h2, .subInfo {
+    padding-right: 20px;
+    padding-left: 20px;
+  }
+
+  .standardBox.thin > p, .standardBox.thin > h2 {
+    padding-right: 10%;
+    padding-left: 10%;
+  }
+
 }
 
 
@@ -741,6 +784,12 @@ li {
     height: auto !important;
   }
 
+  .standardBox.thin > p, .standardBox.thin > h2, .subInfo {
+    padding-right: 20px;
+    padding-left: 20px;
+  }
+
+
   .evenRow {
     align-items: center;
   }
@@ -789,8 +838,12 @@ li {
   .wideFlex {
     width: 100% !important;
     margin-bottom: 30px;
-    margin-left: 0px !important;
-    margin-right: 0px !important;
+  }
+
+  .fullPaddedPic.mobileGrow {
+    max-width: 130%;
+    object-fit: cover;
+    overflow: hidden;
   }
 
   /* .headerImg {
@@ -830,10 +883,6 @@ li {
   }
 
 
-  h2 {
-    padding-left: 0px;
-  }
-
   .about {
     /* padding-left: 10px;
     padding-right: 10px; */
@@ -856,7 +905,9 @@ li {
     margin-right: 0px;
   }
 
-
+  h2 {
+    padding-left: 0px;
+  }
 
   /* .gallery {
     margin-bottom: 20px;
@@ -875,6 +926,11 @@ li {
     height: auto !important;
   }
 
+  .standardBox > p, .standardBox > h2, .subInfo {
+    padding-left: 0px !important;
+    padding-right: 0px !important;
+  }
+
   .fullBox {
     margin-bottom: 20px;
   }
@@ -889,7 +945,9 @@ li {
   .categories {
     margin-bottom: 0px;
     font-size: 16;
-    line-height: normal;
+    line-height: 25px;
+    width: 66% !important;
+    margin-left: 0px;
   }
 
   .description {
@@ -951,11 +1009,7 @@ li {
     overflow: hidden;
   }
 
-  .fullPaddedPic.mobileGrow {
-    max-width: 130%;
-    object-fit: cover;
-    overflow: hidden;
-  }
+
 
   .email {
     font-size: 20px;
