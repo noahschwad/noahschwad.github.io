@@ -1,0 +1,39 @@
+---
+layout: default
+---
+
+
+{{ content }}
+
+
+<div style="display: flex; justify-content: center;">
+
+  {%- if page.previous -%}
+
+    <div style="display: flex; justify-content: center;">
+      <a href="{{ page.previous.url }}" class="button nextProject darkShadow"><span>Next Project</span>
+      </a>
+    </div>
+
+  {% else %}
+
+    <div style="display: flex; justify-content: center;">
+      <a href="about" class="button nextProject darkShadow"><span>About Noah</span>
+      </a>
+    </div>
+
+  {%- endif -%}
+
+
+
+  <!-- {%- if page.next -%}
+    <div style="padding: 20px;">
+      <a href="{{ page.next.url }}"> next post </a>
+    </div>
+  {%- endif -%} -->
+
+
+
+
+
+</div>

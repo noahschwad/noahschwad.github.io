@@ -20,65 +20,32 @@ layout: default
 
   <div class="evenRow menu">
 
-    <div class="standardBox menu darkShadow">
-      <a href="atla" >
-        <img src="assets/home-thumbs/atla-thumb.jpg" class="paddedPic">
-        <h4 class="menuTitle" style="color: black;">atla</h4>
-      </a>
+    {%- if site.posts.size > 0 -%}
+
+        {%- for post in site.posts -%}
+
+          <div class="standardBox menu darkShadow">
+            <a href="{{ post.url | relative_url }}" >
+              {%- if post.thumbnail -%}
+                <img src="{{ post.thumbnail }}" class="paddedPic">
+              {%- endif -%}
+              <h4 class="menuTitle">{{ post.title }}</h4>
+            </a>
+          </div>
+
+          {%- if site.show_excerpts -%}
+            {{ post.excerpt }}
+          {%- endif -%}
+
+        {%- endfor -%}
+
+      {%- endif -%}
+
+
     </div>
-
-    <div class="standardBox menu darkShadow">
-      <a href="bouldercnc">
-        <img src="assets/home-thumbs/bcnc-thumb.png" class="paddedPic">
-        <h4 class="menuTitle">Boulder CNC</h4>
-      </a>
-    </div>
-
-    <div class="standardBox menu darkShadow">
-      <a href="posters">
-        <img src="assets/home-thumbs/posters-thumb.png" class="paddedPic">
-        <h4 class="menuTitle">Designs for Music</h4>
-      </a>
-    </div>
-
-    <div class="standardBox menu darkShadow">
-      <a href="radio-for-the-blind">
-        <img src="assets/home-thumbs/rftb-thumb.png" class="paddedPic">
-        <h4 class="menuTitle">Radio for the Blind</h4>
-      </a>
-    </div>
-
-    <div class="standardBox menu darkShadow">
-      <a href="colorado-carbon-fund">
-        <img src="assets/home-thumbs/ccf-thumb.jpg" class="paddedPic">
-        <h4 class="menuTitle">Colorado Carbon Fund</h4>
-      </a>
-    </div>
-
-    <div class="standardBox menu darkShadow">
-      <a href="phet">
-        <img src="assets/home-thumbs/other-work-thumb.jpg" class="paddedPic">
-        <h4 class="menuTitle">Interaction Design Conference</h4>
-      </a>
-    </div>
-
-    <!-- <div class="standardBox menu darkShadow">
-      <a href="code-projects">
-        <img src="assets/home-thumbs/code-thumb.gif" class="paddedPic">
-        <h4 class="menuTitle">Code Experiments</h4>
-      </a>
-    </div> -->
-
-    <!-- <div class="standardBox menu darkShadow">
-      <a href="funnn.html">
-        <img src="assets/home-thumbs/fun-thumb.jpg" class="paddedPic">
-        <h4 class="menuTitle">Fun</h4>
-      </a>
-    </div> -->
 
   </div>
 
-</div>
 
 <script>
 var nav = document.getElementById('work');
