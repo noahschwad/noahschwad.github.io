@@ -1,0 +1,9 @@
+
+
+<div class="categories">
+  {% if page.categories %}
+    {% for category in page.categories %}
+      <p><span>{{ category }}</span></p>
+    {% endfor %}
+  {% endif %}
+</div>
