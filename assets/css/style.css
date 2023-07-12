@@ -80,6 +80,7 @@ p, .carousel-indicator{
   text-decoration: none;
   line-height: .65rem;
   vertical-align: baseline;
+  letter-spacing: -.02rem;
 
 }
 
@@ -88,6 +89,7 @@ h2 {
     font-family: 'agipo bold';
     line-height: 5vh;
     margin-bottom: var(--spacing-unit);
+    letter-spacing: -.02rem;
 }
 
 h2.project-title {
@@ -104,7 +106,7 @@ h2.project-title {
 
 .project-tags{
   font-size: var(--small);
-  margin-bottom: var(--spacing-unit);
+  margin-bottom: calc(var(--spacing-unit) - .08rem);
 }
 
 .carousel-indicator {
@@ -135,13 +137,13 @@ h2.project-title {
     }
 
     .grid-container > .site-title, .nav-link {
-      font-size: .6rem;
+      font-size: .8rem;
     }
 
     h2.project-title {
       margin-top: .3rem;
-      font-size: .6rem;
-      line-height: .7rem;
+      /* font-size: .6rem; */
+      /* line-height: .7rem; */
     }
 
     p {
@@ -168,9 +170,9 @@ h2.project-title {
 /*----------chatgpt carousel-----------*/
 
 .carousel {
-  position: relative;
+  /* position: relative; */
   /* width: 400px; */
-  height: 100%;
+  /* height: 100%; */
   overflow: hidden;
   grid-column: 1 / span 8;
 }
@@ -178,19 +180,24 @@ h2.project-title {
 .carousel-container {
   display: flex;
   align-items: flex-start;
-  width: 100%;
-  height: 100%;
+  /* width: 100%;
+  height: 100%; */
 }
 
 .slide {
-  flex: 0 0 100%;
+  /* flex: 0 0 100%; */
+  flex-grow: 0;
+  flex-shrink: 0;
+  flex-basis: 100%;
   transition: transform 0.5s ease-in-out;
+  /* margin-bottom: -.5rem; */
+  /* aspect-ratio: 5 / 4; */
   
 }
 
 .slide img {
   width: 100%;
-  /* height: 100%; */
+  height: 100%;
   
 }
 
@@ -199,7 +206,7 @@ h2.project-title {
   height: 100%;
 }
 
-.carousel-nav {
+/* .carousel-nav {
   position: absolute;
   width: 100%;
   height: 100%;
@@ -271,19 +278,19 @@ h2.project-title {
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.3s;
-}
+} */
 
 .carousel-container.slide-animation {
   transition: transform 0.5s ease-in-out;
 }
 
-.carousel-nav-arrow:hover::before {
+/* .carousel-nav-arrow:hover::before {
   opacity: 1;
-}
+} */
   
 
   
-/* Chatgpt ticker tape styles */
+/* ------------ Chatgpt ticker tape styles --------------- */
 
 .ticker-container {
   width: 100%;

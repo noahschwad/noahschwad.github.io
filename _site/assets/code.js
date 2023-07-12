@@ -42,20 +42,23 @@ document.addEventListener("DOMContentLoaded", function() {
       }
     });
 
-    carousel.addEventListener("touchstart", function(event) {
-      touchstartX = event.touches[0].clientX;
-    });
 
-    carousel.addEventListener("touchend", function(event) {
-      const touchendX = event.changedTouches[0].clientX;
-      const deltaX = touchendX - touchstartX;
-      const sensitivity = 100;
-      if (deltaX > sensitivity) {
-        prevSlide();
-      } else if (deltaX < -sensitivity) {
-        nextSlide();
-      }
-    });
+    //------ swipe controls -------
+    // gets triggered when zooming on mobile >:(
+    // carousel.addEventListener("touchstart", function(event) {
+    //   touchstartX = event.touches[0].clientX;
+    // });
+
+    // carousel.addEventListener("touchend", function(event) {
+    //   const touchendX = event.changedTouches[0].clientX;
+    //   const deltaX = touchendX - touchstartX;
+    //   const sensitivity = 100;
+    //   if (deltaX > sensitivity) {
+    //     prevSlide();
+    //   } else if (deltaX < -sensitivity) {
+    //     nextSlide();
+    //   }
+    // });
 
     showSlide(currentSlide);
     indicator.querySelector(".total-slides").textContent = slides.length;
