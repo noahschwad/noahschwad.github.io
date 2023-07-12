@@ -3,69 +3,49 @@ layout: default
 ---
 
 
-<!DOCTYPE html>
-<!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
-<!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8"> <![endif]-->
-<!--[if IE 8]>         <html class="no-js lt-ie9"> <![endif]-->
-<!--[if gt IE 8]>      <html class="no-js"> <!--<![endif]-->
-<html>
-    <head>
-        <meta charset="utf-8">
-        <meta http-equiv="X-UA-Compatible" content="IE=edge">
-        <title>{{ page.title }} - {{ site.title }}</title>
-        <meta name="description" content="">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <link rel="stylesheet" href="{{ "/assets/css/style.css" | relative_url }}">
-    </head>
-
-
-
-
-    <body>
-      
-            {% for project in site.data.projects %}
-            <div class="grid-container">
-                <div class="carousel">
-                    <div class="carousel-container">
-                        {% for image in project.images %}
-                            {% if image contains '.mp4' %}
-                                <div class="slide">
-                                    <video class="carousel-video" src="{{ image }}" type="video/mp4" playsinline="" muted="" autoplay="" loop=""></video>
-                                </div>
-                            {% else %}
-                                <div class="slide">
-                                    <img src="{{ image }}">
-                                </div>
-                            {% endif %}
-                        {% endfor %}
-                    </div>
-                    <div class="carousel-nav">
-                      <div class="carousel-nav-indicator"></div>
-                    </div>
-                </div>
-                <div class="project-info">
-                    <div class="description">
-                        <h2 class="project-title">{{ project.name }}</h2>
-                        <div class="project-tags">{{ project.year }}, {{ project.categories }}</div>
-                        <p>{{ project.description }}</p>
-                    </div>
-                    <div class="carousel-indicator">
-                        <span class="current-slide">1</span>/<span class="total-slides"></span>
-                    </div>        
-                </div>
+    
+{% for project in site.data.projects %}
+    <div class="grid-container">
+        <div class="carousel">
+            <div class="carousel-container">
+                {% for image in project.images %}
+                    {% if image contains '.mp4' %}
+                        <div class="slide">
+                            <video class="carousel-video" src="{{ image }}" type="video/mp4" playsinline="" muted="" autoplay="" loop=""></video>
+                        </div>
+                    {% else %}
+                        <div class="slide">
+                            <img src="{{ image }}">
+                        </div>
+                    {% endif %}
+                {% endfor %}
             </div>
-            <hr>
-            {% endfor %}
-                
-        
-        
+            <div class="carousel-nav">
+                <div class="carousel-nav-indicator"></div>
+            </div>
+        </div>
+        <div class="project-info">
+            <div class="description">
+                <h2 class="project-title">{{ project.name }}</h2>
+                <div class="project-tags">{{ project.year }}, {{ project.categories }}</div>
+                <p>{{ project.description }}</p>
+            </div>
+            <div class="carousel-indicator">
+                <span class="current-slide">1</span>/<span class="total-slides"></span>
+            </div>        
+        </div>
+    </div>
+    <hr>
+{% endfor %}
+            
+    
+    
 
 
 
-        {{ content }}
+    {{ content }}
+
+{% include ticker.html %}
 
 
 
-        <script src="" async defer></script>
-    </body>
-</html>
