@@ -58,6 +58,8 @@ hr {
 
 a {
   color: var(--main-color);
+  font-family: 'agipo light italic';
+  text-decoration: none;
 }
 
 p {
