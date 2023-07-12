@@ -21,6 +21,11 @@
   src: url(/assets/fonts/agipo-bold.otf);
 }
 
+::selection {
+  background: #ffb7b7; /* WebKit/Blink Browsers */
+}
+
+
 
 
 
