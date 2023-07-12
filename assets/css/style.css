@@ -1,0 +1,296 @@
+:root {
+  --main-color: rgb(42, 42, 42);
+  --spacing-unit: .4rem;
+  --large: 1rem;
+  --normal: .5rem;
+  --small: .33rem;
+}
+
+@font-face {
+  font-family: 'agipo light italic';
+  src: url(/assets/fonts/agipo-light-italic.ttf);
+}
+
+@font-face {
+  font-family: 'agipo regular';
+  src: url(/assets/fonts/agipo-regular.otf);
+}
+
+@font-face {
+  font-family: 'agipo bold';
+  src: url(/assets/fonts/agipo-bold.otf);
+}
+
+
+
+
+
+
+
+
+
+
+html{
+    font-size: 5vh;
+    color: var(--main-color);
+    font-family: 'agipo regular';
+}
+
+body {
+  margin: 0px;
+}
+
+header {
+  margin-bottom: var(--spacing-unit);
+  border-bottom: 1px solid var(--main-color);
+  padding-top: .1rem;
+}
+
+hr {
+  margin-top: var(--spacing-unit);
+  margin-bottom: var(--spacing-unit);
+}
+
+a {
+  color: var(--main-color);
+}
+
+p {
+  margin-top:0px;
+}
+
+.wrapper {
+  margin: 0px;
+}
+
+.grid-container {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    grid-gap: var(--spacing-unit);
+    margin: var(--spacing-unit);
+}
+
+p, .carousel-indicator{
+    font-size: var(--normal);
+}
+
+.site-title, .nav-link {
+  font-size: var(--large);
+  font-family: 'agipo light italic', 'Times New Roman', Times, serif;
+  text-decoration: none;
+  line-height: .65rem;
+  vertical-align: baseline;
+
+}
+
+h2 {
+    font-size: var(--large);
+    font-family: 'agipo bold';
+    line-height: 5vh;
+    margin-bottom: var(--spacing-unit);
+}
+
+h2.project-title {
+  margin-top: -.1rem;
+}
+
+
+
+.project-info {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.project-tags{
+  font-size: var(--small);
+  margin-bottom: var(--spacing-unit);
+}
+
+.carousel-indicator {
+  margin-bottom: -.11rem;
+}
+
+
+
+
+
+    .project-info {
+        grid-column: 9 / span 4;
+    }
+
+
+
+
+@media (max-width: 800px) {
+
+
+    .grid-container{
+        display: block;
+    }
+}
+
+
+@media (min-width: 1600px) {
+
+  .grid-container {
+    margin-left: 2rem;
+    margin-right: 2rem;
+  }
+
+}
+
+
+
+/*----------chatgpt carousel-----------*/
+
+.carousel {
+    position: relative;
+    /* width: 400px; */
+    height: 100%;
+    overflow: hidden;
+    grid-column: 1 / span 8;  }
+  
+  .carousel-container {
+    display: flex;
+    align-items: flex-start;
+    width: 100%;
+    height: 100%;
+  }
+  
+  .slide {
+    flex: 0 0 100%;
+    transition: transform 0.5s ease-in-out;
+    
+  }
+  
+  .slide img {
+    width: 100%;
+    height: 100%;
+    
+  }
+
+  .carousel-video {
+    width: 100%;
+    height: 100%;
+  }
+
+  .carousel-nav {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: default;
+  }
+  
+  .carousel-nav-indicator {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    color: #fff;
+    font-size: 16px;
+  }
+  
+  .carousel-nav-indicator .current-slide {
+    font-weight: bold;
+  }
+  
+  .carousel-nav-arrow {
+    position: absolute;
+    top: 50%;
+    width: 40px;
+    height: 40px;
+    background: rgba(0, 0, 0, 0.5);
+    color: #fff;
+    text-align: center;
+    line-height: 40px;
+    font-size: 20px;
+    cursor: pointer;
+    z-index: 1;
+  }
+  
+  .carousel-nav-arrow.left {
+    left: 10px;
+    transform: translateY(-50%) rotate(45deg);
+    cursor: w-resize;
+  }
+  
+  .carousel-nav-arrow.right {
+    right: 10px;
+    transform: translateY(-50%) rotate(-135deg);
+    cursor: e-resize;
+  }
+  
+  .carousel-nav-arrow.left::before {
+    content: "Previous";
+    position: absolute;
+    top: 50%;
+    left: -60px;
+    transform: translateY(-50%);
+    white-space: nowrap;
+    font-size: 12px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s;
+  }
+  
+  .carousel-nav-arrow.right::before {
+    content: "Next";
+    position: absolute;
+    top: 50%;
+    right: -60px;
+    transform: translateY(-50%);
+    white-space: nowrap;
+    font-size: 12px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s;
+  }
+  
+  .carousel-container.slide-animation {
+    transition: transform 0.5s ease-in-out;
+  }
+  
+  .carousel-nav-arrow:hover::before {
+    opacity: 1;
+  }
+  
+
+  
+/* Chatgpt ticker tape styles */
+
+.ticker-container {
+  width: 100%;
+  overflow: hidden;
+  position: relative;
+  margin-bottom: calc(var(--spacing-unit) - .1rem);
+}
+
+.ticker-content {
+  display: inline-block;
+  white-space: nowrap;
+  animation: ticker-animation 100s linear infinite;
+}
+
+.ticker-list {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+}
+
+.ticker-item {
+  display: inline-block;
+  margin-right: 1.5rem;
+  font-family: 'agipo light italic';
+}
+
+@keyframes ticker-animation {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
+}

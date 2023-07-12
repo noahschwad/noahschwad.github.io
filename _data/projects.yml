@@ -1,0 +1,45 @@
+- name: This Magazine is for Snails
+  year: 2023
+  categories: editorial
+  description: A journal of art and ecology for people who live slowly and intentionally. The design is inspired by homely web 1.0 gardening blogs (where all the best gardening tips come from), but remains elevated in order to appeal to a design-savvy audience.
+  images:
+    - assets/snails/v2-_4-5.jpg
+    - assets/snails/v2-_6-7.jpg
+    - assets/snails/v2-_16-17.jpg
+
+- name: Muriel Cooper
+  year: 2023
+  categories: exhibition
+  description: A proposed exhibition of the pioneering digital designer’s career. My goal was to create an identity and design system that is engaging and memorable but never attempts to outshine Muriel’s design work.
+  images:
+    - assets/muriel/sculpture&title-v2.jpg
+    - assets/muriel/fullview-v2.mp4
+    - assets/muriel/Exterior_wall-v2.jpg
+    - assets/muriel/D wall-v2.jpg
+    - assets/muriel/FlatWall-muriel-v2.jpg
+    - assets/muriel/wall-C-v2.jpg
+
+
+- name: Click Shirt
+  year: 2022
+  categories: apparel, silkscreen
+  description: I once had a dream that I found a Click promo t-shirt at a thrift store. Upset that it was only a dream, I made that shirt into a beautiful reality.
+  images:
+    - assets/click/
+
+
+
+- name: BioMuseo Generative Identity
+  year: 2022
+  categories: identity, code
+  description: Biomuseo is a museum in Panama dedicated to exploring the natural history of the country. For numerous reasons, the concept of biodiversity is central to that story. The logo visually reflects the museum’s iconic architecture, and its generative nature reflects their focus on biodiversity.
+  images:
+    - assets/biomuseo/
+
+
+- name: First Things First
+  year: 2022
+  categories: editorial
+  description: For AIGA’s manifesto calling for designers to prioritize cultural and functional work over consumeristic projects, I wanted to show their seriousness, but also convey momentum and hope.
+  images:
+    - assets/aiga/
