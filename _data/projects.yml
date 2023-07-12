@@ -3,9 +3,13 @@
   categories: editorial
   description: A journal of art and ecology for people who live slowly and intentionally. The design is inspired by homely web 1.0 gardening blogs (where all the best gardening tips come from), but remains elevated in order to appeal to a design-savvy audience.
   images:
+    - assets/snails/v2-_cover.jpg
     - assets/snails/v2-_4-5.jpg
     - assets/snails/v2-_6-7.jpg
     - assets/snails/v2-_16-17.jpg
+    - assets/snails/4-spreads.jpg
+    - assets/snails/v2-_10-11.jpg
+    - assets/snails/v2-_12-13.jpg
 
 - name: Muriel Cooper
   year: 2023
