@@ -70,6 +70,7 @@ p {
     margin: var(--spacing-unit);
 }
 
+
 p, .carousel-indicator{
     font-size: var(--normal);
 }
@@ -102,6 +103,7 @@ h2.project-title {
     display: flex;
     flex-direction: column;
     justify-content: space-between;
+    margin-bottom: var(--spacing-unit);
 }
 
 .project-tags{
@@ -110,17 +112,23 @@ h2.project-title {
 }
 
 .carousel-indicator {
-  margin-bottom: -.11rem;
+  margin-bottom: -.26rem;
+}
+
+.project-info {
+    grid-column: 9 / span 4;
 }
 
 
 
 
+@media (min-width: 801px) {
+  
+  .grid-container.home-project {
+    margin-bottom: calc(var(--spacing-unit) - .6rem);
+  }
 
-    .project-info {
-        grid-column: 9 / span 4;
-    }
-
+}
 
 
 
@@ -190,8 +198,6 @@ h2.project-title {
   flex-shrink: 0;
   flex-basis: 100%;
   transition: transform 0.5s ease-in-out;
-  /* margin-bottom: -.5rem; */
-  /* aspect-ratio: 5 / 4; */
   
 }
 
