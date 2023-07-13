@@ -82,7 +82,7 @@ p, .carousel-indicator{
     font-size: var(--normal);
 }
 
-.site-title, .nav-link {
+h2, .site-title, .nav-link, .ticker-item {
   font-size: var(--large);
   font-family: 'agipo light italic', 'Times New Roman', Times, serif;
   text-decoration: none;
@@ -97,7 +97,6 @@ h2 {
     font-family: 'agipo bold';
     line-height: 5vh;
     margin-bottom: var(--spacing-unit);
-    letter-spacing: -.02rem;
 }
 
 h2.project-title {
