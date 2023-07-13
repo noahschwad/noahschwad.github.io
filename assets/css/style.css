@@ -120,6 +120,7 @@ h2.project-title {
 
 .carousel-indicator {
   margin-bottom: -.26rem;
+  letter-spacing: .05rem;
 }
 
 .project-info {
@@ -162,12 +163,14 @@ h2.project-title {
     }
 
     p {
-      margin-bottom: .4rem;
+      margin-bottom: 1rem;
     }
 
     .carousel-indicator {
       margin-bottom: 0rem;
+      order: -1;
     }
+
 }
 
 

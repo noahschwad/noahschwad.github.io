@@ -22,6 +22,7 @@
     - assets/muriel/D wall-v2.jpg
     - assets/muriel/FlatWall-muriel-v2.jpg
     - assets/muriel/wall-C-v2.jpg
+    - assets/muriel/muriel-3d-text.mp4
 
 
 - name: Click Shirt
@@ -60,6 +61,11 @@
 
 
 - name: Smaller Projects
-  description: For AIGA’s manifesto calling for designers to prioritize cultural and functional work over consumeristic projects, I wanted to show their seriousness, but also convey momentum and hope.
+  description: A collection of work from various from school, freelance, and personal projects.
   images:
-    - assets/aiga/cover.jpg
+    - assets/small/algae-v7-5x4.mp4
+    - assets/small/eatingcontest-v7.mp4
+    - assets/small/deviated-septum-scan-5x4.jpg
+    - assets/small/sinus-relief-5x4.jpg
+    - assets/small/stick-spiral-5x4.jpg
+    
