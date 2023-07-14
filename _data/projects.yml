@@ -16,10 +16,11 @@
   categories: exhibition
   description: A proposed exhibition of the pioneering digital designer’s career. My goal was to create an identity and design system that is engaging and memorable but never attempts to outshine Muriel’s design work.
   images:
-    - assets/muriel/sculpture&title-v2.jpg
     - assets/muriel/fullview-v2.mp4
+    - assets/muriel/ortho-v1.jpg
     - assets/muriel/Exterior_wall-v2.jpg
-    - assets/muriel/D wall-v2.jpg
+    - assets/muriel/sculpture&title-v2.jpg
+    - assets/muriel/D-wall-v2.jpg
     - assets/muriel/FlatWall-muriel-v2.jpg
     - assets/muriel/wall-C-v2.jpg
     - assets/muriel/muriel-3d-text.mp4
