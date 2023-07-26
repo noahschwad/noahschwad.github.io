@@ -11,18 +11,22 @@
     - assets/snails/v2-_10-11.jpg
     - assets/snails/v2-_12-13.jpg
 
-- name: Muriel Cooper
+- name: "Muriel Cooper: Pioneering Ink and Interface"
   year: 2023
   categories: exhibition
   description: A proposed exhibition of the pioneering digital designer’s career. My goal was to create an identity and design system that is engaging and memorable but never attempts to outshine Muriel’s design work.
   images:
     - assets/muriel/fullview-v2.mp4
+    - assets/muriel/title@4x.png
+    - assets/muriel/title-detail@4x.png
     - assets/muriel/ortho-v1.jpg
+    - assets/muriel/muriels-work-portfolio.mp4
     - assets/muriel/Exterior_wall-v2.jpg
     - assets/muriel/sculpture&title-v2.jpg
-    - assets/muriel/D-wall-v2.jpg
+    - assets/muriel/D-wall-v3.jpg
+    - assets/muriel/Flatwall_2-v3.jpg
+    - assets/muriel/wall-C-v3.jpg
     - assets/muriel/FlatWall-muriel-v2.jpg
-    - assets/muriel/wall-C-v2.jpg
     - assets/muriel/muriel-3d-text.mp4
 
 

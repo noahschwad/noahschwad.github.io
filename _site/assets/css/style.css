@@ -119,7 +119,11 @@ h2.project-title {
 
 .carousel-indicator {
   margin-bottom: -.26rem;
-  letter-spacing: .05rem;
+  /* letter-spacing: .05rem; */
+}
+
+.smallspace {
+  letter-spacing: -.05rem;
 }
 
 .project-info {
@@ -173,7 +177,7 @@ h2.project-title {
 }
 
 
-@media (min-width: 1600px) {
+@media (min-width: 1700px) {
 
   .grid-container {
     margin-left: 2rem;
