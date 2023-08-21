@@ -70,7 +70,7 @@
 
 - name: Smaller Projects
   id: small-projects
-  description: A collection of work from various from school, freelance, and personal projects.
+  description: A collection of work from various school, freelance, and personal projects.
   images:
     - assets/small/algae-v7-5x4.mp4
     - assets/small/eatingcontest-v7.mp4
