@@ -64,3 +64,52 @@ document.addEventListener("DOMContentLoaded", function() {
     indicator.querySelector(".total-slides").textContent = slides.length;
   });
 });
+
+
+
+
+
+
+//--------- carousel hover arrows --------------
+
+var is_touch_device = 'ontouchstart' in document.documentElement;
+
+
+function updateCursorPosition(event) {
+  if (!is_touch_device) {
+    const div = event.target;
+    const rect = div.getBoundingClientRect();
+    const mouseX = event.clientX - rect.left;
+
+    const customCursorLeft = document.getElementById("customCursorLeft");
+    const customCursorRight = document.getElementById("customCursorRight");
+
+    // Calculate the position of the mouse relative to the center of the div
+    const distanceFromCenter = mouseX - div.offsetWidth / 2;
+
+    if (distanceFromCenter < 0) {
+      // Mouse is on the left half of the div
+      customCursorLeft.style.display = "block";
+      customCursorRight.style.display = "none";
+    } else {
+      // Mouse is on the right half of the div
+      customCursorLeft.style.display = "none";
+      customCursorRight.style.display = "block";
+    }
+
+    // Update the custom cursor positions
+    customCursorLeft.style.left = event.clientX - customCursorLeft.width / 2 + "px";
+    customCursorLeft.style.top = event.clientY - customCursorLeft.height / 2 + "px";
+    customCursorRight.style.left = event.clientX - customCursorRight.width / 2 + "px";
+    customCursorRight.style.top = event.clientY - customCursorRight.height / 2 + "px";
+  }
+}
+
+function hideCustomCursor() {
+  if (!is_touch_device) {
+    const customCursorLeft = document.getElementById("customCursorLeft");
+    const customCursorRight = document.getElementById("customCursorRight");
+    customCursorLeft.style.display = "none";
+    customCursorRight.style.display = "none";
+  }
+}

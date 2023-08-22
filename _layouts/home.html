@@ -2,11 +2,16 @@
 layout: default
 ---
 
+
+
+<img src="assets/fonts/arrow_back_FILL0_wght400_GRAD0_opsz48.svg" class="custom-cursor" id="customCursorLeft" />
+<img src="assets/fonts/arrow_forward_FILL0_wght400_GRAD0_opsz48.svg" class="custom-cursor" id="customCursorRight" />
+
     
 {% for project in site.data.projects %}
     <div class="grid-container home-project">
         <div class="carousel" id="{{ project.id }}">
-            <div class="carousel-container">
+            <div class="carousel-container" onmouseover="updateCursorPosition(event)" onmousemove="updateCursorPosition(event)" onmouseleave="hideCustomCursor()">
                 {% for image in project.images %}
                 <div class="slide">
                     {% if image contains '.mp4' %}
