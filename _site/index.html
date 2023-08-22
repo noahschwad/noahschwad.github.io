@@ -16,10 +16,14 @@
   </header>
   <main class="page-content" aria-label="Content">
       <div class="wrapper">
-        
+        <img src="assets/fonts/arrow_back_FILL0_wght400_GRAD0_opsz48.svg" class="custom-cursor" id="customCursorLeft" />
+<img src="assets/fonts/arrow_forward_FILL0_wght400_GRAD0_opsz48.svg" class="custom-cursor" id="customCursorRight" />
+
+    
+
     <div class="grid-container home-project">
         <div class="carousel" id="snails">
-            <div class="carousel-container">
+            <div class="carousel-container" onmousemove="updateCursorPosition(event)" onmouseleave="hideCustomCursor()">
                 
                 <div class="slide">
                     
@@ -93,7 +97,7 @@
 
     <div class="grid-container home-project">
         <div class="carousel" id="muriel">
-            <div class="carousel-container">
+            <div class="carousel-container" onmousemove="updateCursorPosition(event)" onmouseleave="hideCustomCursor()">
                 
                 <div class="slide">
                     
@@ -167,7 +171,7 @@
 
     <div class="grid-container home-project">
         <div class="carousel" id="click">
-            <div class="carousel-container">
+            <div class="carousel-container" onmousemove="updateCursorPosition(event)" onmouseleave="hideCustomCursor()">
                 
                 <div class="slide">
                     
@@ -211,7 +215,7 @@
 
     <div class="grid-container home-project">
         <div class="carousel" id="biomuseo">
-            <div class="carousel-container">
+            <div class="carousel-container" onmousemove="updateCursorPosition(event)" onmouseleave="hideCustomCursor()">
                 
                 <div class="slide">
                     
@@ -273,7 +277,7 @@
 
     <div class="grid-container home-project">
         <div class="carousel" id="aiga">
-            <div class="carousel-container">
+            <div class="carousel-container" onmousemove="updateCursorPosition(event)" onmouseleave="hideCustomCursor()">
                 
                 <div class="slide">
                     
@@ -323,7 +327,7 @@
 
     <div class="grid-container home-project">
         <div class="carousel" id="small-projects">
-            <div class="carousel-container">
+            <div class="carousel-container" onmousemove="updateCursorPosition(event)" onmouseleave="hideCustomCursor()">
                 
                 <div class="slide">
                     
@@ -346,6 +350,12 @@
                 <div class="slide">
                     
                             <img src="assets/small/sinus-relief-5x4.jpg">
+                    
+                </div>
+                
+                <div class="slide">
+                    
+                            <img src="assets/small/eternal-punishment-3d.jpg">
                     
                 </div>
                 

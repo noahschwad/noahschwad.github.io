@@ -197,6 +197,7 @@ h2.project-title {
 .carousel-container {
   display: flex;
   align-items: flex-start;
+  cursor: none; /*for hover arrows*/
   /* width: 100%;
   height: 100%; */
 }
@@ -339,4 +340,18 @@ h2.project-title {
   100% {
     transform: translateX(-100%);
   }
+}
+
+
+/* ------- carousel hover arrows ----------- */
+
+/* Hide default cursor for the custom cursor element */
+.custom-cursor {
+  position: fixed;
+  width: 3rem;
+  /* height: 300px; */
+  pointer-events: none; /* Make sure the custom cursor doesn't interfere with mouse events */
+  z-index: 9999; /* Make sure the custom cursor appears on top of other elements */
+  display: none; /* Initially hide the custom cursor */
+  fill: blue !important;
 }
