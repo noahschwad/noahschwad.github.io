@@ -11,7 +11,7 @@ layout: default
 {% for project in site.data.projects %}
     <div class="grid-container home-project">
         <div class="carousel" id="{{ project.id }}">
-            <div class="carousel-container" onmousemove="updateCursorPosition(event)" onmouseleave="hideCustomCursor()">
+            <div class="carousel-container" onmouseover="updateCursorPosition(event)" onmousemove="updateCursorPosition(event)" onmouseleave="hideCustomCursor()">
                 {% for image in project.images %}
                 <div class="slide">
                     {% if image contains '.mp4' %}
