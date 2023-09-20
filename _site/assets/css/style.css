@@ -39,6 +39,7 @@ html{
     font-size: 5vh;
     color: var(--main-color);
     font-family: 'agipo regular';
+    font-weight: 400;
 }
 
 body {
@@ -80,6 +81,7 @@ p {
 
 p, .carousel-indicator{
     font-size: var(--normal);
+    line-height: 123%;
 }
 
 h2, .site-title, .nav-link, .ticker-item {
@@ -95,6 +97,7 @@ h2, .site-title, .nav-link, .ticker-item {
 h2 {
     font-size: var(--large);
     font-family: 'agipo bold';
+    font-weight: 700;
     line-height: 5vh;
     margin-bottom: var(--spacing-unit);
 }
@@ -126,13 +129,33 @@ h2.project-title {
     grid-column: 9 / span 4;
 }
 
+.subdescription {
+  /* display: none; */
+}
+
+.subtitle {
+  font-size: .5rem;
+  /* margin-top: 1rem; */
+  margin-bottom: .15rem;
+}
+
+.smallP {
+  font-size: .35rem;
+}
 
 
+
+
+/* Media queries -------------------------------------------------------------------- */
 
 @media (min-width: 801px) {
   
   .grid-container.home-project {
     margin-bottom: calc(var(--spacing-unit) - .6rem);
+  }
+
+  .subtitle{
+    margin-top: 2rem;
   }
 
 }
@@ -168,6 +191,10 @@ h2.project-title {
     .carousel-indicator {
       margin-bottom: 0rem;
       order: -1;
+    }
+
+    .subtitle{
+      margin-top: var(--spacing-unit);
     }
 
 }

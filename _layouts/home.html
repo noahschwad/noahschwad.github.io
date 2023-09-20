@@ -22,9 +22,6 @@ layout: default
                 </div>
                 {% endfor %}
             </div>
-            <!-- <div class="carousel-nav">
-                <div class="carousel-nav-indicator"></div>
-            </div> -->
         </div>
         <div class="project-info">
             <div class="description">
@@ -35,6 +32,17 @@ layout: default
                 {% if project.description %}
                     <p>{{ project.description }}</p>
                 {% endif %}
+                {% if project.subdescriptions %}
+                    <div id="subdescription-container">
+                    {% for subdescription in project.subdescriptions %}
+                        <div class="subdescription">
+                            <h4 class="subtitle">{{ subdescription.title }}</h4>
+                            <p class="smallP">{{ subdescription.description }}</p>
+                        </div>
+                    {% endfor %}
+                    </div>
+                {% endif %}
+
             </div>
             <div class="carousel-indicator">
                 <span class="current-slide">1</span>/<span class="total-slides"></span>
