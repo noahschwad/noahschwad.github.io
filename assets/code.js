@@ -6,11 +6,25 @@ document.addEventListener("DOMContentLoaded", function() {
     const slides = container.getElementsByClassName("slide");
     const indicator = carousel.parentNode.querySelector(".carousel-indicator");
     let currentSlide = 0;
+    let smallprojects = false;
+    // console.log(carousel.parentElement.parentElement.getElementsByClassName('subdescription')[0]);
+    if (carousel.parentElement.getElementsByClassName('subdescription')[0]) {//if it has a subdescription, declare a variable called subprojects
+      smallprojects = true;
+      const subdescriptions = document.getElementsByClassName("subdescription");
+    }
     let touchstartX = 0;
 
     function showSlide(index) {
       container.style.transform = `translateX(-${index * 100}%)`;
       indicator.querySelector(".current-slide").textContent = index + 1;
+      if (smallprojects) {
+        for (let subdescription of subdescriptions) {
+          subdescription.style.display = "none";
+          // console.log(subdescription.innerHTML);
+        }
+        console.log(subdescriptions[index].innerHTML);
+        subdescriptions[index].style.display = "block";
+      }
     }
 
     function animateSlide() {
@@ -41,6 +55,12 @@ document.addEventListener("DOMContentLoaded", function() {
         prevSlide();
       }
     });
+
+
+    // make array of descriptions
+    var subdescriptions = document.getElementsByClassName("subdescription");
+
+    var subdescriptionContainer = document.getElementById("subdescription-container");
 
 
     //------ swipe controls -------
