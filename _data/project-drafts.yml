@@ -1,0 +1,39 @@
+- name: There's One Climate Narrative We Need To Debunk
+  id: bloomberg
+  year: 2023
+  categories: code, illustration
+  description: Generative & interactive illustration for Bloomberg Businessweek.
+  link: https://noahcode.netlify.app/illustration/illustrationv5/illustration
+  linkText: + Link to live site
+  images:
+    - assets/bloomberg-illustration/headlines-screen-recording.mp4
+    - assets/bloomberg-illustration/mobile-mockup.mp4
+    - assets/bloomberg-illustration/print-mockup.jpg
+    - assets/bloomberg-illustration/ig-mockup.jpg
+
+
+- name: Smaller Projects
+  id: small-projects
+  images:
+    - assets/small/algae-v7-5x4.mp4
+    - assets/small/super-pulse-jersey.jpg
+    - assets/small/eatingcontest-v7.mp4
+    - assets/small/deviated-septum-scan-5x4.jpg
+    - assets/small/sinus-relief-5x4.jpg
+    - assets/small/eternal-punishment-3d.jpg
+    - assets/small/stick-spiral-5x4.jpg
+  subdescriptions:
+    - title: Algae
+      description: Interactive flexbox type
+    - title: Super Pulse cycling jersey
+      description: They asked for an extreme
+    - title: Web poster for an eating contest
+      description: They asked for an extreme
+    - title: Sinus Poster no. 1
+      description: They asked for an extreme
+    - title: Sinus Poster no. 2
+      description: They asked for an extreme
+    - title: Identity for Eternal Punishment Effects
+      description: They asked for an extreme
+    - title: A digital image
+      description: They asked for an extreme

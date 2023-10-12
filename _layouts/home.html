@@ -42,6 +42,9 @@ layout: default
                     {% endfor %}
                     </div>
                 {% endif %}
+                {% if project.link %}
+                    <p><a class="projLink" href="{{ project.link }}">{{ project.linkText }}</a></p>
+                {% endif %}
 
             </div>
             <div class="carousel-indicator">

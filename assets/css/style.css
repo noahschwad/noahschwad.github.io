@@ -129,6 +129,14 @@ h2.project-title {
     grid-column: 9 / span 4;
 }
 
+a.projLink {
+  font-family: 'agipo regular';
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  padding-left: 2vw;
+  /* margin-top: -2vh; */
+}
+
 .subdescription {
   /* display: none; */
 }
