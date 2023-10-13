@@ -31,7 +31,7 @@ document.addEventListener("DOMContentLoaded", function() {
       container.classList.add("slide-animation");
       setTimeout(function() {
         container.classList.remove("slide-animation");
-      }, 300); // Adjust the duration (in milliseconds) to match your transition duration
+      }, 400); // Adjust the duration (in milliseconds) to match your transition duration
     }
 
     function nextSlide() {

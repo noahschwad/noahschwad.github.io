@@ -30,7 +30,7 @@ layout: default
                     <div class="project-tags">{{ project.year }}<br>{% if project.year and project.categories %}{% endif %}{{ project.categories }}</div>
                 {% endif %}
                 {% if project.description %}
-                    <p>{{ project.description }}</p>
+                    <p class="projDescription">{{ project.description }}</p>
                 {% endif %}
                 {% if project.subdescriptions %}
                     <div id="subdescription-container">

@@ -133,7 +133,7 @@ a.projLink {
   font-family: 'agipo regular';
   text-decoration: underline;
   text-decoration-thickness: 1px;
-  padding-left: 2vw;
+  text-underline-offset: .3vh;
   /* margin-top: -2vh; */
 }
 
@@ -156,22 +156,10 @@ a.projLink {
 
 /* Media queries -------------------------------------------------------------------- */
 
-@media (min-width: 801px) {
-  
-  .grid-container.home-project {
-    margin-bottom: calc(var(--spacing-unit) - .6rem);
-  }
-
-  .subtitle{
-    margin-top: 2rem;
-  }
-
-}
 
 
 
 @media (max-width: 800px) {
-
 
     .grid-container{
         display: block;
@@ -204,6 +192,30 @@ a.projLink {
     .subtitle{
       margin-top: var(--spacing-unit);
     }
+    .projLink {
+      padding-left: 7vw;
+    }
+
+    .projDescription {
+      margin-bottom: .4rem;
+    }
+
+}
+
+
+@media (min-width: 801px) {
+  
+  .grid-container.home-project {
+    margin-bottom: calc(var(--spacing-unit) - .6rem);
+  }
+
+  .subtitle{
+    margin-top: 2rem;
+  }
+
+  .projLink {
+    padding-left: 2vw;
+  }
 
 }
 
@@ -214,6 +226,7 @@ a.projLink {
     margin-left: 2rem;
     margin-right: 2rem;
   }
+
 
 }
 
@@ -242,7 +255,7 @@ a.projLink {
   flex-grow: 0;
   flex-shrink: 0;
   flex-basis: 100%;
-  transition: transform 0.5s ease-in-out;
+  /* transition: transform 0.3s ease-in-out; */
   
 }
 
@@ -332,7 +345,9 @@ a.projLink {
 } */
 
 .carousel-container.slide-animation {
-  transition: transform 0.5s ease-in-out;
+  transition: transform 0.4s ease-in-out;
+    /*need to adjust a variable on line 34 of code to match*/
+
 }
 
 /* .carousel-nav-arrow:hover::before {
