@@ -18,7 +18,9 @@
 
 @font-face {
   font-family: 'agipo bold';
-  src: url(/assets/fonts/agipo-bold.otf);
+  src: url(/assets/fonts/agipo-bold.otf) format('opentype');
+  font-weight: 700;
+  font-style: normal;
 }
 
 ::selection {
