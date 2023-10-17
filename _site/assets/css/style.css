@@ -406,4 +406,5 @@ a.projLink {
   z-index: 99; /* Make sure the custom cursor appears on top of other elements */
   display: none; /* Initially hide the custom cursor */
   fill: blue !important;
+  filter: drop-shadow(.2vh .2vh .2vh rgb(0 0 0 / 0.1));
 }
