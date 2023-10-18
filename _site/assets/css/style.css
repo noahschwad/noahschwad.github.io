@@ -153,6 +153,10 @@ a.projLink {
   font-size: .35rem;
 }
 
+.italic {
+  font-style: italic;
+}
+
 
 
 
@@ -194,7 +198,7 @@ a.projLink {
     .subtitle{
       margin-top: var(--spacing-unit);
     }
-    .projLink {
+    .projLink, .subdescription {
       padding-left: 7vw;
     }
 
@@ -215,8 +219,12 @@ a.projLink {
     margin-top: 2rem;
   }
 
-  .projLink {
+  .projLink, .subdescription {
     padding-left: 2vw;
+  }
+
+  .subdescription {
+    width: 20vw;
   }
 
 }

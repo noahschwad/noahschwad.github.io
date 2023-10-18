@@ -4,25 +4,45 @@
 - name: Smaller Projects
   id: small-projects
   images:
-    - assets/small/algae-v7-5x4.mp4
     - assets/small/super-pulse-jersey.jpg
-    - assets/small/eatingcontest-v7.mp4
+    - assets/click/5x4_back.jpg
+    - assets/click/5x4_back-closeup.jpg
     - assets/small/deviated-septum-scan-5x4.jpg
-    - assets/small/sinus-relief-5x4.jpg
-    - assets/small/eternal-punishment-3d.jpg
     - assets/small/stick-spiral-5x4.jpg
   subdescriptions:
-    - title: Algae
-      description: Interactive flexbox type
     - title: Super Pulse cycling jersey
-      description: They asked for an extreme
-    - title: Web poster for an eating contest
-      description: They asked for an extreme
-    - title: Sinus Poster no. 1
-      description: They asked for an extreme
-    - title: Sinus Poster no. 2
-      description: They asked for an extreme
-    - title: Identity for Eternal Punishment Effects
-      description: They asked for an extreme
-    - title: A digital image
-      description: They asked for an extreme
+      description: Cycling jersey for super pulse
+    - title: Click Bootleg
+      description: I once had a dream that I found a Click promo t-shirt at a thrift store. Upset that it was only a dream, I made that shirt into a beautiful reality. 
+    - title: Click Bootleg
+      description: I once had a dream that I found a Click promo t-shirt at a thrift store. Upset that it was only a dream, I made that shirt into a beautiful reality. 
+    - description: An autobiographic screenprinted poster
+    - description: Untitled illustration
+
+
+
+
+
+# removed 10/18/23
+- name: Smaller Projects
+  id: small-projects
+  images:
+    - assets/small/super-pulse-jersey.jpg
+    - assets/small/algae-v7-5x4.mp4
+    - assets/small/holding-print-5x4.jpg
+    - assets/small/scan-closeup.jpg
+    - assets/small/stick-spiral-5x4.jpg
+    - assets/small/sinus-relief-5x4.jpg
+    - assets/small/eternal-punishment-3d.jpg
+
+
+# removed 10/18/23
+- name: Click Shirt
+  id: click
+  year: 2022
+  categories: apparel, silkscreen
+  description: I once had a dream that I found a Click promo t-shirt at a thrift store. Upset that it was only a dream, I made that shirt into a beautiful reality.
+  images:
+    - assets/click/5x4_back.jpg
+    - assets/click/5x4_front.jpg
+    - assets/click/5x4_back-closeup.jpg

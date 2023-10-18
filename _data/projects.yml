@@ -44,17 +44,6 @@
     - assets/bloomberg-illustration/ig-mockup.jpg
 
 
-- name: Click Shirt
-  id: click
-  year: 2022
-  categories: apparel, silkscreen
-  description: I once had a dream that I found a Click promo t-shirt at a thrift store. Upset that it was only a dream, I made that shirt into a beautiful reality.
-  images:
-    - assets/click/5x4_back.jpg
-    - assets/click/5x4_front.jpg
-    - assets/click/5x4_back closeup.jpg
-
-
 
 - name: BioMuseo Generative Identity
   id: biomuseo
@@ -86,10 +75,8 @@
   id: small-projects
   images:
     - assets/small/super-pulse-jersey.jpg
-    - assets/small/algae-v7-5x4.mp4
+    - assets/click/5x4_back.jpg
+    - assets/click/5x4_back-closeup.jpg
     - assets/small/holding-print-5x4.jpg
     - assets/small/scan-closeup.jpg
     - assets/small/stick-spiral-5x4.jpg
-    - assets/small/sinus-relief-5x4.jpg
-    - assets/small/eternal-punishment-3d.jpg
-
