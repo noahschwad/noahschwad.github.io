@@ -35,7 +35,7 @@
   year: 2023
   categories: code, illustration
   description: A generative & interactive illustration for Bloomberg Businessweek. Climate researchers are rather absurdly being accused of sensationalizing their findings, so I wanted the viewer to have the absurd experience of sensationalizing the environment.
-  link: https://noahcode.netlify.app/projects/illustration/illustrationv5/illustration
+  link: /assets/bloomberg-illustration/live-site/illustration.html
   linkText: + Live Site
   images:
     - assets/bloomberg-illustration/headlines-desktop.mp4

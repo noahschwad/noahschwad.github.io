@@ -1,0 +1,242 @@
+body {
+    margin: 0px;
+}
+
+#container {
+    /* background-image: url("maui-wildfire.jpeg");
+    background-size: cover;
+    background-position: center;
+    height: 100vh;
+    width: 100vw; */
+    overflow: hidden;
+    position: relative;
+    border-bottom: 1px solid black;
+    background-color: black;
+    cursor: none !important;
+}
+
+#container > div {
+    cursor: none !important;
+}
+
+.bleedimage {
+    position: relative;
+    background-size: cover;
+    background-position: center;
+    height: 90vh;
+    width: 80vw;
+    margin: 10vw 10vw;
+    z-index: 2;
+}
+
+.bgvideo {
+    width: 80vw;
+    height: 80vh;
+    margin: 0vw 10vw 10vw 10vw;
+    position:relative;
+}
+
+video {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    object-fit: cover;
+    z-index: 0;
+}
+
+#pointer {
+    position: absolute;
+    z-index: 102;
+    height: 30px;
+    cursor: none !important;
+    transform: translate(-50%, -50%);
+}
+
+.headline {
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    -webkit-text-stroke-width: 1px;
+    -webkit-text-stroke-color: black;
+    /* line-height: 90%; */
+    white-space: nowrap;
+    padding: 0vh .5vh .2vh .5vh;
+    transition: transform 100ms;
+    transition-timing-function: linear;
+    box-shadow: 5px 5px 20px rgba(0, 0, 0, .3);
+    z-index: 3;
+    /* letter-spacing: -.1vh; */
+    /* cursor: default; */
+}
+
+#title-container {
+    /* z-index: 100; */
+    /* background-color: white; */
+    position: absolute;
+    top: 33vh;
+    left: 0vw;
+    transform: translate(0%, -50%);
+    /* width: 100vw; */
+    /* box-shadow: .3vh .3vh 10px rgba(0, 0, 0, 1); */
+    /* padding: 3vh 4vh; */
+}
+
+#title {
+    font-family: "neue-haas-grotesk-display", sans-serif;
+    font-weight: 600;
+    font-style: normal;
+    font-size: 7vh;
+    line-height: 89%;
+    letter-spacing: -.02vw;
+    color: white;
+    /* box-shadow: .3vh .3vh 10px rgba(0, 0, 0, 1); */
+    /* border: 5px solid green; */
+    
+    margin: 0px;
+    /* max-width: 62vw; */
+}
+
+.subtitle {
+    font-family: "neue-haas-grotesk-text", sans-serif;
+    font-weight: 400;
+    font-style: normal;
+    font-size: 2vh;
+    padding-top: 2vh;
+    color: white;
+}
+
+#logo {
+    font-family: "neue-haas-grotesk-display", sans-serif;
+    color: white;
+    letter-spacing: -.02vw;
+    line-height: 90%;
+    font-weight: 400;
+    font-style: normal;
+    font-size: 4vh;
+    padding-top: 2vh;
+    position: absolute;
+    top: 0px;
+    left: 10vw;
+    /* z-index: 100; */
+    text-shadow: 0px 0px 3px black;
+}
+
+#article {
+    /* height: 100vh; */
+    font-family: "utopia-std", serif;
+    font-weight: 400;
+    font-style: normal;
+    
+    padding-top: 6vw;
+    font-size: 2.3vh;
+    line-height: 125%;
+    position: relative;
+}
+
+#fade {
+    position: absolute;
+    bottom: 0px;
+    width: 100%;
+    height: 30vh;
+    background: linear-gradient(0deg, rgba(255,255,255,1) 25%, rgba(255,255,255,0) 100%);
+    z-index: 100;
+}
+
+.topSpacer {
+    width: 100vw;
+    height: 50vh;
+}
+
+
+
+
+
+
+
+/* Media Queries -----------------------------------*/
+
+@media screen and (max-width: 800px) {
+    #logo {
+        left: 6vw;
+        font-size: 3vh;
+        width: 70vw;
+    }
+    
+    #title-container {
+        margin: 0px 6vw 0 6vw;
+        /* padding: 1vh 1.5vh; */
+    }
+    #title {
+        font-size: 5vh !important;
+    }
+    .subtitle {
+        padding-top: 8px;
+    }
+    #pointer {
+        visibility: hidden;
+    }
+    .bgvideo {
+        width: 90vw;
+        height: 70vh;
+        margin: 0 5vw 5vw 5vw;
+    }
+    #article {
+        padding-left: 6vw;
+        padding-right: 6vw;
+    }
+    #fade {
+        width: 90vw;
+    }
+    .topSpacer {
+        height: 55vh;
+    }
+}
+
+
+@media screen and (max-width: 1200px) and (min-width: 801px) {
+    #title-container {
+        margin: 0px 10vw 0 10vw;
+    }
+    
+    #title {
+
+    }
+
+    #article {
+        border-left: 1px solid black;
+        border-right: 1px solid black;
+        padding-left: calc(0px + 10vw);
+        padding-right: calc(0px + 20vw);
+        margin-left: 10vw;
+        margin-right: 10vw;
+
+    }
+
+    #fade {
+        width: 80vw;
+    }
+  }
+
+@media screen and (min-width: 1201px) {
+    #title-container {
+
+        margin: 0vh 36vw 0 10vw;
+        width: 50vw;
+    }
+    
+    #title {
+        /* padding-left: 12vw; */
+    }
+
+    #article {
+        border-left: 1px solid black;
+        border-right: 1px solid black;
+        padding-left: 10vw;
+        margin-left: 10vw;
+        padding-right: 30vw;
+        margin-right: 10vw;
+    }
+    #fade {
+        width: 40vw;
+    }
+  }
