@@ -38,7 +38,7 @@
 
 
 html{
-    font-size: 5vh;
+    font-size: 5lvh;
     color: var(--main-color);
     font-family: 'agipo regular';
     font-weight: 400;
@@ -100,7 +100,7 @@ h2 {
     font-size: var(--large);
     font-family: 'agipo bold';
     font-weight: 700;
-    line-height: 5vh;
+    line-height: 5lvh;
     margin-bottom: var(--spacing-unit);
 }
 
@@ -135,8 +135,8 @@ a.projLink {
   font-family: 'agipo regular';
   text-decoration: underline;
   text-decoration-thickness: 1px;
-  text-underline-offset: .3vh;
-  /* margin-top: -2vh; */
+  text-underline-offset: .3lvh;
+  /* margin-top: -2lvh; */
 }
 
 .subdescription {
@@ -406,5 +406,5 @@ a.projLink {
   z-index: 99; /* Make sure the custom cursor appears on top of other elements */
   display: none; /* Initially hide the custom cursor */
   fill: blue !important;
-  filter: drop-shadow(.2vh .2vh .2vh rgb(0 0 0 / 0.1));
+  filter: drop-shadow(.2lvh .2lvh .2lvh rgb(0 0 0 / 0.1));
 }

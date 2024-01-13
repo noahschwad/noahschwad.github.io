@@ -6,7 +6,7 @@ body {
     /* background-image: url("maui-wildfire.jpeg");
     background-size: cover;
     background-position: center;
-    height: 100vh;
+    height: 100lvh;
     width: 100vw; */
     overflow: hidden;
     position: relative;
@@ -23,7 +23,7 @@ body {
     position: relative;
     background-size: cover;
     background-position: center;
-    height: 90vh;
+    height: 90lvh;
     width: 80vw;
     margin: 10vw 10vw;
     z-index: 2;
@@ -31,7 +31,7 @@ body {
 
 .bgvideo {
     width: 80vw;
-    height: 80vh;
+    height: 80lvh;
     margin: 0vw 10vw 10vw 10vw;
     position:relative;
 }
@@ -60,12 +60,12 @@ video {
     -webkit-text-stroke-color: black;
     /* line-height: 90%; */
     white-space: nowrap;
-    padding: 0vh .5vh .2vh .5vh;
+    padding: 0lvh .5lvh .2lvh .5lvh;
     transition: transform 100ms;
     transition-timing-function: linear;
     box-shadow: 5px 5px 20px rgba(0, 0, 0, .3);
     z-index: 3;
-    /* letter-spacing: -.1vh; */
+    /* letter-spacing: -.1lvh; */
     /* cursor: default; */
 }
 
@@ -73,23 +73,23 @@ video {
     /* z-index: 100; */
     /* background-color: white; */
     position: absolute;
-    top: 33vh;
+    top: 33lvh;
     left: 0vw;
     transform: translate(0%, -50%);
     /* width: 100vw; */
-    /* box-shadow: .3vh .3vh 10px rgba(0, 0, 0, 1); */
-    /* padding: 3vh 4vh; */
+    /* box-shadow: .3lvh .3lvh 10px rgba(0, 0, 0, 1); */
+    /* padding: 3lvh 4lvh; */
 }
 
 #title {
     font-family: "neue-haas-grotesk-display", sans-serif;
     font-weight: 600;
     font-style: normal;
-    font-size: 7vh;
+    font-size: 7lvh;
     line-height: 89%;
     letter-spacing: -.02vw;
     color: white;
-    /* box-shadow: .3vh .3vh 10px rgba(0, 0, 0, 1); */
+    /* box-shadow: .3lvh .3lvh 10px rgba(0, 0, 0, 1); */
     /* border: 5px solid green; */
     
     margin: 0px;
@@ -100,8 +100,8 @@ video {
     font-family: "neue-haas-grotesk-text", sans-serif;
     font-weight: 400;
     font-style: normal;
-    font-size: 2vh;
-    padding-top: 2vh;
+    font-size: 2lvh;
+    padding-top: 2lvh;
     color: white;
 }
 
@@ -112,8 +112,8 @@ video {
     line-height: 90%;
     font-weight: 400;
     font-style: normal;
-    font-size: 4vh;
-    padding-top: 2vh;
+    font-size: 4lvh;
+    padding-top: 2lvh;
     position: absolute;
     top: 0px;
     left: 10vw;
@@ -122,13 +122,13 @@ video {
 }
 
 #article {
-    /* height: 100vh; */
+    /* height: 100lvh; */
     font-family: "utopia-std", serif;
     font-weight: 400;
     font-style: normal;
     
     padding-top: 6vw;
-    font-size: 2.3vh;
+    font-size: 2.3lvh;
     line-height: 125%;
     position: relative;
 }
@@ -137,14 +137,14 @@ video {
     position: absolute;
     bottom: 0px;
     width: 100%;
-    height: 30vh;
+    height: 30lvh;
     background: linear-gradient(0deg, rgba(255,255,255,1) 25%, rgba(255,255,255,0) 100%);
     z-index: 100;
 }
 
 .topSpacer {
     width: 100vw;
-    height: 50vh;
+    height: 50lvh;
 }
 
 
@@ -159,7 +159,7 @@ video {
 @media screen and (min-width: 1201px) {
     #title-container {
 
-        margin: 0vh 36vw 0 10vw;
+        margin: 0lvh 36vw 0 10vw;
         width: 50vw;
     }
     
@@ -213,17 +213,17 @@ video {
   @media screen and (max-width: 800px) {
     #logo {
         left: 6vw;
-        font-size: 3vh;
+        font-size: 3lvh;
         width: 70vw;
     }
     
     #title-container {
         margin: 0px 6vw 0 6vw;
-        /* padding: 1vh 1.5vh; */
+        /* padding: 1lvh 1.5lvh; */
     }
 
     #title {
-        font-size: 5vh !important;
+        font-size: 5lvh !important;
     }
 
     .subtitle {
@@ -236,7 +236,7 @@ video {
 
     .bgvideo {
         width: 90vw;
-        height: 70vh;
+        height: 70lvh;
         margin: 0 5vw 5vw 5vw;
     }
 
@@ -250,6 +250,6 @@ video {
         width: 90vw;
     }
     .topSpacer {
-        height: 55vh;
+        height: 55lvh;
     }
 }
