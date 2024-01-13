@@ -155,42 +155,32 @@ video {
 
 /* Media Queries -----------------------------------*/
 
-@media screen and (max-width: 800px) {
-    #logo {
-        left: 6vw;
-        font-size: 3vh;
-        width: 70vw;
+
+@media screen and (min-width: 1201px) {
+    #title-container {
+
+        margin: 0vh 36vw 0 10vw;
+        width: 50vw;
     }
     
-    #title-container {
-        margin: 0px 6vw 0 6vw;
-        /* padding: 1vh 1.5vh; */
-    }
     #title {
-        font-size: 5vh !important;
+        /* padding-left: 12vw; */
     }
-    .subtitle {
-        padding-top: 8px;
-    }
-    #pointer {
-        visibility: hidden;
-    }
-    .bgvideo {
-        width: 90vw;
-        height: 70vh;
-        margin: 0 5vw 5vw 5vw;
-    }
+
     #article {
-        padding-left: 6vw;
-        padding-right: 6vw;
+        border-left: 1px solid black;
+        border-right: 1px solid black;
+        padding-left: 10vw;
+        margin-left: 10vw;
+        padding-right: 30vw;
+        margin-right: 10vw;
     }
     #fade {
-        width: 90vw;
+        width: 40vw;
     }
-    .topSpacer {
-        height: 55vh;
-    }
-}
+  }
+
+
 
 
 @media screen and (max-width: 1200px) and (min-width: 801px) {
@@ -217,26 +207,49 @@ video {
     }
   }
 
-@media screen and (min-width: 1201px) {
-    #title-container {
 
-        margin: 0vh 36vw 0 10vw;
-        width: 50vw;
+
+
+  @media screen and (max-width: 800px) {
+    #logo {
+        left: 6vw;
+        font-size: 3vh;
+        width: 70vw;
     }
     
+    #title-container {
+        margin: 0px 6vw 0 6vw;
+        /* padding: 1vh 1.5vh; */
+    }
+
     #title {
-        /* padding-left: 12vw; */
+        font-size: 5vh !important;
+    }
+
+    .subtitle {
+        padding-top: 8px;
+    }
+
+    #pointer {
+        visibility: hidden;
+    }
+
+    .bgvideo {
+        width: 90vw;
+        height: 70vh;
+        margin: 0 5vw 5vw 5vw;
     }
 
     #article {
-        border-left: 1px solid black;
-        border-right: 1px solid black;
-        padding-left: 10vw;
-        margin-left: 10vw;
-        padding-right: 30vw;
-        margin-right: 10vw;
+        padding-left: 6vw;
+        padding-right: 6vw;
     }
+
     #fade {
-        width: 40vw;
+       
+        width: 90vw;
     }
-  }
+    .topSpacer {
+        height: 55vh;
+    }
+}

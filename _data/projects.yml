@@ -1,3 +1,19 @@
+
+
+- name: Data-Driven Wine Labels
+  id: kabaj
+  year: 2023
+  categories: code, packaging, identity
+  description: Kabaj is a family-owned natural winery in Slovenia that utilizes a mix of new and old winemaking techniques. Using the geometric, ornamental grammar of the historic architecture of Ljubljana (Slovenia’s capital city), these data-driven labels are designed to communicate the taste of the wine. This approach makes it easy to select the right wine for the occasion while also making it simple to generate labels for new wines.
+
+  images:
+    - assets/kabaj/corvus.jpg
+    - assets/kabaj/3-bottles.jpg
+    - assets/kabaj/guide.jpg
+    - assets/kabaj/grid.png
+    - assets/kabaj/ooh.jpg
+
+
 - name: This Magazine is for Snails
   id: snails
   year: 2023
@@ -12,6 +28,21 @@
     - assets/snails/3-spreads.jpg
     - assets/snails/v2-_10-11.jpg
     - assets/snails/v2-_12-13.jpg
+
+
+- name: There's One Climate Narrative We Need To Debunk
+  id: bloomberg
+  year: 2023
+  categories: code, illustration
+  description: A generative & interactive illustration for Bloomberg Businessweek. Climate researchers are rather absurdly being accused of sensationalizing their findings, so I wanted the viewer to have the absurd experience of sensationalizing the environment.
+  link: /assets/bloomberg-illustration/live-site/illustration.html
+  linkText: + Live Site
+  images:
+    - assets/bloomberg-illustration/headlines-desktop.mp4
+    - assets/bloomberg-illustration/headlines-mobile.mp4
+    - assets/bloomberg-illustration/print-mockup.jpg
+    - assets/bloomberg-illustration/ig-mockup.jpg
+
 
 - name: Muriel Cooper
   id: muriel
@@ -30,32 +61,6 @@
     - assets/muriel/muriel-3d-text.mp4
 
 
-- name: There's One Climate Narrative We Need To Debunk
-  id: bloomberg
-  year: 2023
-  categories: code, illustration
-  description: A generative & interactive illustration for Bloomberg Businessweek. Climate researchers are rather absurdly being accused of sensationalizing their findings, so I wanted the viewer to have the absurd experience of sensationalizing the environment.
-  link: /assets/bloomberg-illustration/live-site/illustration.html
-  linkText: + Live Site
-  images:
-    - assets/bloomberg-illustration/headlines-desktop.mp4
-    - assets/bloomberg-illustration/headlines-mobile.mp4
-    - assets/bloomberg-illustration/print-mockup.jpg
-    - assets/bloomberg-illustration/ig-mockup.jpg
-
-
-- name: Click Shirt
-  id: click
-  year: 2022
-  categories: apparel, silkscreen
-  description: I once had a dream that I found a Click promo t-shirt at a thrift store. Upset that it was only a dream, I made that shirt into a beautiful reality.
-  images:
-    - assets/click/5x4_back.jpg
-    - assets/click/5x4_front.jpg
-    - assets/click/5x4_back closeup.jpg
-
-
-
 - name: BioMuseo Generative Identity
   id: biomuseo
   year: 2022
@@ -70,23 +75,14 @@
     - assets/biomuseo/biomuseo-kiosks.jpg
 
 
-- name: First Things First
-  id: aiga
-  year: 2022
-  categories: editorial
-  description: For AIGA’s manifesto calling for designers to prioritize cultural and functional work over consumeristic projects, I wanted to show their seriousness, but also convey momentum and hope.
-  images:
-    - assets/aiga/cover.jpg
-    - assets/aiga/2nd-spread.jpg
-    - assets/aiga/arrangement.jpg
-    - assets/aiga/gif3.mp4
-
-
 - name: Smaller Projects
   id: small-projects
   images:
     - assets/small/super-pulse-jersey.jpg
-    - assets/small/algae-v7-5x4.mp4
+    - assets/aiga/arrangement.jpg
+    - assets/click/5x4_back.jpg
+    - assets/click/5x4_front.jpg
+    - assets/click/5x4_back closeup.jpg
     - assets/small/holding-print-5x4.jpg
     - assets/small/scan-closeup.jpg
     - assets/small/stick-spiral-5x4.jpg
