@@ -180,7 +180,6 @@ a.projLink {
       margin-top: .3rem;
       /* font-size: .6rem; */
       /* line-height: .7rem; */
-      font-size: 42px;
     }
 
     p {
@@ -203,7 +202,7 @@ a.projLink {
       margin-bottom: .4rem;
     }
 
-    .projDescription, .carousel-indicator, p {
+    /* .projDescription, .carousel-indicator, p {
       font-size: 20px;
     }
 
@@ -213,7 +212,11 @@ a.projLink {
 
     .site-title a, .nav-link a {
       font-size: 32px;
-    }
+    } */
+
+    html{
+      font-size: 42px !important;
+  }
 
 }
 
