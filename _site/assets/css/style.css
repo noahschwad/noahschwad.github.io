@@ -180,6 +180,7 @@ a.projLink {
       margin-top: .3rem;
       /* font-size: .6rem; */
       /* line-height: .7rem; */
+      font-size: 42px;
     }
 
     p {
@@ -200,6 +201,18 @@ a.projLink {
 
     .projDescription {
       margin-bottom: .4rem;
+    }
+
+    .projDescription, .carousel-indicator, p {
+      font-size: 20px;
+    }
+
+    .project-tags {
+      font-size: 14px;
+    }
+
+    .site-title a, .nav-link a {
+      font-size: 32px;
     }
 
 }
