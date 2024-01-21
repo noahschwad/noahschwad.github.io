@@ -100,7 +100,7 @@ h2 {
     font-size: var(--large);
     font-family: 'agipo bold';
     font-weight: 700;
-    line-height: 5lvh;
+    line-height: 103%;
     margin-bottom: var(--spacing-unit);
 }
 
