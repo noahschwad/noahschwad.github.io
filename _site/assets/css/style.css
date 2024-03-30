@@ -42,6 +42,7 @@ html{
     color: var(--main-color);
     font-family: 'agipo regular';
     font-weight: 400;
+    overflow-y: scroll;
 }
 
 body {
@@ -61,7 +62,18 @@ hr {
 
 a {
   color: var(--main-color);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: .3lvh;
+}
+
+a.infoLinks {
+  color: var(--main-color);
   font-family: 'agipo light italic';
+  text-decoration: none;
+}
+
+.nav-link > a, .site-title > a {
   text-decoration: none;
 }
 
@@ -132,12 +144,14 @@ h2.project-title {
 }
 
 a.projLink {
-  font-family: 'agipo regular';
-  text-decoration: underline;
+  /* font-family: 'agipo regular'; */
+  /* text-decoration: underline;
   text-decoration-thickness: 1px;
-  text-underline-offset: .3lvh;
+  text-underline-offset: .3lvh; */
   /* margin-top: -2lvh; */
 }
+
+
 
 .subdescription {
   /* display: none; */
