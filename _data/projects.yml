@@ -16,6 +16,21 @@
     - assets/kabaj/box-v1.jpg
 
 
+- name: Boundary Analytics
+  id: boundary
+  year: 2024
+  categories: identity, code
+  description: Boundary Analytics is a B2B marketing analytics platform that uses radically different analysis techniques to identify impactful marketing activities. We built the identity around their belief in data's explanatory power and the need to visually stand out as not just another Saas company.
+  images:
+    - assets/boundary/main-lockup.png
+    - assets/boundary/17_System_Exports.mov
+    - assets/boundary/bust.png
+    - assets/boundary/13_Generator_Tool.mp4
+    - assets/boundary/19_Mockups_Billboard.png
+    - assets/boundary/16_System_Grid.mp4
+    - assets/boundary/dongle-mockup-16x9.jpg
+
+
 - name: This Magazine is for Snails
   id: snails
   year: 2023
@@ -62,19 +77,6 @@
     - assets/muriel/FlatWall-muriel-v2.jpg
     - assets/muriel/muriel-3d-text.mp4
 
-
-- name: BioMuseo Generative Identity
-  id: biomuseo
-  year: 2022
-  categories: identity, code
-  description: Biomuseo is a museum in Panama dedicated to exploring the natural history of the country. For numerous reasons, the concept of biodiversity is central to that story. The logo visually reflects the museum’s iconic architecture, and its generative nature reflects their focus on biodiversity.
-  images:
-    - assets/biomuseo/logo-generator-v5.mp4
-    - assets/biomuseo/logos-v4.png
-    - assets/biomuseo/roofandlogo.jpg
-    - assets/biomuseo/biomuseo-fence.jpg
-    - assets/biomuseo/biomuseo-website.jpg
-    - assets/biomuseo/biomuseo-kiosks.jpg
 
 
 - name: Smaller Projects

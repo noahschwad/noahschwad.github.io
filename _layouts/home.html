@@ -14,7 +14,7 @@ layout: default
             <div class="carousel-container" onmouseover="updateCursorPosition(event)" onmousemove="updateCursorPosition(event)" onmouseleave="hideCustomCursor()">
                 {% for image in project.images %}
                 <div class="slide">
-                    {% if image contains '.mp4' %}
+                    {% if image contains '.mp4' or image contains '.mov' %}
                             <video class="carousel-video" src="{{ image }}" type="video/mp4" playsinline="" muted="" autoplay="" loop=""></video>
                     {% else %}
                             <img src="{{ image }}">

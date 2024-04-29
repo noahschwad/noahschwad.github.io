@@ -52,3 +52,18 @@
     - assets/aiga/2nd-spread.jpg
     - assets/aiga/arrangement.jpg
     - assets/aiga/gif3.mp4
+
+
+
+- name: BioMuseo Generative Identity
+  id: biomuseo
+  year: 2022
+  categories: identity, code
+  description: Biomuseo is a museum in Panama dedicated to exploring the natural history of the country. For numerous reasons, the concept of biodiversity is central to that story. The logo visually reflects the museum’s iconic architecture, and its generative nature reflects their focus on biodiversity.
+  images:
+    - assets/biomuseo/logo-generator-v5.mp4
+    - assets/biomuseo/logos-v4.png
+    - assets/biomuseo/roofandlogo.jpg
+    - assets/biomuseo/biomuseo-fence.jpg
+    - assets/biomuseo/biomuseo-website.jpg
+    - assets/biomuseo/biomuseo-kiosks.jpg
