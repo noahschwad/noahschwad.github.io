@@ -4,6 +4,7 @@
   --large: 1rem;
   --normal: .5rem;
   --small: .33rem;
+  --border: 1.5px;
 }
 
 @font-face {
@@ -23,9 +24,17 @@
   font-style: normal;
 }
 
-::selection {
-  background: #ffb7b7; /* WebKit/Blink Browsers */
+@font-face {
+  font-family: 'agipo bold condensed';
+  src: url(/assets/fonts/agipo-bold-cond-regular.ttf) format('truetype');
+  font-weight: 700;
+  font-style: normal;
 }
+
+::selection {
+  background: #67fe50; /* WebKit/Blink Browsers */
+}
+
 
 
 
@@ -43,6 +52,9 @@ html{
     font-family: 'agipo regular';
     font-weight: 400;
     overflow-y: scroll;
+    -moz-osx-font-smoothing: grayscale;
+    -webkit-font-smoothing: antialiased;
+    font-smoothing: antialiased;
 }
 
 body {
@@ -51,13 +63,15 @@ body {
 
 header {
   margin-bottom: var(--spacing-unit);
-  border-bottom: 1px solid var(--main-color);
+  border-bottom: var(--border) solid var(--main-color);
   padding-top: .1rem;
 }
 
 hr {
   margin-top: var(--spacing-unit);
   margin-bottom: var(--spacing-unit);
+  border-width: var(--border) solid var(--main-color);
+
 }
 
 a {
@@ -166,6 +180,43 @@ a.projLink {
 .smallP {
   font-size: .35rem;
 }
+
+h3.pill {
+  border: var(--border) solid black;
+  padding: 3px 13px;
+  border-radius: 50px;
+  /* font-size: .4rem; */
+  font-size: var(--small);
+  line-height: 123%;
+  display: inline-block;
+  margin-bottom: .5rem;
+  margin-block-end: .2rem;
+  margin-block-start: .2rem;
+  font-weight: 400;
+  margin-left: -.08rem;
+}
+
+ul.project-tags {
+  list-style-type: none; /* Removes the bullets */
+  padding: 0;           /* Removes the padding */
+  margin: 0;
+}
+
+ul.project-tags > li {
+  margin-bottom: .15rem;
+}
+
+
+li > a::before {
+  content: "+ ";
+  /* text-decoration: underline; */
+}
+
+.smallNote {
+  opacity: .7;
+  font-size: 50%;
+}
+
 
 
 
