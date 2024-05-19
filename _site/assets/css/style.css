@@ -71,7 +71,10 @@ hr {
   margin-top: var(--spacing-unit);
   margin-bottom: var(--spacing-unit);
   border-width: var(--border) solid var(--main-color);
-
+  border-style: solid;
+  border-bottom: none;
+  border-left: none;
+  border-right: none;
 }
 
 a {
@@ -118,7 +121,7 @@ h2, .site-title, .nav-link, .ticker-item {
   text-decoration: none;
   line-height: .65rem;
   vertical-align: baseline;
-  letter-spacing: -.02rem;
+  letter-spacing: -.03rem;
 
 }
 
