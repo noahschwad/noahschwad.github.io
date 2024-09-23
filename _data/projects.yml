@@ -1,3 +1,18 @@
+- name: Backslash
+  id: backslash
+  year: 2024
+  categories: website, identity
+  description: |
+    Backslash is an art and technology organization funding artists whose practices are nonlinear, unconventional, adventurous, surprising, questionable, and primed for engagement with new technologies. We wanted to reinforce the metaphor behind their name as much as possible, taking any given opportunity to refer to the 21º tilt of their backslash.
+
+  images:
+    - assets/backslash/art-scroll16x9.mp4
+    - assets/backslash/editorial-moments.mp4
+    - assets/backslash/exhibitions-scroll16x9.mp4
+    - assets/backslash/index-page.mp4
+    - assets/backslash/patterns-v3-desktop.mp4
+    - assets/backslash/composition-books.jpg
+
 
 
 - name: Data-Driven Wine Labels
@@ -83,12 +98,13 @@
   id: small-projects
   images:
     - assets/small/super-pulse-jersey.jpg
-    - assets/aiga/arrangement.jpg
+    # - assets/aiga/arrangement.jpg
+    - assets/small/brocade-in-context-scroll.mp4
+    - assets/small/brocade-generator5x4.mp4
     - assets/click/5x4_back.jpg
     - assets/click/5x4_back closeup.jpg
     - assets/small/holding-print-5x4.jpg
     - assets/small/scan-closeup.jpg
     - assets/small/stick-spiral-5x4.jpg
-    - assets/small/sinus-relief-5x4.jpg
     - assets/small/eternal-punishment-3d.jpg
 
