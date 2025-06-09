@@ -1,17 +1,21 @@
-- name: Backslash
-  id: backslash
-  year: 2024
-  categories: website, identity
-  description: |
-    Backslash is an art and technology organization funding artists whose practices are nonlinear, unconventional, adventurous, surprising, questionable, and primed for engagement with new technologies. We wanted to reinforce the metaphor behind their name as much as possible, taking any given opportunity to refer to the 21º tilt of their backslash.
+- name: New Museum Store
+  id: newmuseum
+  year: 2025
+  categories: website, code
+  description: The New Museum needed a distinct digital presence for its store—one that felt connected to the institution but stood on its own. The new site channels the excitement of discovery while spotlighting the artists behind each collection, emphasizing their personal, handmade work.
 
   images:
-    - assets/backslash/art-scroll16x9.mp4
-    - assets/backslash/editorial-moments.mp4
-    - assets/backslash/exhibitions-scroll16x9.mp4
-    - assets/backslash/index-page.mp4
-    - assets/backslash/patterns-v3-desktop.mp4
-    - assets/backslash/composition-books.jpg
+  - assets/newmuseum/hero2.mp4
+  - assets/newmuseum/site-overview.mp4
+  - assets/newmuseum/many-cards.jpg
+  - assets/newmuseum/hover-demo.mp4
+  - assets/newmuseum/indiv-animations-wide.mp4
+  - assets/newmuseum/collection-page.mp4
+  - assets/newmuseum/modular-moment.mp4
+  - assets/newmuseum/full-wordmark-animation2.mp4
+
+
+
 
 
 
@@ -31,6 +35,27 @@
     - assets/kabaj/box-v1.jpg
 
 
+
+
+
+- name: Backslash
+  id: backslash
+  year: 2024
+  categories: website, identity
+  description: |
+    Backslash is an art and technology organization funding artists whose practices are nonlinear, unconventional, adventurous, surprising, questionable, and primed for engagement with new technologies. We wanted to reinforce the metaphor behind their name as much as possible, taking any given opportunity to refer to the 21º tilt of their backslash.
+
+  images:
+    - assets/backslash/art-scroll16x9.mp4
+    - assets/backslash/editorial-moments.mp4
+    - assets/backslash/exhibitions-scroll16x9.mp4
+    - assets/backslash/index-page.mp4
+    - assets/backslash/patterns-v3-desktop.mp4
+    - assets/backslash/composition-books.jpg
+
+
+
+
 - name: Boundary Analytics
   id: boundary
   year: 2024
@@ -44,6 +69,24 @@
     - assets/boundary/19_Mockups_Billboard.png
     - assets/boundary/16_System_Grid.mp4
     - assets/boundary/dongle-mockup-16x9.jpg
+
+
+
+
+- name: There's One Climate Narrative We Need To Debunk
+  id: bloomberg
+  year: 2023
+  categories: code, illustration
+  description: A generative & interactive illustration for Bloomberg Businessweek. Climate researchers are rather absurdly being accused of sensationalizing their findings, so I wanted the viewer to have the absurd experience of sensationalizing the environment.
+  link: /assets/bloomberg-illustration/live-site/illustration.html
+  linkText: + Live Site
+  images:
+    - assets/bloomberg-illustration/headlines-desktop.mp4
+    - assets/bloomberg-illustration/headlines-mobile.mp4
+    - assets/bloomberg-illustration/print-mockup.jpg
+    - assets/bloomberg-illustration/ig-mockup.jpg
+
+
 
 
 - name: This Magazine is for Snails
@@ -62,36 +105,6 @@
     - assets/snails/v2-_12-13.jpg
 
 
-- name: There's One Climate Narrative We Need To Debunk
-  id: bloomberg
-  year: 2023
-  categories: code, illustration
-  description: A generative & interactive illustration for Bloomberg Businessweek. Climate researchers are rather absurdly being accused of sensationalizing their findings, so I wanted the viewer to have the absurd experience of sensationalizing the environment.
-  link: /assets/bloomberg-illustration/live-site/illustration.html
-  linkText: + Live Site
-  images:
-    - assets/bloomberg-illustration/headlines-desktop.mp4
-    - assets/bloomberg-illustration/headlines-mobile.mp4
-    - assets/bloomberg-illustration/print-mockup.jpg
-    - assets/bloomberg-illustration/ig-mockup.jpg
-
-
-- name: Muriel Cooper
-  id: muriel
-  year: 2023
-  categories: exhibition
-  description: A proposed exhibition of the pioneering digital designer’s career. Many ideas central to her work are on display in her 3D typography and information landscape prototypes, so I referenced them heavily in the design of the space. Titles are skewed in abstract 3D space, the wall layouts give a sense of depth and motion, and the exhibition allows for a non-linear experience of the content.
-  images:
-    - assets/muriel/fullview-v2.mp4
-    - assets/muriel/ortho-v1.jpg
-    - assets/muriel/Exterior_wall-v2.jpg
-    - assets/muriel/sculpture&title-v2.jpg
-    - assets/muriel/wall-C-v2.jpg
-    - assets/muriel/D-wall-v2.jpg
-    - assets/muriel/Flatwall_2-v3.jpg
-    - assets/muriel/FlatWall-muriel-v2.jpg
-    - assets/muriel/muriel-3d-text.mp4
-
 
 
 - name: Smaller Projects
@@ -101,6 +114,7 @@
     # - assets/aiga/arrangement.jpg
     - assets/small/brocade-in-context-scroll.mp4
     - assets/small/brocade-generator5x4.mp4
+    - assets/muriel/fullview-v2.mp4
     - assets/click/5x4_back.jpg
     - assets/click/5x4_back closeup.jpg
     - assets/small/holding-print-5x4.jpg
