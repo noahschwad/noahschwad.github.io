@@ -15,7 +15,7 @@ layout: default
                 {% for image in project.images %}
                 <div class="slide">
                     {% if image contains '.mp4' or image contains '.mov' %}
-                            <video class="carousel-video" src="{{ image }}" type="video/mp4" playsinline="" muted="" autoplay="" loop=""></video>
+                            <video class="carousel-video" src="{{ image }}" type="video/mp4" muted loop playsinline preload="none"></video>
                     {% else %}
                             <img src="{{ image }}">
                     {% endif %}

@@ -14,18 +14,34 @@ document.addEventListener("DOMContentLoaded", function() {
     }
     let touchstartX = 0;
 
-    function showSlide(index) {
-      container.style.transform = `translateX(-${index * 100}%)`;
-      indicator.querySelector(".current-slide").textContent = index + 1;
-      if (smallprojects) {
-        for (let subdescription of subdescriptions) {
-          subdescription.style.display = "none";
-          // console.log(subdescription.innerHTML);
-        }
-        console.log(subdescriptions[index].innerHTML);
-        subdescriptions[index].style.display = "block";
-      }
-    }
+
+		function showSlide(index) {
+			container.style.transform = `translateX(-${index * 100}%)`;
+			indicator.querySelector(".current-slide").textContent = index + 1;
+		
+			// Show/hide subdescriptions if relevant
+			if (smallprojects) {
+				for (let subdescription of subdescriptions) {
+					subdescription.style.display = "none";
+				}
+				subdescriptions[index].style.display = "block";
+			}
+		
+			// Pause all videos and reset them
+			for (let i = 0; i < slides.length; i++) {
+				const video = slides[i].querySelector("video");
+				if (video) {
+					if (i === index) {
+						video.load(); // start loading now
+						video.play().catch(() => {}); // safe catch for autoplay fail
+					} else {
+						video.pause();
+						// video.currentTime = 0;
+					}
+				}
+			}
+		}
+		
 
     function animateSlide() {
       container.classList.add("slide-animation");

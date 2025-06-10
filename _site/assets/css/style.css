@@ -186,7 +186,7 @@ a.projLink {
 
 h3.pill {
   border: var(--border) solid black;
-  padding: 3px 13px;
+  padding: 3px 16px;
   border-radius: 50px;
   /* font-size: .4rem; */
   font-size: var(--small);
