@@ -34,6 +34,14 @@ document.addEventListener("DOMContentLoaded", function() {
 					if (i === index) {
 						video.load(); // start loading now
 						video.play().catch(() => {}); // safe catch for autoplay fail
+						const nextSlide = slides[index + 1];
+						if (nextSlide) {
+							const nextVideo = nextSlide.querySelector("video");
+							if (nextVideo && nextVideo.preload !== "auto") {
+								nextVideo.preload = "auto";
+								nextVideo.load();
+							}
+						}
 					} else {
 						video.pause();
 						// video.currentTime = 0;
