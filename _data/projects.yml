@@ -5,14 +5,14 @@
   description: The New Museum needed a distinct digital presence for its store—one that felt connected to the institution but stood on its own. The new site channels the excitement of discovery while spotlighting the artists behind each collection, emphasizing their personal, handmade work.
 
   images:
-  - assets/newmuseum/hero2.mp4
-  - assets/newmuseum/site-overview.mp4
+  - https://r2-proxy.noah-schwadron.workers.dev/hero2.mp4
+  - https://r2-proxy.noah-schwadron.workers.dev/site-overview.mp4
   - assets/newmuseum/many-cards.jpg
-  - assets/newmuseum/hover-demo.mp4
-  - assets/newmuseum/indiv-animations-wide.mp4
-  - assets/newmuseum/collection-page.mp4
-  - assets/newmuseum/modular-moment.mp4
-  - assets/newmuseum/full-wordmark-animation2.mp4
+  - https://r2-proxy.noah-schwadron.workers.dev/hover-demo.mp4
+  - https://r2-proxy.noah-schwadron.workers.dev/indiv-animations-wide.mp4
+  - https://r2-proxy.noah-schwadron.workers.dev/collection-page.mp4
+  - https://r2-proxy.noah-schwadron.workers.dev/modular-moment.mp4
+  - https://r2-proxy.noah-schwadron.workers.dev/full-wordmark-animation2.mp4
 
 
 
