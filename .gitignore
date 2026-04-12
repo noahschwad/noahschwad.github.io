@@ -1,2 +1,4 @@
-.DS_store
-_site/
+node_modules
+dist
+.DS_Store
+*.local
