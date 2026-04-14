@@ -1,33 +1,12 @@
-export type MediaKind = "image" | "video";
-
-export type ProjectAsset = {
-  id: string;
-  kind: MediaKind;
-  /** Remote URL or `/public` path. Empty / omitted shows “no asset” UI. */
-  src?: string;
-  /** Extra tiles beyond the first asset, which is always selected. */
-  selected?: boolean;
-  /** Optional label shown instead of the project `category` for this tile (e.g. secondary selected work). */
-  category?: string;
-};
-
-export type Project = {
-  id: string;
-  title: string;
-  category: string;
-  year: number;
-  assets: ProjectAsset[];
-};
-
 /** First asset is always selected; any other with `selected: true` is included, in array order. */
-export function getSelectedAssets(project: Project): ProjectAsset[] {
+export function getSelectedAssets(project) {
   if (project.assets.length === 0) return [];
   const first = project.assets[0];
   const extras = project.assets.slice(1).filter((a) => a.selected === true);
   return [first, ...extras];
 }
 
-export const projects: Project[] = [
+export const projects = [
   {
     id: "signals",
     title: "Signals",

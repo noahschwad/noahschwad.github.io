@@ -1,6 +1,49 @@
+.app-root {
+  --panel-text-size: 1;
+  --panel-image-size: 1;
+  --control-panel-h: 4.75rem;
+}
+
+.control-panel {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: flex-end;
+  gap: clamp(1rem, 3vw, 2rem);
+  min-height: var(--control-panel-h);
+  padding: 0.65rem var(--space) 0.75rem;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+}
+
+.control {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.35rem;
+  flex: 0 1 12rem;
+  min-width: 8.5rem;
+}
+
+.control__label {
+  display: block;
+}
+
+.control__input {
+  width: 100%;
+  margin: 0;
+  accent-color: var(--accent);
+}
+
 .app {
   min-height: 100dvh;
   padding: var(--space);
+  padding-top: calc(var(--control-panel-h) + var(--space) + 0.35rem);
 }
 
 .selected-strip {
@@ -15,9 +58,9 @@
 }
 
 .selected-strip__item {
-  flex: 1 1 16rem;
-  min-width: min(100%, 14rem);
-  max-width: 26rem;
+  flex: 1 1 calc(16rem * var(--panel-image-size, 1));
+  min-width: min(100%, calc(14rem * var(--panel-image-size, 1)));
+  max-width: calc(26rem * var(--panel-image-size, 1));
 }
 
 .asset-tile {
@@ -25,13 +68,14 @@
   flex-direction: column;
   gap: 0.75rem;
   height: 100%;
+  font-size: calc(1rem * var(--panel-text-size, 1));
 }
 
 .asset-tile__media {
   border-radius: 0.5rem;
   border: 1px solid var(--border);
   overflow: hidden;
-  background: color-mix(in oklab, var(--fg) 4%, var(--bg));
+  background: #f5f5f5;
   aspect-ratio: 3 / 2;
 }
 
@@ -49,9 +93,6 @@
   place-items: center;
   padding: 1.25rem;
   text-align: center;
-  font-family: var(--font-mono);
-  font-size: 0.8125rem;
-  color: var(--muted);
   border: 1px dashed var(--border);
   margin: 0.5rem;
   border-radius: 0.25rem;
@@ -65,14 +106,10 @@
 
 .asset-tile__title {
   margin: 0;
-  letter-spacing: -0.02em;
-  font-size: 1rem;
 }
 
 .asset-tile__sub {
   margin: 0;
-  font-size: 1rem;
-  color: var(--muted);
 }
 
 .asset-tile__dot {

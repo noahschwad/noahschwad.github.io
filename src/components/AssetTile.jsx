@@ -1,16 +1,10 @@
 import { useState } from "react";
-import type { Project, ProjectAsset } from "../data/projects";
 
-type Props = {
-  project: Project;
-  asset: ProjectAsset;
-};
-
-function hasSrc(src: string | undefined): src is string {
+function hasSrc(src) {
   return typeof src === "string" && src.trim().length > 0;
 }
 
-export function AssetTile({ project, asset }: Props) {
+export function AssetTile({ project, asset }) {
   const [mediaFailed, setMediaFailed] = useState(false);
   const missing = !hasSrc(asset.src) || mediaFailed;
   const category = asset.category ?? project.category;
