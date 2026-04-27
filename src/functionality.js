@@ -1,4 +1,3 @@
-import { useCallback, useLayoutEffect, useRef, useState } from "react";
 import { getSelectedAssets } from "./data/projects";
 
 // —— strip tile config ——————————————————————————————————————————————————————
@@ -30,8 +29,13 @@ export const TILE_LAYOUT_OPTIONS = [
   { value: TILE_LAYOUT_TEXT_LEFT, label: "Text left of media" },
 ];
 
-/** Image size (`--panel-image-size`) above this → stacked; at or below → text-left of media. */
-export const TILE_LAYOUT_IMAGE_SIZE_BREAKPOINT = 0.3;
+/**
+ * Image-size threshold for tile layout switch.
+ * The image slider range is 0.05–3.0 (step 0.01). A 30% threshold on that range
+ * is 0.05 + 0.30 * (3.0 - 0.05) = 0.935.
+ * Above this => stacked; at or below => text-left.
+ */
+export const TILE_LAYOUT_IMAGE_SIZE_BREAKPOINT = 0.935;
 
 /** @param {number} imageSize rounded panel image size multiplier */
 export function tileLayoutFromImageSize(imageSize) {
@@ -117,7 +121,7 @@ export const DISPLAY_MODE_OPTIONS = [
  * Share of total grid (content + blanks) that should be blank; blanks are added, not converted.
  * Single source for the debug range control in `ControlPanel` and for blank-tile tenth shuffles.
  */
-export const blankTilesPercentRange = { min: 0, max: 60, step: 1, defaultValue: 0 };
+export const blankTilesPercentRange = { min: 0, max: 40, step: 1, defaultValue: 0 };
 
 /**
  * When panel image size (0.01 steps) moves into a new 0.1 "band" (tenth index
@@ -298,177 +302,4 @@ export function intersperseBlankTiles(contentTiles, blankPercent, options = {}) 
     }
   }
   return out;
-}
-
-// —— row flex-fill hook (size mode) ———————————————————————————————————————
-
-const Y_TOLERANCE = 2;
-const RO_DEBOUNCE_MS = 120;
-
-/**
- * @param {HTMLElement} root
- * @param {HTMLElement} li
- */
-function rowYRelativeToStrip(root, li) {
-  const r0 = root.getBoundingClientRect();
-  const r1 = li.getBoundingClientRect();
-  return Math.round(r1.top - r0.top);
-}
-
-/** In DOM order; group by roughly equal vertical position. */
-function groupRowsByY(list, root) {
-  const rowGroups = [];
-  let current = [];
-  let rowY = null;
-  for (const li of list) {
-    const y = rowYRelativeToStrip(root, li);
-    if (rowY == null) {
-      current = [li];
-      rowY = y;
-    } else if (Math.abs(y - rowY) <= Y_TOLERANCE) {
-      current.push(li);
-    } else {
-      rowGroups.push(current);
-      current = [li];
-      rowY = y;
-    }
-  }
-  if (current.length) rowGroups.push(current);
-  return rowGroups;
-}
-
-/**
- * @param {HTMLElement} el
- * @returns {string}
- */
-function liKey(el) {
-  return el?.dataset?.tileKey ?? "";
-}
-
-/**
- * @param {HTMLElement[]} row
- */
-function pickPoolForRow(row) {
-  const noTextLeft = row.filter(
-    (el) => !el.querySelector?.(".asset-tile--text-left"),
-  );
-  return noTextLeft.length > 0 ? noTextLeft : row;
-}
-
-/** Deterministic, no Math.random (avoids layout ↔ observer feedback). */
-function pickStableKeyFromPool(pool, rowSignature) {
-  if (pool.length === 0) return "";
-  let h = 2166136261;
-  for (let i = 0; i < rowSignature.length; i += 1) {
-    h ^= rowSignature.charCodeAt(i);
-    h = Math.imul(h, 16777619);
-  }
-  const idx = Math.abs(h) % pool.length;
-  return liKey(pool[idx]);
-}
-
-function setsEqual(a, b) {
-  if (a.size !== b.size) return false;
-  for (const v of a) {
-    if (!b.has(v)) return false;
-  }
-  return true;
-}
-
-/**
- * Picks one strip item per row to grow (flex), except the last row (no grower there).
- * Stable across ResizeObserver flapping: per-row ref map, deterministic first pick, debounced observer.
- * @param {string} layoutSignature
- * @param {boolean} enabled
- */
-export function useRowFillTileKeys(layoutSignature, enabled) {
-  const stripRef = useRef(null);
-  const fillKeyByRowSigRef = useRef(new Map());
-  const [fillKeySet, setFillKeySet] = useState(() => new Set());
-
-  const recompute = useCallback(() => {
-    if (!enabled) {
-      setFillKeySet((s) => (s.size > 0 ? new Set() : s));
-      return;
-    }
-    const ul = stripRef.current;
-    if (!ul) return;
-
-    const items = Array.from(ul.querySelectorAll(":scope > li"));
-    if (items.length === 0) {
-      setFillKeySet((s) => (s.size > 0 ? new Set() : s));
-      return;
-    }
-
-    const rows = groupRowsByY(items, ul);
-    const currentSignatures = new Set();
-    const map = fillKeyByRowSigRef.current;
-    const next = new Set();
-
-    for (let ri = 0; ri < rows.length; ri += 1) {
-      const row = rows[ri];
-      const rowSig = row.map(liKey).join("\0");
-      currentSignatures.add(rowSig);
-      if (rowSig.length === 0) continue;
-
-      const isLastRow = ri === rows.length - 1;
-      if (isLastRow) {
-        map.delete(rowSig);
-        continue;
-      }
-
-      const pool = pickPoolForRow(row);
-      if (pool.length === 0) continue;
-
-      const prev = map.get(rowSig);
-      let chosen = "";
-      if (prev && pool.some((el) => liKey(el) === prev)) {
-        chosen = prev;
-      } else {
-        chosen = pickStableKeyFromPool(pool, rowSig);
-        if (chosen) map.set(rowSig, chosen);
-      }
-      if (chosen) next.add(chosen);
-    }
-
-    for (const s of map.keys()) {
-      if (!currentSignatures.has(s)) {
-        map.delete(s);
-      }
-    }
-
-    setFillKeySet((prev) => (setsEqual(prev, next) ? prev : next));
-  }, [enabled, layoutSignature]);
-
-  useLayoutEffect(() => {
-    const t = requestAnimationFrame(recompute);
-    return () => cancelAnimationFrame(t);
-  }, [recompute]);
-
-  useLayoutEffect(() => {
-    if (!enabled) {
-      fillKeyByRowSigRef.current.clear();
-    }
-  }, [enabled]);
-
-  useLayoutEffect(() => {
-    if (!enabled) return undefined;
-    const el = stripRef.current;
-    if (!el) return undefined;
-    let timeoutId;
-    const run = () => {
-      clearTimeout(timeoutId);
-      timeoutId = window.setTimeout(() => {
-        recompute();
-      }, RO_DEBOUNCE_MS);
-    };
-    const ro = new ResizeObserver(run);
-    ro.observe(el);
-    return () => {
-      ro.disconnect();
-      clearTimeout(timeoutId);
-    };
-  }, [enabled, recompute]);
-
-  return { stripRef, rowFillKeySet: fillKeySet, rowFillMode: enabled };
 }

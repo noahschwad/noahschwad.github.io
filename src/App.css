@@ -219,6 +219,28 @@
   transition: .2s;
 }
 
+/* JS-simulated flexbox: absolute tiles, gaps handled in layout engine */
+.selected-strip.selected-strip--js-flex {
+  display: block;
+  position: relative;
+  transition: none;
+}
+
+.selected-strip--js-flex > .selected-strip__item {
+  position: absolute;
+  margin: 0;
+  box-sizing: border-box;
+  flex: none !important;
+  min-width: 0;
+  max-width: none !important;
+  overflow: visible;
+}
+
+.selected-strip--js-flex > .selected-strip__item.selected-strip__item--blank-exiting {
+  overflow: hidden;
+  pointer-events: none;
+}
+
 .selected-strip:has(.asset-tile--text-left) {
   row-gap: 1rem;
   column-gap: 1rem;
@@ -258,13 +280,6 @@
   outline-offset: 2px;
 }
 
-/* Size mode: random tiers + one item per row may grow to fill remaining width */
-.selected-strip--row-fill-mode > .selected-strip__item--row-fill {
-  flex: 1 1 calc(16rem * var(--panel-image-size, 1) * var(--tile-size-factor));
-  max-width: 100%;
-  box-sizing: border-box;
-}
-
 /* Text-left tiles: strip item + article width follow content (text + media), not flex basis */
 .selected-strip__item:has(.asset-tile--text-left) {
   flex: 0 0 auto;
@@ -278,16 +293,6 @@
 /* Re-apply: text-left above sets min-width: 0; text blocks still need a width floor. */
 .selected-strip__item:has(.asset-tile--text-left):has(.asset-tile__media[data-kind="text"]) {
   min-width: min(100%, var(--text-tile-min));
-}
-
-/* Row fill + text-left: after base .text-left strip rules, allow grower to keep flex if chosen */
-.selected-strip--row-fill-mode
-  > .selected-strip__item.selected-strip__item--row-fill:has(.asset-tile--text-left) {
-  width: auto;
-  max-width: 100%;
-  flex: 1 1 auto;
-  min-width: 0;
-  overflow: visible;
 }
 
 .asset-tile {

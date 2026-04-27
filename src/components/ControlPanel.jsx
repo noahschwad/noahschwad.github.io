@@ -7,7 +7,7 @@ import {
 
 /** These numbers are exactly `--panel-text-size` / `--panel-image-size` (multipliers). */
 export const textSizeRange = { min: 0.45, max: 5.3, step: 0.01, defaultValue: 1 };
-export const imageSizeRange = { min: 0.05, max: 3, step: 0.01, defaultValue: 1 };
+export const imageSizeRange = { min: 0.25, max: 3, step: 0.01, defaultValue: 1 };
 
 /** Rounds to `imageSizeRange.step` (0.01). */
 export function roundImageSizeStep(n) {
@@ -29,6 +29,8 @@ function DebugPanel({
   onTextSize,
   imageSize,
   onImageSize,
+  onImageSizeGrabStart,
+  onImageSizeGrabEnd,
   blankTilesPercent,
   onBlankTilesPercent,
   displayMode,
@@ -134,6 +136,10 @@ function DebugPanel({
           step={imageSizeRange.step}
           value={imageSize}
           onChange={(e) => onImageSize(roundImageSizeStep(Number(e.target.value)))}
+          onPointerDown={onImageSizeGrabStart}
+          onPointerUp={onImageSizeGrabEnd}
+          onPointerCancel={onImageSizeGrabEnd}
+          onBlur={onImageSizeGrabEnd}
         />
       </div>
     </div>
@@ -156,6 +162,8 @@ export function ControlPanel({
   onSizeMode,
   layoutMode,
   onLayoutMode,
+  onImageSizeGrabStart,
+  onImageSizeGrabEnd,
 }) {
   return (
     <div className="top-chrome">
@@ -169,6 +177,10 @@ export function ControlPanel({
           step={imageSizeRange.step}
           value={imageSize}
           onChange={(e) => onImageSize(roundImageSizeStep(Number(e.target.value)))}
+          onPointerDown={onImageSizeGrabStart}
+          onPointerUp={onImageSizeGrabEnd}
+          onPointerCancel={onImageSizeGrabEnd}
+          onBlur={onImageSizeGrabEnd}
         />
       </div>
       <DebugPanel
@@ -176,6 +188,8 @@ export function ControlPanel({
         onTextSize={onTextSize}
         imageSize={imageSize}
         onImageSize={onImageSize}
+        onImageSizeGrabStart={onImageSizeGrabStart}
+        onImageSizeGrabEnd={onImageSizeGrabEnd}
         blankTilesPercent={blankTilesPercent}
         onBlankTilesPercent={onBlankTilesPercent}
         displayMode={displayMode}

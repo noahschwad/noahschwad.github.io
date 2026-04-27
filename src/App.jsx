@@ -1,4 +1,12 @@
-import { useCallback, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import { useJsFlexStrip } from "./useJsFlexStrip";
 import { AssetTile } from "./components/AssetTile";
 import { ProjectLightbox } from "./components/ProjectLightbox";
 import { SiteFooter } from "./components/SiteFooter";
@@ -16,7 +24,6 @@ import {
   LAYOUT_FLEX_RANDOM,
   LAYOUT_FLEX_START,
   applyImageTenthCrossShuffle,
-  SIZE_MODE_RANDOM_TIERS_ROW_FILL,
   SIZE_MODE_UNIFORM,
   buildChronologicalTiles,
   buildDefaultTiles,
@@ -26,7 +33,6 @@ import {
   intersperseBlankTiles,
   orderTilesWithStripLeads,
   tileLayoutFromImageSize,
-  useRowFillTileKeys,
 } from "./functionality";
 import "./App.css";
 
@@ -42,8 +48,13 @@ export function App() {
     blankTilesPercentRange.defaultValue,
   );
   const [layoutMode, setLayoutMode] = useState(LAYOUT_FLEX_START);
+  const [exitingBlankIds, setExitingBlankIds] = useState([]);
   const [lightbox, setLightbox] = useState(null);
   const lightboxReturnFocusRef = useRef(null);
+  const stripRef = useRef(null);
+  const prevLayoutBlankIdsRef = useRef(new Set());
+  const imageSliderGrabbedRef = useRef(false);
+  const pendingImageTenthShuffleRef = useRef(false);
 
   const resolveTileSizeFactor = useMemo(() => createTileSizeFactorResolver(), []);
 
@@ -52,7 +63,6 @@ export function App() {
     [imageSize],
   );
 
-  const rowFillSizeMode = sizeMode === SIZE_MODE_RANDOM_TIERS_ROW_FILL;
   const stripLeadCount = useMemo(() => countStripLeadTiles(projects), [projects]);
   const tiles = useMemo(() => {
     const ordered =
@@ -66,6 +76,35 @@ export function App() {
       reservedLeadingSlots: stripLeadCount,
     });
   }, [displayMode, blankTilesPercent, stripLeadCount, projects]);
+
+  useLayoutEffect(() => {
+    const cur = new Set(
+      tiles.filter((t) => t.type === "blank").map((t) => t.blankId),
+    );
+    const prev = prevLayoutBlankIdsRef.current;
+    setExitingBlankIds((ids) => {
+      let next = ids.filter((id) => !cur.has(id));
+      for (const id of prev) {
+        if (!cur.has(id) && !next.includes(id)) next = [...next, id];
+      }
+      return next;
+    });
+    prevLayoutBlankIdsRef.current = cur;
+  }, [tiles]);
+
+  const stripTiles = useMemo(() => {
+    const inLayout = new Set(
+      tiles.filter((t) => t.type === "blank").map((t) => t.blankId),
+    );
+    const exiting = exitingBlankIds
+      .filter((id) => !inLayout.has(id))
+      .map((id) => ({ type: "blank", blankId: id, exiting: true }));
+    return [...tiles, ...exiting];
+  }, [tiles, exitingBlankIds]);
+
+  const handleExitingBlankDone = useCallback((blankKey) => {
+    setExitingBlankIds((ids) => ids.filter((id) => id !== blankKey));
+  }, []);
 
   const tileAlignSelfByKey = useMemo(() => {
     if (layoutMode !== LAYOUT_FLEX_RANDOM) return null;
@@ -81,35 +120,82 @@ export function App() {
     return map;
   }, [layoutMode, tiles]);
 
-  const rowFillLayoutKey = useMemo(
-    () =>
-      `${tiles
-        .map((t) =>
-          t.type === "blank" ? t.blankId : `${t.project.id}-${t.asset.id}`,
-        )
-        .join("|")}|${textSize}|${imageSize}|${tileLayout}|${layoutMode}`,
-    [tiles, textSize, imageSize, tileLayout, layoutMode],
+  const tileKeyFn = useCallback(
+    (t) =>
+      t.type === "blank" ? t.blankId : `${t.project.id}-${t.asset.id}`,
+    [],
   );
 
-  const { stripRef, rowFillKeySet, rowFillMode } = useRowFillTileKeys(
-    rowFillLayoutKey,
-    rowFillSizeMode,
+  const tileSizeFactorForKey = useCallback(
+    (key) => resolveTileSizeFactor(sizeMode, key),
+    [resolveTileSizeFactor, sizeMode],
   );
+
+  const { registerTileEl } = useJsFlexStrip({
+    stripRef,
+    tiles: stripTiles,
+    tileKeyFn,
+    imageSize,
+    textSize,
+    tileLayout,
+    sizeMode,
+    tileSizeFactor: tileSizeFactorForKey,
+    alignSelfByKey: tileAlignSelfByKey,
+    onExitingBlankDone: handleExitingBlankDone,
+  });
+
+  const flushPendingImageTenthShuffle = useCallback(() => {
+    if (!pendingImageTenthShuffleRef.current) return;
+    pendingImageTenthShuffleRef.current = false;
+    applyImageTenthCrossShuffle({
+      sizeMode: setSizeMode,
+      layoutMode: setLayoutMode,
+      blankTilesPercent: setBlankTilesPercent,
+      // e.g. displayMode: setDisplayMode,
+    });
+  }, []);
+
+  const handleImageSizeGrabStart = useCallback(() => {
+    imageSliderGrabbedRef.current = true;
+  }, []);
+
+  const handleImageSizeGrabEnd = useCallback(() => {
+    const wasGrabbed = imageSliderGrabbedRef.current;
+    imageSliderGrabbedRef.current = false;
+    if (wasGrabbed || pendingImageTenthShuffleRef.current) {
+      flushPendingImageTenthShuffle();
+    }
+  }, [flushPendingImageTenthShuffle]);
+
+  useEffect(() => {
+    const releaseGrab = () => {
+      if (!imageSliderGrabbedRef.current) return;
+      handleImageSizeGrabEnd();
+    };
+    window.addEventListener("pointerup", releaseGrab);
+    window.addEventListener("pointercancel", releaseGrab);
+    window.addEventListener("mouseup", releaseGrab);
+    window.addEventListener("touchend", releaseGrab);
+    return () => {
+      window.removeEventListener("pointerup", releaseGrab);
+      window.removeEventListener("pointercancel", releaseGrab);
+      window.removeEventListener("mouseup", releaseGrab);
+      window.removeEventListener("touchend", releaseGrab);
+    };
+  }, [handleImageSizeGrabEnd]);
 
   const handleImageSize = useCallback((raw) => {
     const next = roundImageSizeStep(raw);
     const t = imageSizeTenthIndex(next);
     if (imageTenthIndexRef.current !== t) {
-      applyImageTenthCrossShuffle({
-        sizeMode: setSizeMode,
-        layoutMode: setLayoutMode,
-        blankTilesPercent: setBlankTilesPercent,
-        // e.g. displayMode: setDisplayMode,
-      });
+      pendingImageTenthShuffleRef.current = true;
+      if (!imageSliderGrabbedRef.current) {
+        flushPendingImageTenthShuffle();
+      }
     }
     imageTenthIndexRef.current = t;
     setImageSize(next);
-  }, []);
+  }, [flushPendingImageTenthShuffle]);
 
   return (
     <div
@@ -132,32 +218,29 @@ export function App() {
         onSizeMode={setSizeMode}
         layoutMode={layoutMode}
         onLayoutMode={setLayoutMode}
+        onImageSizeGrabStart={handleImageSizeGrabStart}
+        onImageSizeGrabEnd={handleImageSizeGrabEnd}
       />
       <main id="main" className="app">
         <SiteIntro project={projects.find((p) => p.staticSiteIntro)} />
         <ul
-          className={
-            rowFillMode
-              ? "selected-strip selected-strip--row-fill-mode"
-              : "selected-strip"
-          }
+          className="selected-strip selected-strip--js-flex"
           aria-label="Selected work"
           ref={stripRef}
         >
-          {tiles.map((tile) => {
+          {stripTiles.map((tile) => {
             const tileKey =
               tile.type === "blank"
                 ? tile.blankId
                 : `${tile.project.id}-${tile.asset.id}`;
             const factor = resolveTileSizeFactor(sizeMode, tileKey);
-            const alignSelf = tileAlignSelfByKey?.get(tileKey);
             const openLightbox =
               tile.type === "asset" && tile.asset?.kind !== "text";
             const itemClasses = [
               "selected-strip__item",
               openLightbox ? "selected-strip__item--interactive" : "",
-              rowFillKeySet.has(tileKey) && rowFillMode
-                ? "selected-strip__item--row-fill"
+              tile.type === "blank" && tile.exiting
+                ? "selected-strip__item--blank-exiting"
                 : "",
             ]
               .filter(Boolean)
@@ -167,9 +250,9 @@ export function App() {
                 key={tileKey}
                 data-tile-key={tileKey}
                 className={itemClasses}
+                ref={(el) => registerTileEl(tileKey, el)}
                 style={{
                   "--tile-size-factor": String(factor),
-                  ...(alignSelf ? { alignSelf } : {}),
                 }}
                 {...(openLightbox
                   ? {
