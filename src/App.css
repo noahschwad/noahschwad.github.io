@@ -1,33 +1,76 @@
 .app-root {
   --panel-text-size: 1;
   --panel-image-size: 1;
-  --control-panel-h: 4.75rem;
+  --control-panel-scale: 0.5;
+  /* Slider row (main control) + former control strip (debug) */
+  --control-bar-h: calc(1.1rem * var(--control-panel-scale) + 1.35rem);
+  --debug-panel-h: calc(4.75rem * var(--control-panel-scale));
+  --control-panel-h: calc(var(--control-bar-h) + var(--debug-panel-h));
 }
 
-.control-panel {
+.top-chrome {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   z-index: 50;
   display: flex;
-  flex-direction: row;
-  flex-wrap: nowrap;
-  align-items: flex-end;
-  gap: clamp(1rem, 3vw, 2rem);
-  min-height: var(--control-panel-h);
-  padding: 0.65rem var(--space) 0.75rem;
+  flex-direction: column;
+  align-items: stretch;
+  width: 100%;
+  background: var(--bg);
+  box-sizing: border-box;
+}
+
+.control-bar {
+  flex: 0 0 auto;
+  width: 100%;
+  box-sizing: border-box;
+  padding: calc(0.45rem * var(--control-panel-scale))
+    calc(var(--space) * var(--control-panel-scale));
+  min-height: var(--control-bar-h);
+  display: flex;
+  align-items: center;
   border-bottom: 1px solid var(--border);
   background: var(--bg);
+}
+
+.control-bar__input {
+  display: block;
+  width: 100%;
+  margin: 0;
+  accent-color: var(--accent);
+  box-sizing: border-box;
+  cursor: pointer;
+}
+
+/* Former “control panel”: layout / size / text / image (debug) */
+.debug-panel {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: clamp(
+    calc(1rem * var(--control-panel-scale)),
+    calc(3vw * var(--control-panel-scale)),
+    calc(2rem * var(--control-panel-scale))
+  );
+  min-height: var(--debug-panel-h);
+  padding: calc(0.65rem * var(--control-panel-scale))
+    calc(var(--space) * var(--control-panel-scale))
+    calc(0.75rem * var(--control-panel-scale));
+  background: var(--bg);
+  font-size: calc(1rem * var(--control-panel-scale));
+  border-bottom: 1px solid var(--border);
 }
 
 .control {
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  gap: 0.35rem;
-  flex: 0 1 12rem;
-  min-width: 8.5rem;
+  gap: calc(0.35rem * var(--control-panel-scale));
+  flex: 0 1 calc(12rem * var(--control-panel-scale));
+  min-width: calc(8.5rem * var(--control-panel-scale));
 }
 
 .control__label {
@@ -40,68 +83,389 @@
   accent-color: var(--accent);
 }
 
+.control--order,
+.control--size-mode,
+.control--layout,
+.control--tile-layout {
+  flex: 0 1 calc(14rem * var(--control-panel-scale));
+  min-width: calc(10rem * var(--control-panel-scale));
+}
+
+.control__select {
+  font: inherit;
+  padding: calc(0.35rem * var(--control-panel-scale))
+    calc(0.5rem * var(--control-panel-scale));
+  color: inherit;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: calc(0.25rem * var(--control-panel-scale));
+  cursor: pointer;
+}
+
 .app {
   min-height: 100dvh;
   padding: var(--space);
-  padding-top: calc(var(--control-panel-h) + var(--space) + 0.35rem);
+  padding-top: calc(
+    var(--control-panel-h) + var(--space) +
+      calc(0.35rem * var(--control-panel-scale))
+  );
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+/* Static site intro: not affected by --panel-text-size / strip layout. */
+.site-intro {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  margin-bottom: calc(1.5rem + 0.5 * var(--space, 1rem));
+  color: var(--fg);
+  font-size: 0.875rem;
+  line-height: 1.45;
+}
+
+.site-intro a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 0.1em;
+}
+
+.site-intro__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  column-gap: var(--space);
+  row-gap: 1.25rem;
+  align-items: start;
+}
+
+.site-intro__bio {
+  grid-column: 1 / -1;
+  margin: 0;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.site-intro__bio--large {
+  font-size: max(1.2rem, 2vw);
+  line-height: 1.2;
+  margin-top: -0.15em;
+}
+
+.site-intro__blurb {
+  min-width: 0;
+}
+
+.site-intro__blurb--rec {
+  grid-column: 1;
+}
+
+.site-intro__blurb--contact {
+  grid-column: 2;
+}
+
+.site-intro__blurb-inner {
+  margin: 0;
+}
+
+@media (max-width: 50em) {
+  .site-intro__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .site-intro__blurb--rec,
+  .site-intro__blurb--contact {
+    grid-column: 1;
+  }
+}
+
+/* Static footer: full-width row below the work strip; not affected by panel controls. */
+.site-footer {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  margin-top: auto;
+  padding-top: var(--space);
+  color: var(--fg);
+  font-size: 0.75rem;
+  line-height: 1.55;
+  max-width: 400px;
+}
+
+.site-footer__inner {
+  margin: 0;
+  min-width: 0;
+}
+
+.site-footer a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 0.1em;
 }
 
 .selected-strip {
   list-style: none;
   margin: 0;
   padding: 0;
+  /* Keep wrapping width stable whether scrollbar is visible or not. */
+  width: calc(100vw - (2 * var(--space)));
+  max-width: calc(100vw - (2 * var(--space)));
   display: flex;
   flex-direction: row;
   flex-wrap: wrap;
-  gap: clamp(1rem, 2.5vw, 1.75rem);
+  column-gap: .3rem;
+  row-gap: 1rem;
   align-items: flex-start;
+  transition: .2s;
+}
+
+.selected-strip:has(.asset-tile--text-left) {
+  row-gap: 1rem;
+  column-gap: 1rem;
 }
 
 .selected-strip__item {
-  flex: 1 1 calc(16rem * var(--panel-image-size, 1));
-  min-width: min(100%, calc(14rem * var(--panel-image-size, 1)));
-  max-width: calc(26rem * var(--panel-image-size, 1));
+  --tile-size-factor: 1;
+  /* Floor width for text tiles; same basis as .asset-tile; tracks --panel-text-size. */
+  --text-tile-min-base: calc(30 * 0.75rem * var(--panel-text-size, 1));
+  /* Matches body copy scale: 1em default, 1.5× with .asset-tile__text-block--large */
+  --text-tile-min: var(--text-tile-min-base);
+  flex: 0 1 calc(16rem * var(--panel-image-size, 1) * var(--tile-size-factor));
+  min-width: 0;
+  max-width: calc(26rem * var(--panel-image-size, 1) * var(--tile-size-factor));
+}
+
+.selected-strip__item:has(.asset-tile__text-block--large) {
+  --text-tile-min: calc(var(--text-tile-min-base) * 1.5);
+}
+
+/* Stacked text tiles only: cap strip item width. Text-left layout: width is meta|media; don’t cap here (was clipping with overflow: hidden on the li). */
+.selected-strip__item:has(.asset-tile__media[data-kind="text"]):not(
+    :has(.asset-tile--text-left)
+  ) {
+  min-width: min(100%, var(--text-tile-min));
+  max-width: min(100%, var(--text-tile-min));
+  box-sizing: border-box;
+  padding-right: 0.8em;
+}
+
+.selected-strip__item--interactive {
+  cursor: pointer;
+}
+
+.selected-strip__item--interactive:focus-visible {
+  outline: 2px solid var(--accent, currentColor);
+  outline-offset: 2px;
+}
+
+/* Size mode: random tiers + one item per row may grow to fill remaining width */
+.selected-strip--row-fill-mode > .selected-strip__item--row-fill {
+  flex: 1 1 calc(16rem * var(--panel-image-size, 1) * var(--tile-size-factor));
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* Text-left tiles: strip item + article width follow content (text + media), not flex basis */
+.selected-strip__item:has(.asset-tile--text-left) {
+  flex: 0 0 auto;
+  width: fit-content;
+  max-width: 100%;
+  min-width: 0;
+  overflow: visible;
+  box-sizing: border-box;
+}
+
+/* Re-apply: text-left above sets min-width: 0; text blocks still need a width floor. */
+.selected-strip__item:has(.asset-tile--text-left):has(.asset-tile__media[data-kind="text"]) {
+  min-width: min(100%, var(--text-tile-min));
+}
+
+/* Row fill + text-left: after base .text-left strip rules, allow grower to keep flex if chosen */
+.selected-strip--row-fill-mode
+  > .selected-strip__item.selected-strip__item--row-fill:has(.asset-tile--text-left) {
+  width: auto;
+  max-width: 100%;
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: visible;
 }
 
 .asset-tile {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0.3rem;
+  font-size: calc(.75rem * var(--panel-text-size, 1));
+  line-height: .96
+}
+
+/* DOM order is meta then media (stable Mux mount); pull media above copy in stacked column layout. */
+.asset-tile:not(.asset-tile--text-left) .asset-tile__media {
+  order: -1;
+}
+
+.asset-tile--text-left {
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 0.3rem;
+  width: fit-content;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.asset-tile--text-left .asset-tile__meta {
+  flex: 0 0 auto;
+  align-items: flex-end;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.asset-tile--text-left .asset-tile__title,
+.asset-tile--text-left .asset-tile__sub {
+  width: fit-content;
+  max-width: 100%;
+}
+
+/* Media height: Image size slider × size mode; overflow visible so object-fit:contain isn’t clipped by a hidden box */
+.asset-tile--text-left .asset-tile__media {
+  flex: 0 0 auto;
+  box-sizing: border-box;
+  height: calc(10rem * var(--panel-image-size, 1) * var(--tile-size-factor, 1));
+  width: auto;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  overflow: visible;
+}
+
+.asset-tile--text-left .asset-tile__img,
+.asset-tile--text-left .asset-tile__video,
+.asset-tile--text-left .asset-tile__mux-wrap {
+  width: auto;
   height: 100%;
-  font-size: calc(1rem * var(--panel-text-size, 1));
+  max-height: 100%;
+  flex-shrink: 0;
+  object-fit: contain;
+}
+
+.asset-tile--text-left .asset-tile__placeholder {
+  height: 100%;
+  min-height: 0;
+  box-sizing: border-box;
+}
+
+.asset-tile ::selection {
+  background-color: rgb(var(--tile-sel-r) var(--tile-sel-g) var(--tile-sel-b));
+  color: rgb(var(--tile-sel-fg) var(--tile-sel-fg) var(--tile-sel-fg));
 }
 
 .asset-tile__media {
-  border-radius: 0.5rem;
-  border: 1px solid var(--border);
   overflow: hidden;
-  background: #f5f5f5;
-  aspect-ratio: 3 / 2;
+}
+
+/* Text tiles: height follows copy (no min/max; overrides base overflow hidden). Width floor is on .selected-strip__item. */
+.asset-tile__media[data-kind="text"] {
+  display: block;
+  overflow: visible;
+  height: auto;
+  min-height: 0;
+  max-height: none;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+/* textLarge: 1.5em of .asset-tile; not large: 1em (see projects.js) */
+.asset-tile__text-block {
+  margin: 0;
+  width: 100%;
+  /* padding: 0.5rem 0.4rem; */
+  padding: 0 0 0.5em 0;
+  box-sizing: border-box;
+  line-height: 1.35;
+  text-align: left;
+  white-space: normal;
+  font-size: 1em;
+  margin-top: 0;
+}
+
+.asset-tile__text-block--large {
+  font-size: 1.5em;
+  margin-top: -0.27em;
+}
+
+.asset-tile__text-block a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 0.12em;
+}
+
+/* Text in the media column when layout is text-left: width as before; height from copy (overrides image column flex+fixed height) */
+.asset-tile--text-left .asset-tile__media[data-kind="text"] {
+  display: block;
+  width: min(100%, 22rem);
+  min-width: 0;
+  height: auto;
+  min-height: 0;
+  max-height: none;
+}
+
+.asset-tile--text-left .asset-tile__text-block {
+  height: auto;
+  max-height: none;
+  overflow: visible;
+}
+
+.asset-tile--blank .asset-tile__media {
+  min-height: 8rem;
+  aspect-ratio: 4 / 3;
 }
 
 .asset-tile__img,
-.asset-tile__video {
+.asset-tile__video,
+.asset-tile__mux-wrap {
   display: block;
   width: 100%;
+  height: auto;
+  outline: none;
+}
+
+/* Wrapper when strip video defers to intersection observer (native video + hls.js). */
+.asset-tile__mux-wrap {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+}
+
+/* Reserve space for deferred strip video so the strip does not height-collapse before mount. */
+.asset-tile__mux-standin {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: rgb(0 0 0 / 0.12);
+}
+
+.asset-tile--text-left .asset-tile__mux-standin {
+  width: auto;
   height: 100%;
-  object-fit: cover;
+  flex: 1 1 auto;
+  min-width: 10rem;
+  background: rgb(0 0 0 / 0.12);
 }
 
 .asset-tile__placeholder {
-  height: 100%;
+  min-height: 8rem;
   display: grid;
   place-items: center;
   padding: 1.25rem;
   text-align: center;
-  border: 1px dashed var(--border);
-  margin: 0.5rem;
-  border-radius: 0.25rem;
 }
 
 .asset-tile__meta {
   display: flex;
   flex-direction: column;
   gap: 0.15rem;
+  padding-bottom: .5em;
 }
 
 .asset-tile__title {
@@ -110,8 +474,279 @@
 
 .asset-tile__sub {
   margin: 0;
+  color: #aaa;
 }
 
 .asset-tile__dot {
   margin-inline: 0.2rem;
+}
+
+/* —— project lightbox / carousel —— */
+.lightbox {
+  --lightbox-media-inset: 20vw;
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  pointer-events: none;
+  box-sizing: border-box;
+}
+
+.lightbox * {
+  box-sizing: border-box;
+}
+
+.lightbox__scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: auto;
+  cursor: zoom-out;
+  background: rgb(0 0 0 / 0.2);
+  backdrop-filter: blur(0);
+  -webkit-backdrop-filter: blur(0);
+  opacity: 0;
+  /* Match .lightbox__body --lightbox-fade (open/close) */
+  transition:
+    opacity 0.4s ease,
+    backdrop-filter 0.4s ease,
+    -webkit-backdrop-filter 0.4s ease;
+}
+
+.lightbox--entering .lightbox__scrim,
+.lightbox--has-carousel .lightbox__scrim {
+  opacity: 1;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+.lightbox--leaving .lightbox__scrim {
+  opacity: 0 !important;
+  backdrop-filter: blur(0) !important;
+  -webkit-backdrop-filter: blur(0) !important;
+}
+
+.lightbox--leaving .lightbox__body {
+  opacity: 0;
+}
+
+.lightbox__body {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  max-height: 100%;
+  /* padding-bottom: 4.5rem; */
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.4s ease;
+}
+
+.lightbox--has-carousel .lightbox__body {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.lightbox__carousel {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+  touch-action: pan-x;
+}
+
+/* Horizontal row: transform translateX centers the active slide. */
+.lightbox__track {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  height: 100%;
+  min-height: 0;
+  width: max-content;
+  max-width: none;
+  box-sizing: border-box;
+  will-change: transform;
+  touch-action: none;
+  user-select: none;
+  cursor: grab;
+}
+
+.lightbox__track--drag {
+  transition: none !important;
+  cursor: grabbing;
+}
+
+.lightbox__slide {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* Measured for translate; intrinsic + cap, not 100%↔circular with children. */
+  width: max-content;
+  max-width: min(100%, calc(100vw - var(--lightbox-media-inset)));
+  height: 100%;
+  min-height: 0;
+  min-width: auto;
+  box-sizing: border-box;
+  /* Match track so drags on img/mux are not taken over by the browser. */
+  touch-action: none;
+}
+
+.lightbox__slideCell {
+  /* Hard-bounded “stage” so media never extends past the viewport insets. */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* Match slide width: inherit intrinsic size, cap to slide’s max-width. */
+  width: max-content;
+  max-width: 100%;
+  /* height: 100% stretched the stage and broke %/max-height for tall (portrait) video */
+  height: auto;
+  max-height: calc(100dvh - var(--lightbox-media-inset));
+  min-width: 0;
+  min-height: 0;
+  box-sizing: border-box;
+  overflow: visible;
+}
+
+.lightbox__inner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* Sizing from media; avoid height:100% so portrait video isn’t clipped vs max-height. */
+  width: max-content;
+  max-width: 100%;
+  height: auto;
+  max-height: calc(100dvh - var(--lightbox-media-inset));
+  min-width: 0;
+  min-height: 0;
+  box-sizing: border-box;
+  margin: 0;
+  transition: opacity 0.45s ease;
+  overflow: visible;
+}
+
+.lightbox__inner--pre {
+  opacity: 0;
+}
+
+.lightbox__inner--visible {
+  opacity: 1;
+}
+
+/* Opened-asset slide: no reveal fade; avoids a second flash when the carousel
+   first paints or when other slides’ media load. */
+.lightbox__inner--opener {
+  opacity: 1;
+  transition: none;
+}
+
+.lightbox__media {
+  display: block;
+  flex: 0 0 auto;
+  min-width: 0;
+  min-height: 0;
+  /* Viewport caps so height-limited media isn’t tied to a cyclic % parent. */
+  max-width: calc(100vw - var(--lightbox-media-inset));
+  max-height: calc(100dvh - var(--lightbox-media-inset));
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  object-position: center;
+  touch-action: none;
+}
+
+p.lightbox__text.lightbox__media {
+  object-fit: unset;
+  object-position: unset;
+  margin: 0;
+  text-align: left;
+  line-height: 1.5;
+  font-size: calc(0.75rem * var(--panel-text-size, 1));
+  width: 100%;
+  max-width: min(40rem, calc(100vw - var(--lightbox-media-inset)));
+  padding: 0.5rem 0.75rem 1rem;
+  box-sizing: border-box;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  touch-action: auto;
+  cursor: text;
+}
+
+p.lightbox__text.lightbox__text--large.lightbox__media {
+  font-size: calc(0.75rem * var(--panel-text-size, 1) * 1.5);
+}
+
+p.lightbox__text.lightbox__media a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 0.12em;
+}
+
+/* Mux: shadow video uses contain; host uses same viewport caps as <video>. */
+.lightbox__inner mux-player.lightbox__media {
+  --controls: none;
+  --media-object-fit: contain;
+  --media-object-position: center;
+  --media-background-color: transparent;
+  display: block;
+  flex: 0 0 auto;
+  min-width: 0;
+  min-height: 0;
+  max-width: calc(100vw - var(--lightbox-media-inset));
+  max-height: calc(100dvh - var(--lightbox-media-inset));
+  width: auto;
+  height: auto;
+}
+
+/*
+ * mux-video’s shadow sets video { min-width/min-height: 100% }, which forces the
+ * <video> box to fill the media slot and breaks height-limited (portrait) layout.
+ * mux-player forwards ::part(video) — reset mins and cap with viewport units.
+ */
+.lightbox__inner mux-player.lightbox__media::part(video) {
+  min-width: 0 !important;
+  min-height: 0 !important;
+  max-width: calc(100vw - var(--lightbox-media-inset)) !important;
+  max-height: calc(100dvh - var(--lightbox-media-inset)) !important;
+  width: auto !important;
+  height: auto !important;
+  object-fit: contain !important;
+  object-position: center !important;
+}
+
+/* Keep the media slot from exceeding the lightbox stage (documented part). */
+.lightbox__inner mux-player.lightbox__media::part(media-layer) {
+  max-width: calc(100vw - var(--lightbox-media-inset));
+  max-height: calc(100dvh - var(--lightbox-media-inset));
+  box-sizing: border-box;
+}
+
+.lightbox__bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 3;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1.25rem;
+  pointer-events: auto;
+  background: linear-gradient(transparent, rgb(0 0 0 / 0.25));
+}
+
+.lightbox__btn {
+  font: inherit;
+  font-size: 0.9rem;
+  padding: 0.4rem 0.85rem;
+  cursor: pointer;
+  color: #fff;
+  text-shadow: 0 0 0.3rem #000;
+  background: transparent;
+  border: 1px solid rgb(255 255 255 / 0.4);
+  border-radius: 0.25rem;
 }

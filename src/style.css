@@ -16,6 +16,8 @@
 
 html {
   scroll-behavior: smooth;
+  /* Avoid layout shift when scrollbars appear/disappear (e.g. body overflow lock). */
+  scrollbar-gutter: stable;
 }
 
 body {
