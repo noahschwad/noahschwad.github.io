@@ -5,7 +5,7 @@
   /* Slider row (main control) + former control strip (debug) */
   --control-bar-h: calc(1.1rem * var(--control-panel-scale) + 1.35rem);
   --debug-panel-h: calc(4.75rem * var(--control-panel-scale));
-  --control-panel-h: calc(var(--control-bar-h) + var(--debug-panel-h));
+  --control-panel-h: 64px;
 }
 
 .top-chrome {
@@ -26,22 +26,20 @@
   flex: 0 0 auto;
   width: 100%;
   box-sizing: border-box;
-  padding: calc(0.45rem * var(--control-panel-scale))
-    calc(var(--space) * var(--control-panel-scale));
+  padding: calc(var(--space) * 0.75) var(--space);
   min-height: var(--control-bar-h);
   display: flex;
   align-items: center;
-  border-bottom: 1px solid var(--border);
-  background: var(--bg);
 }
 
+/* Main (top) image size slider: use UA track/thumb colors (not `--accent`). */
 .control-bar__input {
   display: block;
   width: 100%;
+  max-width: 100%;
   margin: 0;
-  accent-color: var(--accent);
   box-sizing: border-box;
-  cursor: pointer;
+  accent-color: auto;
 }
 
 /* Former “control panel”: layout / size / text / image (debug) */
@@ -105,10 +103,7 @@
 .app {
   min-height: 100dvh;
   padding: var(--space);
-  padding-top: calc(
-    var(--control-panel-h) + var(--space) +
-      calc(0.35rem * var(--control-panel-scale))
-  );
+  padding-top: var(--control-panel-h);
   display: flex;
   flex-direction: column;
   align-items: stretch;
@@ -426,6 +421,13 @@
   aspect-ratio: 4 / 3;
 }
 
+/* In text-left strip, mirror image tiles: 10rem×image×size-mode height (not stacked 8rem+4/3). */
+.asset-tile--text-left.asset-tile--blank .asset-tile__media {
+  min-height: 0;
+  aspect-ratio: 4 / 3;
+  width: auto;
+}
+
 .asset-tile__img,
 .asset-tile__video,
 .asset-tile__mux-wrap {
@@ -689,43 +691,10 @@ p.lightbox__text.lightbox__media a {
   text-underline-offset: 0.12em;
 }
 
-/* Mux: shadow video uses contain; host uses same viewport caps as <video>. */
-.lightbox__inner mux-player.lightbox__media {
-  --controls: none;
-  --media-object-fit: contain;
-  --media-object-position: center;
-  --media-background-color: transparent;
-  display: block;
-  flex: 0 0 auto;
-  min-width: 0;
-  min-height: 0;
-  max-width: calc(100vw - var(--lightbox-media-inset));
-  max-height: calc(100dvh - var(--lightbox-media-inset));
-  width: auto;
-  height: auto;
-}
-
-/*
- * mux-video’s shadow sets video { min-width/min-height: 100% }, which forces the
- * <video> box to fill the media slot and breaks height-limited (portrait) layout.
- * mux-player forwards ::part(video) — reset mins and cap with viewport units.
- */
-.lightbox__inner mux-player.lightbox__media::part(video) {
-  min-width: 0 !important;
-  min-height: 0 !important;
-  max-width: calc(100vw - var(--lightbox-media-inset)) !important;
-  max-height: calc(100dvh - var(--lightbox-media-inset)) !important;
-  width: auto !important;
-  height: auto !important;
-  object-fit: contain !important;
-  object-position: center !important;
-}
-
-/* Keep the media slot from exceeding the lightbox stage (documented part). */
-.lightbox__inner mux-player.lightbox__media::part(media-layer) {
-  max-width: calc(100vw - var(--lightbox-media-inset));
-  max-height: calc(100dvh - var(--lightbox-media-inset));
-  box-sizing: border-box;
+/* Mux: native <video> — same caps as .lightbox__media for portrait/landscape. */
+.lightbox__inner video.lightbox__media {
+  object-fit: contain;
+  object-position: center;
 }
 
 .lightbox__bar {

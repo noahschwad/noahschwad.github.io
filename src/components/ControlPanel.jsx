@@ -5,13 +5,24 @@ import {
   blankTilesPercentRange,
 } from "../functionality";
 
+/** `false` hides the lower debug controls (order, modes, blank tiles, text/image debug sliders). The top image size bar stays. */
+export const SHOW_DEBUG_PANEL = false;
+
 /** These numbers are exactly `--panel-text-size` / `--panel-image-size` (multipliers). */
 export const textSizeRange = { min: 0.45, max: 5.3, step: 0.01, defaultValue: 1 };
 export const imageSizeRange = { min: 0.25, max: 3, step: 0.01, defaultValue: 1 };
 
-/** Rounds to `imageSizeRange.step` (0.01). */
+/** Top control bar only: one tenth of `imageSizeRange.step` (finer drag). */
+export const imageSizeMainBarStep = imageSizeRange.step / 10;
+
+/** Rounds to `imageSizeRange.step` (0.01). Debug panel + any 0.01-grid use. */
 export function roundImageSizeStep(n) {
   return Math.round(n / imageSizeRange.step) * imageSizeRange.step;
+}
+
+/** Rounds to `imageSizeMainBarStep` (0.001). Main image size slider only. */
+export function roundImageSizeMainBarStep(n) {
+  return Math.round(n / imageSizeMainBarStep) * imageSizeMainBarStep;
 }
 
 /**
@@ -28,10 +39,9 @@ function DebugPanel({
   textSize,
   onTextSize,
   imageSize,
-  onImageSize,
-  onImageSizeGrabStart,
-  onImageSizeGrabEnd,
+  onDebugImageSize,
   blankTilesPercent,
+  blankTilesPercentMax,
   onBlankTilesPercent,
   displayMode,
   onDisplayMode,
@@ -95,14 +105,14 @@ function DebugPanel({
       </div>
       <div className="control">
         <label className="control__label" htmlFor="control-blank-tiles">
-          Blank tiles ({blankTilesPercent}% of grid)
+          Blank tiles ({blankTilesPercent}% of grid, max {blankTilesPercentMax.toFixed(0)}% at this image size)
         </label>
         <input
           id="control-blank-tiles"
           className="control__input"
           type="range"
           min={blankTilesPercentRange.min}
-          max={blankTilesPercentRange.max}
+          max={blankTilesPercentMax}
           step={blankTilesPercentRange.step}
           value={blankTilesPercent}
           onChange={(e) => onBlankTilesPercent(Number(e.target.value))}
@@ -135,11 +145,9 @@ function DebugPanel({
           max={imageSizeRange.max}
           step={imageSizeRange.step}
           value={imageSize}
-          onChange={(e) => onImageSize(roundImageSizeStep(Number(e.target.value)))}
-          onPointerDown={onImageSizeGrabStart}
-          onPointerUp={onImageSizeGrabEnd}
-          onPointerCancel={onImageSizeGrabEnd}
-          onBlur={onImageSizeGrabEnd}
+          onChange={(e) =>
+            onDebugImageSize(roundImageSizeStep(Number(e.target.value)))
+          }
         />
       </div>
     </div>
@@ -154,7 +162,9 @@ export function ControlPanel({
   onTextSize,
   imageSize,
   onImageSize,
+  onDebugImageSize,
   blankTilesPercent,
+  blankTilesPercentMax = blankTilesPercentRange.max,
   onBlankTilesPercent,
   displayMode,
   onDisplayMode,
@@ -174,31 +184,32 @@ export function ControlPanel({
           aria-label="Image size"
           min={imageSizeRange.min}
           max={imageSizeRange.max}
-          step={imageSizeRange.step}
+          step={imageSizeMainBarStep}
           value={imageSize}
-          onChange={(e) => onImageSize(roundImageSizeStep(Number(e.target.value)))}
+          onChange={(e) => onImageSize(Number(e.target.value))}
           onPointerDown={onImageSizeGrabStart}
           onPointerUp={onImageSizeGrabEnd}
           onPointerCancel={onImageSizeGrabEnd}
           onBlur={onImageSizeGrabEnd}
         />
       </div>
-      <DebugPanel
-        textSize={textSize}
-        onTextSize={onTextSize}
-        imageSize={imageSize}
-        onImageSize={onImageSize}
-        onImageSizeGrabStart={onImageSizeGrabStart}
-        onImageSizeGrabEnd={onImageSizeGrabEnd}
-        blankTilesPercent={blankTilesPercent}
-        onBlankTilesPercent={onBlankTilesPercent}
-        displayMode={displayMode}
-        onDisplayMode={onDisplayMode}
-        sizeMode={sizeMode}
-        onSizeMode={onSizeMode}
-        layoutMode={layoutMode}
-        onLayoutMode={onLayoutMode}
-      />
+      {SHOW_DEBUG_PANEL ? (
+        <DebugPanel
+          textSize={textSize}
+          onTextSize={onTextSize}
+          imageSize={imageSize}
+          onDebugImageSize={onDebugImageSize}
+          blankTilesPercent={blankTilesPercent}
+          blankTilesPercentMax={blankTilesPercentMax}
+          onBlankTilesPercent={onBlankTilesPercent}
+          displayMode={displayMode}
+          onDisplayMode={onDisplayMode}
+          sizeMode={sizeMode}
+          onSizeMode={onSizeMode}
+          layoutMode={layoutMode}
+          onLayoutMode={onLayoutMode}
+        />
+      ) : null}
     </div>
   );
 }

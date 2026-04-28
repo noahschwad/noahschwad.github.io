@@ -18,5 +18,5 @@ for (const link of document.querySelectorAll(
 const rootEl = document.getElementById("root");
 if (!rootEl) throw new Error('Missing root element with id "root"');
 
-/* No <StrictMode>: in dev it remounts the tree once, which tears down strip mux-players and restarts every loop. */
+/* No <StrictMode>: in dev it remounts the tree once, which tears down strip mux <video> and restarts every loop. */
 createRoot(rootEl).render(<App />);

@@ -7,7 +7,9 @@ import {
   useState,
 } from "react";
 import {
+  MIN_STRIP_TILE_PX,
   SIZE_MODE_RANDOM_TIERS_ROW_FILL,
+  stripTileBumpBasisRem,
   TILE_LAYOUT_TEXT_LEFT,
 } from "./functionality";
 import {
@@ -32,8 +34,11 @@ const STRIP_CONTAINER_FLEX = {
   alignContent: ALIGN_CONTENT_STRETCH,
 };
 
-const LERP = 0.12;
+const LERP = 0.15;
 const SNAP = 0.45;
+/** Max update rate for strip position/size lerp (avoids 120+ tick/s on ProMotion / high-refresh). */
+const STRIP_ANIMATION_MAX_FPS = 60;
+const STRIP_ANIMATION_MIN_FRAME_MS = 1000 / STRIP_ANIMATION_MAX_FPS;
 
 /**
  * @param {string} key
@@ -163,6 +168,28 @@ function measureTextLeftMainSize(stripItemEl, cap) {
 }
 
 /**
+ * `--tile-size-factor` on the strip item is set from React from
+ * `getEffectiveFactor(…)`. Resolver mutations do not re-render, so the inline
+ * style can lag. Keep the var in sync when we read a factor or position tiles.
+ * @param {HTMLElement} stripItemEl
+ * @param {number} factor
+ */
+function syncStripItemTileSizeFactor(stripItemEl, factor) {
+  stripItemEl.style.setProperty("--tile-size-factor", String(factor));
+}
+
+/**
+ * Stacked blank: `16*rem*imageSize*factor` flex basis. Text-left blanks + image/video/mux: media
+ * height is `10*rem*imageSize*factor` — also bumps. Text-left without `el` still uses 16* for the
+ * fallback row basis. Stacked and text-left **text** copy tiles: no `factor`–driven media box to enforce.
+ */
+function tileUsesSizeModeForStripBumps(tile, el, tileLayout) {
+  if (tile.type === "blank") return true;
+  if (tile.type === "asset" && tile.asset?.kind === "text") return false;
+  return true;
+}
+
+/**
  * Recompute row `y` / target heights from real `offsetHeight` at resolved widths.
  * Fixes under-estimated line cross sizes when `height: auto` content is taller than
  * the pre-layout intrinsic measure (e.g. random tier widths changing text wrap).
@@ -251,7 +278,7 @@ function reflowStripRowsByActualHeights(
  * @param {number} params.textSize
  * @param {string} params.tileLayout
  * @param {string} params.sizeMode
- * @param {(key: string) => number} params.tileSizeFactor
+ * @param {import("./functionality").TileSizeResolver} params.tileSizeApi
  * @param {Map<string, string>|null} params.alignSelfByKey layout-random align-self
  * @param {(blankId: string) => void} [params.onExitingBlankDone]
  */
@@ -263,7 +290,7 @@ export function useJsFlexStrip({
   textSize,
   tileLayout,
   sizeMode,
-  tileSizeFactor,
+  tileSizeApi,
   alignSelfByKey,
   onExitingBlankDone,
 }) {
@@ -271,15 +298,37 @@ export function useJsFlexStrip({
   const currentRef = useRef(new Map());
   const rafRef = useRef(0);
   const fillKeyByRowSigRef = useRef(new Map());
-  const tileKeysSigRef = useRef("");
+  const tileKeySetSigRef = useRef("");
   const lastLayoutRectRef = useRef(new Map());
   const exitNotifiedRef = useRef(new Set());
   const onExitingBlankDoneRef = useRef(onExitingBlankDone);
+  /**
+   * While a layout rAF lerp is running, each tile’s `li` and media are resized every frame. That
+   * triggers per-tile ResizeObserver → setMeasureTick → this effect re-runs, cancels the pending
+   * lerp, and redoes the full O(n) pass—felt as jank and “infinite” animation, worse with more
+   * blank tiles (both w+h lerp for layoutBlank). We ignore bumps while lerping, then one tick.
+   */
+  const inRafLerpRef = useRef(false);
+  const deferredMeasureTickFromResizeRef = useRef(false);
+  const lastLerpFrameTimeRef = useRef(0);
+  const factorResetRef = useRef({
+    image: NaN,
+    tileLayout: "",
+    sizeMode: "",
+    rem: NaN,
+  });
 
   const [containerSize, setContainerSize] = useState({ w: 0, h: 0 });
   const [measureTick, setMeasureTick] = useState(0);
 
-  const tileKeysSig = stripTiles.map(tileKeyFn).join("|");
+  /** Order of strip positions changes when blanks are re-interleaved; observer + keyset sync need only the set of keys, not the order. */
+  const tileKeySetSig = useMemo(
+    () =>
+      JSON.stringify(
+        [...new Set(stripTiles.map((t) => tileKeyFn(t)))].sort(),
+      ),
+    [stripTiles, tileKeyFn],
+  );
 
   const layoutTiles = useMemo(
     () => stripTiles.filter((t) => !(t.type === "blank" && t.exiting)),
@@ -317,6 +366,10 @@ export function useJsFlexStrip({
   useLayoutEffect(() => {
     let scheduled = false;
     const bump = () => {
+      if (inRafLerpRef.current) {
+        deferredMeasureTickFromResizeRef.current = true;
+        return;
+      }
       if (scheduled) return;
       scheduled = true;
       requestAnimationFrame(() => {
@@ -325,20 +378,20 @@ export function useJsFlexStrip({
       });
     };
     const observers = [];
-    const keys = tileKeysSig.length > 0 ? tileKeysSig.split("|") : [];
-    for (const key of keys) {
+    for (const t of stripTiles) {
+      const key = tileKeyFn(t);
       const el = elMapRef.current.get(key);
       if (!el) continue;
       const ro = new ResizeObserver(bump);
       ro.observe(el);
-      const mediaEl = el.querySelector(".asset-tile__media");
-      if (mediaEl) ro.observe(mediaEl);
-      const metaEl = el.querySelector(".asset-tile__meta");
-      if (metaEl) ro.observe(metaEl);
+      if (t.type !== "blank") {
+        const mediaEl = el.querySelector(".asset-tile__media");
+        if (mediaEl) ro.observe(mediaEl);
+      }
       observers.push(ro);
     }
     return () => observers.forEach((o) => o.disconnect());
-  }, [tileKeysSig]);
+  }, [tileKeySetSig, tileKeyFn]);
 
   useLayoutEffect(() => {
     const root = stripRef.current;
@@ -348,6 +401,20 @@ export function useJsFlexStrip({
       parseFloat(
         getComputedStyle(document.documentElement).fontSize || "16",
       ) || 16;
+
+    const r = factorResetRef.current;
+    if (
+      r.image !== imageSize
+      || r.tileLayout !== tileLayout
+      || r.sizeMode !== sizeMode
+      || r.rem !== rem
+    ) {
+      tileSizeApi.resetLayoutExtraSteps();
+      r.image = imageSize;
+      r.tileLayout = tileLayout;
+      r.sizeMode = sizeMode;
+      r.rem = rem;
+    }
     const colGapRem =
       tileLayout === TILE_LAYOUT_TEXT_LEFT
         ? MAX_GAP_REM_MAIN_TEXT_LEFT
@@ -361,7 +428,7 @@ export function useJsFlexStrip({
       STRIP_CONTAINER_FLEX.flexDirection === FLEX_ROW ||
       STRIP_CONTAINER_FLEX.flexDirection === FLEX_ROW_REVERSE;
 
-    if (tileKeysSigRef.current !== tileKeysSig) {
+    if (tileKeySetSigRef.current !== tileKeySetSig) {
       const nextKeys = new Set(stripTiles.map(tileKeyFn));
       for (const k of currentRef.current.keys()) {
         if (!nextKeys.has(k)) currentRef.current.delete(k);
@@ -369,7 +436,7 @@ export function useJsFlexStrip({
       for (const k of exitNotifiedRef.current) {
         if (!nextKeys.has(k)) exitNotifiedRef.current.delete(k);
       }
-      tileKeysSigRef.current = tileKeysSig;
+      tileKeySetSigRef.current = tileKeySetSig;
     }
 
     const blankLayoutKeySet = new Set(
@@ -385,8 +452,15 @@ export function useJsFlexStrip({
     const textLeftKeySet = new Set();
     if (tileLayout === TILE_LAYOUT_TEXT_LEFT) {
       for (const t of layoutTiles) {
-        if (t.type === "asset") textLeftKeySet.add(tileKeyFn(t));
+        if (t.type === "asset" || t.type === "blank") {
+          textLeftKeySet.add(tileKeyFn(t));
+        }
       }
+    }
+
+    const tileByKey = new Map();
+    for (const t0 of stripTiles) {
+      tileByKey.set(tileKeyFn(t0), t0);
     }
 
     /** @type {import("./jsFlexLayout.js").FlexItemInput[]} */
@@ -396,63 +470,113 @@ export function useJsFlexStrip({
       const tile = layoutTiles[docIdx];
       const key = tileKeyFn(tile);
       const el = elMapRef.current.get(key);
-      const factor = tile.type === "blank" ? 1 : tileSizeFactor(key);
+      const canBump = tileUsesSizeModeForStripBumps(tile, el, tileLayout);
+      const bumpBasisRem = stripTileBumpBasisRem(tile, tileLayout);
 
-      let flexBasisMain;
+      let flexBasisMain = 0;
       let minMain = 0;
       let maxMain = 1e9;
       let flexShrink = 1;
+      let crossIntrinsic = 120;
 
-      if (tile.type === "blank") {
-        flexBasisMain = 16 * rem * imageSize * factor;
-        maxMain = 26 * rem * imageSize * factor;
-      } else if (tileLayout === TILE_LAYOUT_TEXT_LEFT) {
-        // Text-left historically behaved as fit-content up to full row width.
-        // Do not apply the 26rem media cap used by stacked tiles.
-        const cap = containerSize.w;
-        maxMain = cap;
+      for (let bumpPass = 0; bumpPass < 8; bumpPass += 1) {
+        const factor = tileSizeApi.getEffectiveFactor(
+          sizeMode,
+          key,
+          rem,
+          imageSize,
+          bumpBasisRem,
+        );
         if (el) {
-          const pw = el.style.width;
-          const pm = el.style.maxWidth;
-          const pb = el.style.boxSizing;
-          el.style.boxSizing = "border-box";
-          el.style.maxWidth = "none";
-          el.style.width = "auto";
-          flexBasisMain = measureTextLeftMainSize(el, cap);
-          el.style.width = pw;
-          el.style.maxWidth = pm;
-          el.style.boxSizing = pb;
+          syncStripItemTileSizeFactor(el, factor);
+        }
+
+        if (tile.type === "blank" && tileLayout !== TILE_LAYOUT_TEXT_LEFT) {
+          flexBasisMain = 16 * rem * imageSize * factor;
+          maxMain = 26 * rem * imageSize * factor;
+        } else if (tileLayout === TILE_LAYOUT_TEXT_LEFT) {
+          // Text-left historically behaved as fit-content up to full row width.
+          // Do not apply the 26rem media cap used by stacked tiles.
+          // Blanks: same article layout as other text-left tiles (10rem media height in CSS).
+          const cap = containerSize.w;
+          maxMain = cap;
+          if (el) {
+            const pw = el.style.width;
+            const pm = el.style.maxWidth;
+            const pb = el.style.boxSizing;
+            el.style.boxSizing = "border-box";
+            el.style.maxWidth = "none";
+            el.style.width = "auto";
+            flexBasisMain = measureTextLeftMainSize(el, cap);
+            el.style.width = pw;
+            el.style.maxWidth = pm;
+            el.style.boxSizing = pb;
+          } else {
+            flexBasisMain = 16 * rem * imageSize * factor;
+          }
+          flexBasisMain = Math.min(flexBasisMain, cap);
+          // Match prior CSS behavior for text-left tiles (`flex: 0 0 auto`):
+          // keep intrinsic measured width and do not shrink below it.
+          minMain = flexBasisMain;
+          flexShrink = 0;
+        } else if (tile.asset?.kind === "text") {
+          const w = Math.min(textTileMin, containerSize.w);
+          flexBasisMain = w;
+          minMain = Math.min(w, containerSize.w);
+          maxMain = w;
         } else {
           flexBasisMain = 16 * rem * imageSize * factor;
+          maxMain = 26 * rem * imageSize * factor;
         }
-        flexBasisMain = Math.min(flexBasisMain, cap);
-        // Match prior CSS behavior for text-left tiles (`flex: 0 0 auto`):
-        // keep intrinsic measured width and do not shrink below it.
-        minMain = flexBasisMain;
-        flexShrink = 0;
-      } else if (tile.asset?.kind === "text") {
-        const w = Math.min(textTileMin, containerSize.w);
-        flexBasisMain = w;
-        minMain = Math.min(w, containerSize.w);
-        maxMain = w;
-      } else {
-        flexBasisMain = 16 * rem * imageSize * factor;
-        maxMain = 26 * rem * imageSize * factor;
-      }
 
-      let crossIntrinsic = el?.offsetHeight ?? 120;
-      if (el) {
-        const prevW = el.style.width;
-        const prevMaxW = el.style.maxWidth;
-        const prevBox = el.style.boxSizing;
-        el.style.height = "";
-        el.style.boxSizing = "border-box";
-        el.style.maxWidth = `${maxMain}px`;
-        el.style.width = `${Math.min(maxMain, Math.max(minMain, flexBasisMain))}px`;
-        crossIntrinsic = el.offsetHeight;
-        el.style.width = prevW;
-        el.style.maxWidth = prevMaxW;
-        el.style.boxSizing = prevBox;
+        crossIntrinsic = el?.offsetHeight ?? 120;
+        if (el) {
+          const prevW = el.style.width;
+          const prevMaxW = el.style.maxWidth;
+          const prevBox = el.style.boxSizing;
+          el.style.height = "";
+          el.style.boxSizing = "border-box";
+          el.style.maxWidth = `${maxMain}px`;
+          el.style.width = `${Math.min(
+            maxMain,
+            Math.max(minMain, flexBasisMain),
+          )}px`;
+          crossIntrinsic = el.offsetHeight;
+          el.style.width = prevW;
+          el.style.maxWidth = prevMaxW;
+          el.style.boxSizing = prevBox;
+        }
+
+        if (!canBump) break;
+        if (!el) break;
+        const mediaEl = el.querySelector(".asset-tile__media");
+        let minDim = 0;
+        if (mediaEl) {
+          const mw = mediaEl.offsetWidth;
+          const mh = mediaEl.offsetHeight;
+          if (mw > 0 && mh > 0) {
+            minDim = Math.min(mw, mh);
+          }
+        }
+        if (minDim === 0) {
+          const wUsed = Math.min(
+            maxMain,
+            Math.max(minMain, flexBasisMain),
+          );
+          minDim = Math.min(wUsed, crossIntrinsic);
+        }
+        if (minDim >= MIN_STRIP_TILE_PX) break;
+        if (
+          !tileSizeApi.bumpFactorUpOneStep(
+            sizeMode,
+            key,
+            rem,
+            imageSize,
+            bumpBasisRem,
+          )
+        ) {
+          break;
+        }
       }
 
       const alignSelfRaw = alignSelfByKey?.get(key);
@@ -472,6 +596,23 @@ export function useJsFlexStrip({
         crossSizeIntrinsic: crossIntrinsic,
         alignSelf,
       });
+    }
+
+    for (const t of layoutTiles) {
+      const k = tileKeyFn(t);
+      const li = elMapRef.current.get(k);
+      if (li) {
+        syncStripItemTileSizeFactor(
+          li,
+          tileSizeApi.getEffectiveFactor(
+            sizeMode,
+            k,
+            rem,
+            imageSize,
+            stripTileBumpBasisRem(t, tileLayout),
+          ),
+        );
+      }
     }
 
     const innerMain = isRow
@@ -545,7 +686,17 @@ export function useJsFlexStrip({
     root.style.minHeight = `${Math.max(bottomExtent, 0)}px`;
 
     cancelAnimationFrame(rafRef.current);
-    const tick = () => {
+    lastLerpFrameTimeRef.current = 0;
+    inRafLerpRef.current = true;
+    const tick = (time) => {
+      const now = time ?? performance.now();
+      if (lastLerpFrameTimeRef.current > 0) {
+        if (now - lastLerpFrameTimeRef.current < STRIP_ANIMATION_MIN_FRAME_MS) {
+          rafRef.current = requestAnimationFrame(tick);
+          return;
+        }
+      }
+      lastLerpFrameTimeRef.current = now;
       let busy = false;
       const containerAlign = STRIP_CONTAINER_FLEX.alignItems;
       for (const key of Object.keys(rects)) {
@@ -565,31 +716,42 @@ export function useJsFlexStrip({
           currentRef.current.set(key, c);
         }
 
-        let nx = lerp(c.x, t.x, LERP);
-        let ny = lerp(c.y, t.y, LERP);
+        let nx;
+        let ny;
         let nw;
         let nh;
 
-        if (exitingBlank) {
-          nw = lerp(c.width, t.width, LERP);
-          nh = lerp(c.height, t.height, LERP);
-        } else if (layoutBlank) {
-          nw = lerp(c.width, t.width, LERP);
-          nh = stretch ? lerp(c.height, t.height, LERP) : lerp(c.height, t.height, LERP);
+        if (layoutBlank) {
+          // Empty placeholder: no visible benefit from easing; skip lerp to avoid extra frames + RO.
+          nx = t.x;
+          ny = t.y;
+          nw = t.width;
+          nh = t.height;
         } else {
-          nw = lockWidth ? t.width : lerp(c.width, t.width, LERP);
-          nh = stretch ? lerp(c.height, t.height, LERP) : t.height;
+          nx = lerp(c.x, t.x, LERP);
+          ny = lerp(c.y, t.y, LERP);
+          if (exitingBlank) {
+            nw = lerp(c.width, t.width, LERP);
+            nh = lerp(c.height, t.height, LERP);
+          } else {
+            nw = lockWidth ? t.width : lerp(c.width, t.width, LERP);
+            nh = stretch ? lerp(c.height, t.height, LERP) : t.height;
+          }
         }
 
         const nearX = Math.abs(nx - t.x) < SNAP;
         const nearY = Math.abs(ny - t.y) < SNAP;
         const nearW =
-          exitingBlank || layoutBlank
-            ? Math.abs(nw - t.width) < SNAP
-            : lockWidth || Math.abs(nw - t.width) < SNAP;
-        const nearH = exitingBlank || layoutBlank
-          ? Math.abs(nh - t.height) < SNAP
-          : !stretch || Math.abs(nh - t.height) < SNAP;
+          layoutBlank
+            ? true
+            : exitingBlank
+              ? Math.abs(nw - t.width) < SNAP
+              : lockWidth || Math.abs(nw - t.width) < SNAP;
+        const nearH = layoutBlank
+          ? true
+          : exitingBlank
+            ? Math.abs(nh - t.height) < SNAP
+            : !stretch || Math.abs(nh - t.height) < SNAP;
         if (nearX && nearY && nearW && nearH) {
           nx = t.x;
           ny = t.y;
@@ -612,6 +774,19 @@ export function useJsFlexStrip({
 
         const el = elMapRef.current.get(key);
         if (el) {
+          const tTile = tileByKey.get(key);
+          syncStripItemTileSizeFactor(
+            el,
+            tTile
+              ? tileSizeApi.getEffectiveFactor(
+                sizeMode,
+                key,
+                rem,
+                imageSize,
+                stripTileBumpBasisRem(tTile, tileLayout),
+              )
+              : 1,
+          );
           el.style.left = `${nx}px`;
           el.style.top = `${ny}px`;
           el.style.width = `${nw}px`;
@@ -626,12 +801,26 @@ export function useJsFlexStrip({
       }
       if (busy) {
         rafRef.current = requestAnimationFrame(tick);
+      } else {
+        inRafLerpRef.current = false;
+        lastLerpFrameTimeRef.current = 0;
+        if (deferredMeasureTickFromResizeRef.current) {
+          deferredMeasureTickFromResizeRef.current = false;
+          setMeasureTick((x) => x + 1);
+        }
       }
     };
     rafRef.current = requestAnimationFrame(tick);
 
     return () => {
       cancelAnimationFrame(rafRef.current);
+      inRafLerpRef.current = false;
+      if (deferredMeasureTickFromResizeRef.current) {
+        deferredMeasureTickFromResizeRef.current = false;
+        queueMicrotask(() => {
+          setMeasureTick((x) => x + 1);
+        });
+      }
     };
   }, [
     stripRef,
@@ -641,7 +830,7 @@ export function useJsFlexStrip({
     textSize,
     tileLayout,
     sizeMode,
-    tileSizeFactor,
+    tileSizeApi,
     alignSelfByKey,
     containerSize,
     measureTick,

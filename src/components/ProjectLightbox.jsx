@@ -1,5 +1,13 @@
-import MuxPlayer from "@mux/mux-player-react";
-import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import { MuxHlsVideo } from "./MuxStripHlsVideo";
 import { createPortal } from "react-dom";
 import { getProjectAssetsInOrder } from "../data/projects";
 import { getTextTileBodyProps } from "../renderTextWithLineBreaks";
@@ -74,13 +82,20 @@ function getEventComposedPath(e) {
   return out;
 }
 
-/** True for clicks on slide media (img/video, incl. Mux host) or prev/next. */
+/** After a horizontal carousel drag, the browser may emit a stray `click`; we swallow it on the track. */
+const CAROUSEL_DRAG_DISMISS_SUPPRESS_PX = 8;
+
+/**
+ * True when a body click should not close: actual media, nav
+ * buttons, and the lightbox video/img wrapper (incl. “media unavailable” box).
+ */
 function lightboxClickShouldKeepOpen(e) {
   for (const node of getEventComposedPath(e)) {
     if (!(node instanceof Element)) continue;
     const t = node.tagName;
-    if (t === "IMG" || t === "VIDEO" || t === "MUX-PLAYER") return true;
+    if (t === "IMG" || t === "VIDEO") return true;
     if (node.classList?.contains("lightbox__text")) return true;
+    if (node.classList?.contains("lightbox__media")) return true;
     if (node.classList?.contains("lightbox__btn")) return true;
   }
   return false;
@@ -115,6 +130,16 @@ function LightboxMedia({ asset, priority, onReady, className }) {
     onReady?.();
   }, [onReady]);
   const missing = !assetReady(asset) || failed;
+
+  const onMuxError = useCallback(() => setFailed(true), []);
+
+  const muxStyle = useMemo(
+    () =>
+      muxBox
+        ? { width: `${muxBox.width}px`, height: `${muxBox.height}px` }
+        : undefined,
+    [muxBox],
+  );
 
   const measureMuxBox = useCallback(() => {
     const player = muxRef.current;
@@ -187,23 +212,15 @@ function LightboxMedia({ asset, priority, onReady, className }) {
   }
   if (asset.kind === "mux") {
     return (
-      <MuxPlayer
+      <MuxHlsVideo
         ref={muxRef}
         className={className}
-        style={muxBox ? { width: `${muxBox.width}px`, height: `${muxBox.height}px` } : undefined}
+        style={muxStyle}
         playbackId={asset.playbackId.trim()}
-        streamType={asset.streamType ?? "on-demand"}
         tokens={asset.tokens}
-        metadata={asset.metadata}
-        capRenditionToPlayerSize
-        muted
-        loop
-        playsInline
-        autoPlay
         onLoadedMetadata={measureMuxBox}
         onLoadedData={fire}
-        onResize={measureMuxBox}
-        onError={() => setFailed(true)}
+        onError={onMuxError}
       />
     );
   }
@@ -273,6 +290,9 @@ export function ProjectLightbox({ project, initialAsset, onClose }) {
   const [dragT, setDragT] = useState(null);
   const dragTRef = useRef(null);
   const drag = useRef({ startX: 0, startT: 0 });
+  /** One synthetic `click` after a carousel drag; stopped on the track (not on Prev/Next). */
+  const suppressNextTrackClickBubbleFromDragRef = useRef(false);
+  const trackClickSuppressClearTimerRef = useRef(0);
   const closeTimer = useRef(null);
   const exitingRef = useRef(false);
   const onCloseRef = useRef(onClose);
@@ -440,6 +460,17 @@ export function ProjectLightbox({ project, initialAsset, onClose }) {
     [runClose],
   );
 
+  /** Bubble phase: runs after the target, before `lightbox__body`’s click-to-dismiss. */
+  const onTrackClickBubble = useCallback((e) => {
+    if (!suppressNextTrackClickBubbleFromDragRef.current) return;
+    suppressNextTrackClickBubbleFromDragRef.current = false;
+    if (trackClickSuppressClearTimerRef.current) {
+      clearTimeout(trackClickSuppressClearTimerRef.current);
+      trackClickSuppressClearTimerRef.current = 0;
+    }
+    e.stopPropagation();
+  }, []);
+
   const onTrackPointerDown = (e) => {
     if (e.pointerType === "mouse" && e.button !== 0) return;
     if (m.n < 2) return;
@@ -461,6 +492,18 @@ export function ProjectLightbox({ project, initialAsset, onClose }) {
     if (!e.currentTarget.hasPointerCapture(e.pointerId)) return;
     e.currentTarget.releasePointerCapture(e.pointerId);
     const t = dragTRef.current;
+    const dx = e.clientX - drag.current.startX;
+    if (Math.abs(dx) > CAROUSEL_DRAG_DISMISS_SUPPRESS_PX) {
+      if (trackClickSuppressClearTimerRef.current) {
+        clearTimeout(trackClickSuppressClearTimerRef.current);
+        trackClickSuppressClearTimerRef.current = 0;
+      }
+      suppressNextTrackClickBubbleFromDragRef.current = true;
+      trackClickSuppressClearTimerRef.current = window.setTimeout(() => {
+        suppressNextTrackClickBubbleFromDragRef.current = false;
+        trackClickSuppressClearTimerRef.current = 0;
+      }, 200);
+    }
     dragTRef.current = null;
     if (t == null || m.idealT.length < 1) {
       setDragT(null);
@@ -503,6 +546,10 @@ export function ProjectLightbox({ project, initialAsset, onClose }) {
       if (closeTimer.current) {
         clearTimeout(closeTimer.current);
       }
+      if (trackClickSuppressClearTimerRef.current) {
+        clearTimeout(trackClickSuppressClearTimerRef.current);
+        trackClickSuppressClearTimerRef.current = 0;
+      }
       if (remeasureRaf.current) {
         cancelAnimationFrame(remeasureRaf.current);
       }
@@ -541,6 +588,7 @@ export function ProjectLightbox({ project, initialAsset, onClose }) {
               transform: `translate3d(${displayT}px, 0, 0)`,
               transition,
             }}
+            onClick={onTrackClickBubble}
             onPointerDown={onTrackPointerDown}
             onPointerMove={onTrackPointerMove}
             onPointerUp={onTrackPointerUp}

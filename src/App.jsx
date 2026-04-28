@@ -17,6 +17,7 @@ import {
   imageSizeRange,
   imageSizeTenthIndex,
   roundImageSizeStep,
+  roundImageSizeMainBarStep,
   textSizeRange,
 } from "./components/ControlPanel";
 import { projects } from "./data/projects";
@@ -30,9 +31,14 @@ import {
   buildRandomTiles,
   countStripLeadTiles,
   createTileSizeFactorResolver,
+  duplicateEachStripContentTile,
   intersperseBlankTiles,
+  maxBlankTilesPercentForImageSize,
   orderTilesWithStripLeads,
+  stripTileBumpBasisRem,
+  stripTileListKey,
   tileLayoutFromImageSize,
+  TILE_LAYOUT_TEXT_LEFT,
 } from "./functionality";
 import "./App.css";
 
@@ -56,7 +62,23 @@ export function App() {
   const imageSliderGrabbedRef = useRef(false);
   const pendingImageTenthShuffleRef = useRef(false);
 
-  const resolveTileSizeFactor = useMemo(() => createTileSizeFactorResolver(), []);
+  const tileSizeApi = useMemo(() => createTileSizeFactorResolver(), []);
+
+  const maxBlankForImageSize = useMemo(
+    () => maxBlankTilesPercentForImageSize(imageSize),
+    [imageSize],
+  );
+
+  useLayoutEffect(() => {
+    if (blankTilesPercent > maxBlankForImageSize) {
+      setBlankTilesPercent(maxBlankForImageSize);
+    }
+  }, [blankTilesPercent, maxBlankForImageSize]);
+
+  const effectiveBlankTilesPercent = Math.min(
+    blankTilesPercent,
+    maxBlankForImageSize,
+  );
 
   const tileLayout = useMemo(
     () => tileLayoutFromImageSize(imageSize),
@@ -72,10 +94,15 @@ export function App() {
           ? buildRandomTiles(projects)
           : buildDefaultTiles(projects);
     const withLeads = orderTilesWithStripLeads(ordered, projects);
-    return intersperseBlankTiles(withLeads, blankTilesPercent, {
+    return intersperseBlankTiles(
+      duplicateEachStripContentTile(withLeads),
+      effectiveBlankTilesPercent,
+      {
       reservedLeadingSlots: stripLeadCount,
-    });
-  }, [displayMode, blankTilesPercent, stripLeadCount, projects]);
+        imageSize,
+      },
+    );
+  }, [displayMode, effectiveBlankTilesPercent, stripLeadCount, imageSize, projects]);
 
   useLayoutEffect(() => {
     const cur = new Set(
@@ -111,24 +138,39 @@ export function App() {
     const choices = ["flex-start", "flex-end", "center", "baseline", "stretch"];
     const map = new Map();
     for (const tile of tiles) {
-      const key =
-        tile.type === "blank"
-          ? tile.blankId
-          : `${tile.project.id}-${tile.asset.id}`;
-      map.set(key, choices[Math.floor(Math.random() * choices.length)]);
+      if (tile.type === "blank") {
+        map.set(tile.blankId, choices[Math.floor(Math.random() * choices.length)]);
+      } else {
+        map.set(
+          stripTileListKey(tile),
+          choices[Math.floor(Math.random() * choices.length)],
+        );
+      }
     }
     return map;
   }, [layoutMode, tiles]);
 
-  const tileKeyFn = useCallback(
-    (t) =>
-      t.type === "blank" ? t.blankId : `${t.project.id}-${t.asset.id}`,
-    [],
-  );
+  const tileKeyFn = useCallback((t) => stripTileListKey(t), []);
 
-  const tileSizeFactorForKey = useCallback(
-    (key) => resolveTileSizeFactor(sizeMode, key),
-    [resolveTileSizeFactor, sizeMode],
+  const rootRem =
+    typeof document !== "undefined"
+      ? parseFloat(
+        getComputedStyle(document.documentElement).fontSize || "16",
+      ) || 16
+      : 16;
+
+  const getTileSizeFactor = useCallback(
+    (tile) => {
+      const key = tileKeyFn(tile);
+      return tileSizeApi.getEffectiveFactor(
+        sizeMode,
+        key,
+        rootRem,
+        imageSize,
+        stripTileBumpBasisRem(tile, tileLayout),
+      );
+    },
+    [sizeMode, tileSizeApi, imageSize, tileKeyFn, tileLayout, rootRem],
   );
 
   const { registerTileEl } = useJsFlexStrip({
@@ -139,10 +181,16 @@ export function App() {
     textSize,
     tileLayout,
     sizeMode,
-    tileSizeFactor: tileSizeFactorForKey,
+    tileSizeApi,
     alignSelfByKey: tileAlignSelfByKey,
     onExitingBlankDone: handleExitingBlankDone,
   });
+
+  /** Order among **assets** only (0,1,2,…). Stable when blank count/positions change so Mux memo + load order are not disturbed by interleaved blanks. */
+  const assetStripOrdinalByIndex = useMemo(() => {
+    let o = 0;
+    return stripTiles.map((t) => (t.type === "asset" ? o++ : null));
+  }, [stripTiles]);
 
   const flushPendingImageTenthShuffle = useCallback(() => {
     if (!pendingImageTenthShuffleRef.current) return;
@@ -184,18 +232,29 @@ export function App() {
     };
   }, [handleImageSizeGrabEnd]);
 
-  const handleImageSize = useCallback((raw) => {
-    const next = roundImageSizeStep(raw);
-    const t = imageSizeTenthIndex(next);
-    if (imageTenthIndexRef.current !== t) {
-      pendingImageTenthShuffleRef.current = true;
-      if (!imageSliderGrabbedRef.current) {
-        flushPendingImageTenthShuffle();
+  /** Top control bar only: crossing 0.1 “tenths” can run `applyImageTenthCrossShuffle` (coarse mode tweaks). */
+  const handleImageSize = useCallback(
+    (raw) => {
+      const next = roundImageSizeMainBarStep(raw);
+      const t = imageSizeTenthIndex(next);
+      if (imageTenthIndexRef.current !== t) {
+        pendingImageTenthShuffleRef.current = true;
+        if (!imageSliderGrabbedRef.current) {
+          flushPendingImageTenthShuffle();
+        }
       }
-    }
-    imageTenthIndexRef.current = t;
+      imageTenthIndexRef.current = t;
+      setImageSize(next);
+    },
+    [flushPendingImageTenthShuffle],
+  );
+
+  /** Debug panel image slider: same `imageSize` / CSS, but no tenth-mark shuffle. */
+  const handleDebugImageSize = useCallback((raw) => {
+    const next = roundImageSizeStep(raw);
+    imageTenthIndexRef.current = imageSizeTenthIndex(next);
     setImageSize(next);
-  }, [flushPendingImageTenthShuffle]);
+  }, []);
 
   return (
     <div
@@ -210,7 +269,9 @@ export function App() {
         onTextSize={setTextSize}
         imageSize={imageSize}
         onImageSize={handleImageSize}
+        onDebugImageSize={handleDebugImageSize}
         blankTilesPercent={blankTilesPercent}
+        blankTilesPercentMax={maxBlankForImageSize}
         onBlankTilesPercent={setBlankTilesPercent}
         displayMode={displayMode}
         onDisplayMode={setDisplayMode}
@@ -228,12 +289,9 @@ export function App() {
           aria-label="Selected work"
           ref={stripRef}
         >
-          {stripTiles.map((tile) => {
-            const tileKey =
-              tile.type === "blank"
-                ? tile.blankId
-                : `${tile.project.id}-${tile.asset.id}`;
-            const factor = resolveTileSizeFactor(sizeMode, tileKey);
+          {stripTiles.map((tile, i) => {
+            const tileKey = stripTileListKey(tile);
+            const factor = getTileSizeFactor(tile);
             const openLightbox =
               tile.type === "asset" && tile.asset?.kind !== "text";
             const itemClasses = [
@@ -276,7 +334,15 @@ export function App() {
               >
                 {tile.type === "blank" ? (
                   <article
-                    className="asset-tile asset-tile--blank"
+                    className={[
+                      "asset-tile",
+                      "asset-tile--blank",
+                      tileLayout === TILE_LAYOUT_TEXT_LEFT
+                        ? "asset-tile--text-left"
+                        : "",
+                    ]
+                      .filter(Boolean)
+                      .join(" ")}
                     aria-hidden="true"
                   >
                     <div className="asset-tile__media" />
@@ -286,6 +352,7 @@ export function App() {
                     project={tile.project}
                     asset={tile.asset}
                     tileLayout={tileLayout}
+                    stripListIndex={assetStripOrdinalByIndex[i] ?? 0}
                   />
                 )}
               </li>
