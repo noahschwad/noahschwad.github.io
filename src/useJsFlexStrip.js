@@ -7,6 +7,10 @@ import {
   useState,
 } from "react";
 import {
+  LAYOUT_FLEX_CENTER,
+  LAYOUT_FLEX_END,
+  LAYOUT_FLEX_RANDOM,
+  LAYOUT_FLEX_START,
   MIN_STRIP_TILE_PX,
   SIZE_MODE_RANDOM_TIERS_ROW_FILL,
   stripTileBumpBasisRem,
@@ -25,14 +29,27 @@ import {
   computeFlexLayout,
 } from "./jsFlexLayout";
 
-/** Matches legacy `.selected-strip` CSS flex container. */
+/** Matches legacy `.selected-strip` CSS flex container (`alignItems` from `layoutMode`). */
 const STRIP_CONTAINER_FLEX = {
   flexDirection: FLEX_ROW,
   flexWrap: FLEX_WRAP,
   justifyContent: JUSTIFY_FLEX_START,
-  alignItems: ALIGN_START,
   alignContent: ALIGN_CONTENT_STRETCH,
 };
+
+/** @param {string} layoutMode from `LAYOUT_*` in `functionality.js` */
+function stripAlignItemsFromLayoutMode(layoutMode) {
+  switch (layoutMode) {
+    case LAYOUT_FLEX_CENTER:
+      return ALIGN_CENTER;
+    case LAYOUT_FLEX_END:
+      return ALIGN_END;
+    case LAYOUT_FLEX_RANDOM:
+    case LAYOUT_FLEX_START:
+    default:
+      return ALIGN_START;
+  }
+}
 
 const LERP = 0.15;
 const SNAP = 0.45;
@@ -279,6 +296,7 @@ function reflowStripRowsByActualHeights(
  * @param {string} params.tileLayout
  * @param {string} params.sizeMode
  * @param {import("./functionality").TileSizeResolver} params.tileSizeApi
+ * @param {string} params.layoutMode strip cross-axis (`align-items`) except flex random uses per-tile map
  * @param {Map<string, string>|null} params.alignSelfByKey layout-random align-self
  * @param {(blankId: string) => void} [params.onExitingBlankDone]
  */
@@ -291,6 +309,7 @@ export function useJsFlexStrip({
   tileLayout,
   sizeMode,
   tileSizeApi,
+  layoutMode,
   alignSelfByKey,
   onExitingBlankDone,
 }) {
@@ -316,6 +335,7 @@ export function useJsFlexStrip({
     tileLayout: "",
     sizeMode: "",
     rem: NaN,
+    layoutMode: "",
   });
 
   const [containerSize, setContainerSize] = useState({ w: 0, h: 0 });
@@ -408,13 +428,17 @@ export function useJsFlexStrip({
       || r.tileLayout !== tileLayout
       || r.sizeMode !== sizeMode
       || r.rem !== rem
+      || r.layoutMode !== layoutMode
     ) {
       tileSizeApi.resetLayoutExtraSteps();
       r.image = imageSize;
       r.tileLayout = tileLayout;
       r.sizeMode = sizeMode;
       r.rem = rem;
+      r.layoutMode = layoutMode;
     }
+
+    const containerAlignItems = stripAlignItemsFromLayoutMode(layoutMode);
     const colGapRem =
       tileLayout === TILE_LAYOUT_TEXT_LEFT
         ? MAX_GAP_REM_MAIN_TEXT_LEFT
@@ -649,7 +673,7 @@ export function useJsFlexStrip({
       flexDirection: STRIP_CONTAINER_FLEX.flexDirection,
       flexWrap: STRIP_CONTAINER_FLEX.flexWrap,
       justifyContent: STRIP_CONTAINER_FLEX.justifyContent,
-      alignItems: STRIP_CONTAINER_FLEX.alignItems,
+      alignItems: containerAlignItems,
       alignContent: STRIP_CONTAINER_FLEX.alignContent,
       rowGap,
       columnGap,
@@ -660,7 +684,7 @@ export function useJsFlexStrip({
         lineKeyGroups,
         rects,
         alignSelfByKey,
-        STRIP_CONTAINER_FLEX.alignItems,
+        containerAlignItems,
         rowGap,
         elMapRef,
       );
@@ -698,7 +722,7 @@ export function useJsFlexStrip({
       }
       lastLerpFrameTimeRef.current = now;
       let busy = false;
-      const containerAlign = STRIP_CONTAINER_FLEX.alignItems;
+      const containerAlign = containerAlignItems;
       for (const key of Object.keys(rects)) {
         const t = rects[key];
         let c = currentRef.current.get(key);
@@ -831,6 +855,7 @@ export function useJsFlexStrip({
     tileLayout,
     sizeMode,
     tileSizeApi,
+    layoutMode,
     alignSelfByKey,
     containerSize,
     measureTick,

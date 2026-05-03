@@ -8,14 +8,34 @@ import {
   useState,
 } from "react";
 import { MuxHlsVideo } from "./MuxStripHlsVideo";
+import { ProgressiveProjectImage } from "./ProgressiveProjectImage";
 import { createPortal } from "react-dom";
 import { getProjectAssetsInOrder } from "../data/projects";
 import { getTextTileBodyProps } from "../renderTextWithLineBreaks";
 
+/** Open/close fade; must match `.lightbox__scrim` / `.lightbox__body` opacity transition (0.4s). */
 const LIGHTBOX_FADE_MS = 400;
 const SLIDE_MS = 420;
 const REDUCED = typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
 const EASE = "cubic-bezier(0.4, 0, 0.2, 1)";
+
+function LightboxNavArrowIcon() {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="21"
+      height="11"
+      viewBox="0 0 21 11"
+      fill="none"
+      aria-hidden="true"
+    >
+      <path
+        d="M0 5.35352H20M20 5.35352L15 0.353516M20 5.35352L15 10.3535"
+        stroke="currentColor"
+      />
+    </svg>
+  );
+}
 
 function hasSrc(src) {
   return typeof src === "string" && src.trim().length > 0;
@@ -82,15 +102,22 @@ function getEventComposedPath(e) {
   return out;
 }
 
-/** After a horizontal carousel drag, the browser may emit a stray `click`; we swallow it on the track. */
+/** Movement at or below this (px) counts as a tap: only a tap on the adjacent slide goes prev/next; above = drag. Stray `click` after track gestures is swallowed on the track. */
 const CAROUSEL_DRAG_DISMISS_SUPPRESS_PX = 8;
 
+/** Pointer `dx` vs carousel width to advance one slide (else snap back to current). */
+const LIGHTBOX_CAROUSEL_DRAG_COMMIT_FRACTION = 0.2;
+
+/** Max distance (px) from viewport bottom to the nav midpoint — keeps arrows from sitting too high in a tall gap. */
+const LIGHTBOX_NAV_MAX_FROM_VIEWPORT_BOTTOM_PX = 40;
+
 /**
- * True when a body click should not close: actual media, nav
- * buttons, and the lightbox video/img wrapper (incl. “media unavailable” box).
+ * True when the event path hits media, text, nav, or the “media unavailable” box.
+ * Used for click-to-dismiss and for `pointerdown` (capture), because `setPointerCapture`
+ * on the track can retarget the following `click` away from `IMG`/`VIDEO`.
  */
-function lightboxClickShouldKeepOpen(e) {
-  for (const node of getEventComposedPath(e)) {
+function lightboxPathKeepsDialogOpen(path) {
+  for (const node of path) {
     if (!(node instanceof Element)) continue;
     const t = node.tagName;
     if (t === "IMG" || t === "VIDEO") return true;
@@ -99,6 +126,65 @@ function lightboxClickShouldKeepOpen(e) {
     if (node.classList?.contains("lightbox__btn")) return true;
   }
   return false;
+}
+
+function lightboxClickShouldKeepOpen(e) {
+  return lightboxPathKeepsDialogOpen(getEventComposedPath(e));
+}
+
+/**
+ * Resolve simple lengths from `--lightbox-media-inset` etc. (`20vw`, `12px`, `1.5rem`).
+ * `Number.parseFloat("20vw")` is wrong (20); this matches `.lightbox__media` max-width math.
+ */
+function parseCssLengthToPixels(raw, widthBasePx, heightBasePx) {
+  const s = String(raw ?? "").trim();
+  if (!s) return 0;
+  const m = s.match(/^(-?[\d.]+)\s*(%|px|em|rem|vw|vh|dvw|dvh|svw|svh|lvw|lvh)?$/i);
+  if (!m) return 0;
+  const n = Number.parseFloat(m[1]);
+  if (!Number.isFinite(n)) return 0;
+  const u = (m[2] || "px").toLowerCase();
+  switch (u) {
+    case "px":
+      return n;
+    case "%":
+      return (n / 100) * widthBasePx;
+    case "vw":
+    case "dvw":
+    case "svw":
+    case "lvw":
+      return (n / 100) * widthBasePx;
+    case "vh":
+    case "dvh":
+    case "svh":
+    case "lvh":
+      return (n / 100) * heightBasePx;
+    case "rem":
+      return (
+        n *
+        (Number.parseFloat(getComputedStyle(document.documentElement).fontSize) || 16)
+      );
+    case "em":
+      return n * 16;
+    default:
+      return n;
+  }
+}
+
+/** Which `.lightbox__slide` (index in `track.children`) is topmost under the point, or `-1`. */
+function tapHitSlideIndex(track, clientX, clientY) {
+  if (!(track instanceof Element)) return -1;
+  if (typeof document.elementsFromPoint !== "function") return -1;
+  const stack = document.elementsFromPoint(clientX, clientY);
+  if (!stack?.length) return -1;
+  for (const el of stack) {
+    if (!(el instanceof Element)) continue;
+    const slide = el.closest?.(".lightbox__slide");
+    if (slide && track.contains(slide)) {
+      return [...track.children].indexOf(slide);
+    }
+  }
+  return -1;
 }
 
 function measureTrack(track) {
@@ -149,15 +235,20 @@ function LightboxMedia({ asset, priority, onReady, className }) {
       lightbox instanceof HTMLElement
         ? getComputedStyle(lightbox).getPropertyValue("--lightbox-media-inset")
         : "";
-    const inset = Number.parseFloat(insetRaw) || 100;
-    const maxW = Math.max(1, window.innerWidth - inset);
-    const maxH = Math.max(1, window.innerHeight - inset);
+    const viewW = window.innerWidth;
+    const viewH =
+      typeof window !== "undefined" && window.visualViewport?.height
+        ? window.visualViewport.height
+        : window.innerHeight;
+    const insetPx = parseCssLengthToPixels(insetRaw, viewW, viewH);
+    const maxW = Math.max(1, viewW - insetPx);
+    const maxH = Math.max(1, viewH - insetPx);
     if (!(maxW > 0) || !(maxH > 0)) return;
 
-    const vw = Number(player.videoWidth) || 0;
-    const vh = Number(player.videoHeight) || 0;
-    if (vw > 0 && vh > 0) {
-      muxAspectRef.current = vw / vh;
+    const vidW = Number(player.videoWidth) || 0;
+    const vidH = Number(player.videoHeight) || 0;
+    if (vidW > 0 && vidH > 0) {
+      muxAspectRef.current = vidW / vidH;
     }
     const aspect = muxAspectRef.current;
     if (!(aspect > 0)) {
@@ -229,6 +320,7 @@ function LightboxMedia({ asset, priority, onReady, className }) {
       <video
         className={className}
         src={asset.src}
+        tabIndex={-1}
         muted
         loop
         playsInline
@@ -250,15 +342,17 @@ function LightboxMedia({ asset, priority, onReady, className }) {
     );
   }
   return (
-    <img
+    <ProgressiveProjectImage
+      fullSrc={asset.src}
       className={className}
-      src={asset.src}
+      stackClass="lightbox__img-stack"
       alt=""
       draggable={false}
       loading={priority ? "eager" : "lazy"}
       decoding="async"
-      onLoad={fire}
-      onError={() => setFailed(true)}
+      onLoadFull={fire}
+      onErrorFull={() => setFailed(true)}
+      fetchPriority={priority ? "high" : undefined}
     />
   );
 }
@@ -268,8 +362,16 @@ function LightboxMedia({ asset, priority, onReady, className }) {
  * @param {import("../data/projects").projects[number]} props.project
  * @param {object} props.initialAsset
  * @param {() => void} props.onClose
+ * @param {() => void} [props.onAfterOpenFade] After scrim/body fade-in (`LIGHTBOX_FADE_MS`).
+ * @param {() => void} [props.onExitStart] First thing when closing (before fade-out); e.g. resume strip videos.
  */
-export function ProjectLightbox({ project, initialAsset, onClose }) {
+export function ProjectLightbox({
+  project,
+  initialAsset,
+  onClose,
+  onAfterOpenFade,
+  onExitStart,
+}) {
   const id = useId().replace(/[^a-zA-Z0-9]/g, "");
   const prevId = `lb-prev-${id}`;
   const nextId = `lb-next-${id}`;
@@ -278,29 +380,49 @@ export function ProjectLightbox({ project, initialAsset, onClose }) {
   const rootRef = useRef(null);
   const containerRef = useRef(null);
   const trackRef = useRef(null);
-  const [spaceBetween, setSpaceBetween] = useState(64);
   const [activeIndex, setActiveIndex] = useState(0);
   const [m, setM] = useState({
     idealT: [],
     tMax: 0,
     tMin: 0,
     n: 0,
+    viewportW: 0,
   });
   /** `null` when not dragging; else live translateX (px) while dragging. */
   const [dragT, setDragT] = useState(null);
   const dragTRef = useRef(null);
   const drag = useRef({ startX: 0, startT: 0 });
-  /** One synthetic `click` after a carousel drag; stopped on the track (not on Prev/Next). */
+  /** One synthetic `click` after a carousel drag/tap; stopped on the track (not on Prev/Next). */
   const suppressNextTrackClickBubbleFromDragRef = useRef(false);
   const trackClickSuppressClearTimerRef = useRef(0);
+  /** Set in `pointerdown` capture on body; avoids bogus dismiss after track `setPointerCapture`. */
+  const pointerDownKeepsDialogOpenRef = useRef(false);
   const closeTimer = useRef(null);
   const exitingRef = useRef(false);
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
+  const onExitStartRef = useRef(onExitStart);
+  onExitStartRef.current = onExitStart;
+  const onAfterOpenFadeRef = useRef(onAfterOpenFade);
+  onAfterOpenFadeRef.current = onAfterOpenFade;
   const remeasureRaf = useRef(0);
+  /** Viewport Y (px) of midpoint between carousel bottom and viewport bottom; drives fixed nav. */
+  const [navMidpointPx, setNavMidpointPx] = useState(null);
+
+  const updateNavMidpoint = useCallback(() => {
+    const el = containerRef.current;
+    if (!el || typeof window === "undefined") return;
+    const rect = el.getBoundingClientRect();
+    const vh = window.visualViewport?.height ?? window.innerHeight;
+    const gap = Math.max(0, vh - rect.bottom);
+    const rawMid = rect.bottom + gap / 2;
+    const minMidY = vh - LIGHTBOX_NAV_MAX_FROM_VIEWPORT_BOTTOM_PX;
+    setNavMidpointPx(Math.max(rawMid, minMidY));
+  }, []);
 
   const runClose = useCallback(() => {
     if (exitingRef.current) return;
+    onExitStartRef.current?.();
     exitingRef.current = true;
     setExiting(true);
     clearTimeout(closeTimer.current);
@@ -312,10 +434,6 @@ export function ProjectLightbox({ project, initialAsset, onClose }) {
   const assets = getProjectAssetsInOrder(project);
   const initialIndex = Math.max(0, assets.findIndex((a) => a.id === initialAsset.id));
   const count = assets.length;
-
-  useLayoutEffect(() => {
-    setSpaceBetween((parseFloat(getComputedStyle(document.documentElement).fontSize) || 16) * 4);
-  }, []);
 
   useLayoutEffect(() => {
     setActiveIndex(initialIndex);
@@ -356,11 +474,15 @@ export function ProjectLightbox({ project, initialAsset, onClose }) {
 
   const runMeasure = useCallback(() => {
     const t = trackRef.current;
+    const root = rootRef.current;
     if (!t) return;
     const next = measureTrack(t);
     setM((prev) => {
       if (prev.n === next.n && next.idealT.length) {
         let same = true;
+        if (Math.abs((prev.viewportW ?? 0) - next.viewportW) > 0.25) {
+          same = false;
+        }
         for (let i = 0; i < next.idealT.length; i += 1) {
           if (Math.abs((prev.idealT[i] ?? 0) - next.idealT[i]) > 0.25) {
             same = false;
@@ -374,9 +496,30 @@ export function ProjectLightbox({ project, initialAsset, onClose }) {
         tMax: next.tMax,
         tMin: next.tMin,
         n: next.n,
+        viewportW: next.viewportW,
       };
     });
-  }, []);
+
+    /** Cap carousel / body to the tallest slide so the shell is not taller than the assets. */
+    if (root instanceof HTMLElement) {
+      let maxH = 0;
+      for (const slide of t.children) {
+        if (!(slide instanceof HTMLElement)) continue;
+        const cell = slide.querySelector(".lightbox__slideCell");
+        if (!(cell instanceof HTMLElement)) continue;
+        maxH = Math.max(maxH, cell.getBoundingClientRect().height);
+      }
+      if (maxH > 8) {
+        root.style.setProperty(
+          "--lightbox-body-content-max",
+          `${Math.ceil(maxH)}px`,
+        );
+      } else {
+        root.style.removeProperty("--lightbox-body-content-max");
+      }
+    }
+    updateNavMidpoint();
+  }, [updateNavMidpoint]);
 
   const scheduleRemeasure = useCallback(() => {
     if (remeasureRaf.current) cancelAnimationFrame(remeasureRaf.current);
@@ -395,9 +538,47 @@ export function ProjectLightbox({ project, initialAsset, onClose }) {
     if (c) ro.observe(c);
     ro.observe(t);
     return () => ro.disconnect();
-  }, [runMeasure, scheduleRemeasure, count, spaceBetween]);
+  }, [runMeasure, scheduleRemeasure, count]);
 
   const open = reveal && !exiting;
+
+  const displayT =
+    dragT != null
+      ? dragT
+      : m.idealT[activeIndex] != null
+        ? m.idealT[activeIndex]
+        : 0;
+
+  useLayoutEffect(() => {
+    if (!open) {
+      setNavMidpointPx(null);
+      return undefined;
+    }
+    updateNavMidpoint();
+    window.addEventListener("resize", updateNavMidpoint);
+    const vv = window.visualViewport;
+    vv?.addEventListener("resize", updateNavMidpoint);
+    vv?.addEventListener("scroll", updateNavMidpoint);
+    return () => {
+      window.removeEventListener("resize", updateNavMidpoint);
+      vv?.removeEventListener("resize", updateNavMidpoint);
+      vv?.removeEventListener("scroll", updateNavMidpoint);
+    };
+  }, [open, updateNavMidpoint]);
+
+  useLayoutEffect(() => {
+    if (!open) return undefined;
+    const id = requestAnimationFrame(() => updateNavMidpoint());
+    return () => cancelAnimationFrame(id);
+  }, [open, activeIndex, displayT, exiting, dragT, updateNavMidpoint]);
+
+  useEffect(() => {
+    if (!open) return undefined;
+    const id = window.setTimeout(() => {
+      onAfterOpenFadeRef.current?.();
+    }, LIGHTBOX_FADE_MS);
+    return () => window.clearTimeout(id);
+  }, [open]);
 
   useEffect(() => {
     if (!open || count < 1) return undefined;
@@ -423,13 +604,6 @@ export function ProjectLightbox({ project, initialAsset, onClose }) {
     return () => window.removeEventListener("keydown", w);
   }, [open, count, runClose]);
 
-  const displayT =
-    dragT != null
-      ? dragT
-      : m.idealT[activeIndex] != null
-        ? m.idealT[activeIndex]
-        : 0;
-
   useLayoutEffect(() => {
     if (m.n < 1) return;
     setActiveIndex((i) => (i > m.n - 1 ? m.n - 1 : i));
@@ -452,8 +626,18 @@ export function ProjectLightbox({ project, initialAsset, onClose }) {
     }
   };
 
+  const onLightboxBodyPointerDownCapture = useCallback((e) => {
+    pointerDownKeepsDialogOpenRef.current = lightboxPathKeepsDialogOpen(
+      getEventComposedPath(e),
+    );
+  }, []);
+
   const onLightboxBodyClick = useCallback(
     (e) => {
+      if (pointerDownKeepsDialogOpenRef.current) {
+        pointerDownKeepsDialogOpenRef.current = false;
+        return;
+      }
       if (lightboxClickShouldKeepOpen(e)) return;
       runClose();
     },
@@ -493,7 +677,8 @@ export function ProjectLightbox({ project, initialAsset, onClose }) {
     e.currentTarget.releasePointerCapture(e.pointerId);
     const t = dragTRef.current;
     const dx = e.clientX - drag.current.startX;
-    if (Math.abs(dx) > CAROUSEL_DRAG_DISMISS_SUPPRESS_PX) {
+    /** Swallow the synthetic `click` after track gestures so body click-to-dismiss does not run. */
+    if (m.n >= 2) {
       if (trackClickSuppressClearTimerRef.current) {
         clearTimeout(trackClickSuppressClearTimerRef.current);
         trackClickSuppressClearTimerRef.current = 0;
@@ -509,13 +694,35 @@ export function ProjectLightbox({ project, initialAsset, onClose }) {
       setDragT(null);
       return;
     }
-    let best = 0;
-    let bestD = Math.abs(m.idealT[0] - t);
-    for (let i = 1; i < m.idealT.length; i += 1) {
-      const d = Math.abs(m.idealT[i] - t);
-      if (d < bestD) {
-        bestD = d;
-        best = i;
+    const W = m.viewportW ?? 0;
+    const thresh = LIGHTBOX_CAROUSEL_DRAG_COMMIT_FRACTION * W;
+    let best = activeIndex;
+    const tap =
+      m.n >= 2 && Math.abs(dx) <= CAROUSEL_DRAG_DISMISS_SUPPRESS_PX;
+    if (tap) {
+      const trackEl = e.currentTarget;
+      const hit = tapHitSlideIndex(trackEl, e.clientX, e.clientY);
+      if (hit === activeIndex - 1) {
+        best = activeIndex - 1;
+      } else if (hit === activeIndex + 1) {
+        best = activeIndex + 1;
+      }
+      /* else: current slide, gap, or non-adjacent — stay on `activeIndex` */
+    } else if (W > 0 && thresh > 0) {
+      if (dx <= -thresh && activeIndex < m.n - 1) {
+        best = activeIndex + 1;
+      } else if (dx >= thresh && activeIndex > 0) {
+        best = activeIndex - 1;
+      }
+    } else {
+      let bestD = Math.abs(m.idealT[0] - t);
+      best = 0;
+      for (let i = 1; i < m.idealT.length; i += 1) {
+        const d = Math.abs(m.idealT[i] - t);
+        if (d < bestD) {
+          bestD = d;
+          best = i;
+        }
       }
     }
     setActiveIndex(best);
@@ -573,60 +780,84 @@ export function ProjectLightbox({ project, initialAsset, onClose }) {
       tabIndex={-1}
     >
       <div className="lightbox__scrim" onClick={onScrim} aria-hidden="true" />
-      <div className="lightbox__body" onClick={onLightboxBodyClick}>
+      <div
+        className="lightbox__body"
+        onPointerDownCapture={onLightboxBodyPointerDownCapture}
+        onClick={onLightboxBodyClick}
+      >
         <div
           className="lightbox__carousel"
           ref={containerRef}
           role="region"
           aria-label="Project images"
         >
-          <div
-            ref={trackRef}
-            className={trackClass}
-            style={{
-              gap: spaceBetween,
-              transform: `translate3d(${displayT}px, 0, 0)`,
-              transition,
-            }}
-            onClick={onTrackClickBubble}
-            onPointerDown={onTrackPointerDown}
-            onPointerMove={onTrackPointerMove}
-            onPointerUp={onTrackPointerUp}
-            onPointerCancel={onTrackPointerUp}
-          >
-            {assets.map((asset) => (
-              <div key={asset.id} className="lightbox__slide">
-                <div className="lightbox__slideCell">
-                  <LightboxSlideContent
-                    asset={asset}
-                    initialAsset={initialAsset}
-                    onMediaLayout={scheduleRemeasure}
-                  />
+          <div className="lightbox__carousel-stage">
+            <div
+              ref={trackRef}
+              className={trackClass}
+              style={{
+                transform: `translate3d(${displayT}px, 0, 0)`,
+                transition,
+              }}
+              onClick={onTrackClickBubble}
+              onPointerDown={onTrackPointerDown}
+              onPointerMove={onTrackPointerMove}
+              onPointerUp={onTrackPointerUp}
+              onPointerCancel={onTrackPointerUp}
+            >
+              {assets.map((asset) => (
+                <div key={asset.id} className="lightbox__slide">
+                  <div className="lightbox__slideCell">
+                    <LightboxSlideContent
+                      asset={asset}
+                      initialAsset={initialAsset}
+                      onMediaLayout={scheduleRemeasure}
+                    />
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
-        <div className="lightbox__bar">
+        <div
+          className="lightbox__bar"
+          style={
+            open && navMidpointPx != null
+              ? {
+                  position: "fixed",
+                  left: "50%",
+                  top: `${navMidpointPx}px`,
+                  transform: "translate(-50%, -50%)",
+                  zIndex: 4,
+                }
+              : undefined
+          }
+        >
           <button
             type="button"
-            className="lightbox__btn"
+            className="lightbox__btn lightbox__btn--prev"
             id={prevId}
             aria-label="Previous"
+            tabIndex={-1}
             disabled={count < 2 || activeIndex === 0}
             onClick={goPrev}
           >
-            Prev
+            <span className="lightbox__btn-icon" aria-hidden="true">
+              <LightboxNavArrowIcon />
+            </span>
           </button>
           <button
             type="button"
-            className="lightbox__btn"
+            className="lightbox__btn lightbox__btn--next"
             id={nextId}
             aria-label="Next"
+            tabIndex={-1}
             disabled={count < 2 || activeIndex >= count - 1}
             onClick={goNext}
           >
-            Next
+            <span className="lightbox__btn-icon" aria-hidden="true">
+              <LightboxNavArrowIcon />
+            </span>
           </button>
         </div>
       </div>

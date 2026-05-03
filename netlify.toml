@@ -1,0 +1,7 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  # Sharp has prebuilds; Node 20 matches local tooling.
+  NODE_VERSION = "20"

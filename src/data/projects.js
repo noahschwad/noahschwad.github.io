@@ -11,7 +11,7 @@
  * optional `textLarge: false` for 1em copy relative to the tile, omit or `true` for 1.5em (default);
  * optional `textHtml: true` to render `text` as HTML (for links, etc.); only use with trusted copy.
  * `stripLead: true` keeps this project’s selected tiles first in the strip for every order mode (default / chronological / random).
- * `staticSiteIntro: true` — copy is not shown as tiles; it is rendered in the static `SiteIntro` block above the work strip (ignores control panel).
+ * `staticSiteIntro: true` — copy is not shown as tiles; bio is in `SiteIntro` above the strip; contact + recognition render in `SiteFooter` above copyright (ignores control panel).
  * `staticSiteFooter: true` — same idea: rendered in `SiteFooter` below the work strip, full-width row (ignores control panel).
  */
 export function getSelectedAssets(project) {
@@ -65,8 +65,10 @@ export const projects = [
         selected: true,
         textHtml: true,
         textLarge: false,
+        /** Shown in `SiteFooter` as a copy-to-clipboard control; not used when this asset is a strip tile. */
+        copyEmail: "noah.schwadron@gmail.com",
         text:
-          "Contact<br>noah.schwadron@gmail.com<br><a href=\"https://www.instagram.com/noah_oclock_/\" target=\"_blank\" rel=\"noopener noreferrer\">instagram</a><br><a href=\"https://www.linkedin.com/in/nschwadron/\" target=\"_blank\" rel=\"noopener noreferrer\">linkedin</a>",
+          "<a href=\"https://www.instagram.com/noah_oclock_/\" target=\"_blank\" rel=\"noopener noreferrer\">instagram</a><br><a href=\"https://www.linkedin.com/in/nschwadron/\" target=\"_blank\" rel=\"noopener noreferrer\">linkedin</a>",
       },
     ],
   },

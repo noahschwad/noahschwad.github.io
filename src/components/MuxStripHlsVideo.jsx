@@ -35,6 +35,30 @@ export function muxPlaybackM3u8Url(playbackId, tokens) {
   return `${base}?${params.toString()}`;
 }
 
+/**
+ * Mux static thumbnail (WebP). Shown as `poster` and in the deferred strip stand-in.
+ * Signed playback IDs require the same `tokens.playback` JWT as stream URLs (`token` query).
+ * @see https://docs.mux.com/guides/get-images-from-a-video
+ * @param {string} playbackId
+ * @param {{ playback?: string } | undefined} tokens
+ * @param {{ width?: number }} [opts]
+ */
+export function muxThumbnailUrl(playbackId, tokens, opts = {}) {
+  const id = typeof playbackId === "string" ? playbackId.trim() : "";
+  if (!id) return "";
+  const w = opts.width;
+  const width =
+    typeof w === "number" && Number.isFinite(w) && w > 0 ? Math.round(w) : 200;
+  const params = new URLSearchParams();
+  params.set("width", String(width));
+  const jwt =
+    typeof tokens?.playback === "string" ? tokens.playback.trim() : "";
+  if (jwt.length > 0) {
+    params.set("token", jwt);
+  }
+  return `https://image.mux.com/${id}/thumbnail.webp?${params.toString()}`;
+}
+
 function canPlayNativeHls(video) {
   return (
     video.canPlayType("application/vnd.apple.mpegurl") !== "" ||
@@ -103,6 +127,13 @@ export const MuxHlsVideo = memo(
       }
       return muxPlaybackM3u8Url(playbackId, { playback: tokenPlayback });
     }, [playbackId, tokenPlayback]);
+    const posterUrl = useMemo(
+      () =>
+        muxThumbnailUrl(playbackId, tokens, {
+          width: deferMount ? 60 : 480,
+        }),
+      [playbackId, tokens, deferMount],
+    );
     const onErrorRef = useRef(onErrorProp);
     onErrorRef.current = onErrorProp;
 
@@ -221,7 +252,24 @@ export const MuxHlsVideo = memo(
     if (!videoNode) {
       return (
         <div className={wrapClassName} ref={wrapRef}>
-          <div className="asset-tile__mux-standin" aria-hidden />
+          {posterUrl ? (
+            <div
+              className="asset-tile__mux-standin asset-tile__mux-standin--thumb"
+              aria-hidden
+            >
+              <img
+                className="asset-tile__mux-thumb"
+                src={posterUrl}
+                alt=""
+                tabIndex={-1}
+                decoding="async"
+                loading="lazy"
+                draggable={false}
+              />
+            </div>
+          ) : (
+            <div className="asset-tile__mux-standin" aria-hidden />
+          )}
         </div>
       );
     }
@@ -231,6 +279,8 @@ export const MuxHlsVideo = memo(
         ref={setVideoRef}
         className={className}
         style={style}
+        poster={posterUrl || undefined}
+        tabIndex={-1}
         muted
         loop
         playsInline

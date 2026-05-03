@@ -14,7 +14,6 @@ import { SiteIntro } from "./components/SiteIntro";
 import {
   ControlPanel,
   blankTilesPercentRange,
-  imageSizeRange,
   imageSizeTenthIndex,
   roundImageSizeStep,
   roundImageSizeMainBarStep,
@@ -32,9 +31,12 @@ import {
   countStripLeadTiles,
   createTileSizeFactorResolver,
   duplicateEachStripContentTile,
+  getImageSizeRange,
+  imageSizeRangeWide,
   intersperseBlankTiles,
   maxBlankTilesPercentForImageSize,
   orderTilesWithStripLeads,
+  STRIP_RANDOM_ORDER_THROTTLE_MS,
   stripTileBumpBasisRem,
   stripTileListKey,
   tileLayoutFromImageSize,
@@ -44,16 +46,36 @@ import "./App.css";
 
 export function App() {
   const [textSize, setTextSize] = useState(textSizeRange.defaultValue);
-  const [imageSize, setImageSize] = useState(imageSizeRange.defaultValue);
-  const imageTenthIndexRef = useRef(
-    imageSizeTenthIndex(roundImageSizeStep(imageSizeRange.defaultValue)),
+  const [imageSizeViewportNarrow, setImageSizeViewportNarrow] = useState(() =>
+    typeof window !== "undefined"
+      ? window.matchMedia("(max-width: 599px)").matches
+      : false,
   );
-  const [displayMode, setDisplayMode] = useState("default");
+  const imageSizeRange = useMemo(
+    () => getImageSizeRange(imageSizeViewportNarrow),
+    [imageSizeViewportNarrow],
+  );
+  const panelImageSizeExtent = useMemo(
+    () => ({ min: imageSizeRange.min, max: imageSizeRange.max }),
+    [imageSizeRange],
+  );
+  const [imageSize, setImageSize] = useState(imageSizeRangeWide.defaultValue);
+  const imageTenthIndexRef = useRef(
+    imageSizeTenthIndex(roundImageSizeStep(imageSizeRangeWide.defaultValue)),
+  );
+  const [displayMode, setDisplayMode] = useState("random");
+  /** Throttles `buildRandomTiles` during slider/window churn; see `STRIP_RANDOM_ORDER_THROTTLE_MS`. */
+  const randomStripOrderRef = useRef({
+    order: null,
+    lastAt: 0,
+    projSig: "",
+  });
   const [sizeMode, setSizeMode] = useState(SIZE_MODE_UNIFORM);
   const [blankTilesPercent, setBlankTilesPercent] = useState(
     blankTilesPercentRange.defaultValue,
   );
   const [layoutMode, setLayoutMode] = useState(LAYOUT_FLEX_START);
+  const [showDebugPanel, setShowDebugPanel] = useState(false);
   const [exitingBlankIds, setExitingBlankIds] = useState([]);
   const [lightbox, setLightbox] = useState(null);
   const lightboxReturnFocusRef = useRef(null);
@@ -64,9 +86,23 @@ export function App() {
 
   const tileSizeApi = useMemo(() => createTileSizeFactorResolver(), []);
 
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 599px)");
+    const apply = () => setImageSizeViewportNarrow(mq.matches);
+    apply();
+    mq.addEventListener("change", apply);
+    return () => mq.removeEventListener("change", apply);
+  }, []);
+
+  useLayoutEffect(() => {
+    setImageSize((v) =>
+      Math.min(imageSizeRange.max, Math.max(imageSizeRange.min, v)),
+    );
+  }, [imageSizeRange.min, imageSizeRange.max]);
+
   const maxBlankForImageSize = useMemo(
-    () => maxBlankTilesPercentForImageSize(imageSize),
-    [imageSize],
+    () => maxBlankTilesPercentForImageSize(imageSize, panelImageSizeExtent),
+    [imageSize, panelImageSizeExtent],
   );
 
   useLayoutEffect(() => {
@@ -86,23 +122,67 @@ export function App() {
   );
 
   const stripLeadCount = useMemo(() => countStripLeadTiles(projects), [projects]);
+
+  const orderedStripContentTiles = useMemo(() => {
+    const clearRandomCache = () => {
+      randomStripOrderRef.current = { order: null, lastAt: 0, projSig: "" };
+    };
+    if (displayMode === "chronological") {
+      clearRandomCache();
+      return buildChronologicalTiles(projects);
+    }
+    if (displayMode === "default") {
+      clearRandomCache();
+      return buildDefaultTiles(projects);
+    }
+    if (displayMode === "random") {
+      const now = performance.now();
+      const r = randomStripOrderRef.current;
+      const projSig = projects.map((p) => p.id).join("\0");
+      const projectsChanged = r.projSig !== projSig;
+      if (
+        r.order != null &&
+        !projectsChanged &&
+        now - r.lastAt < STRIP_RANDOM_ORDER_THROTTLE_MS
+      ) {
+        return r.order;
+      }
+      const next = buildRandomTiles(projects);
+      r.order = next;
+      r.lastAt = now;
+      r.projSig = projSig;
+      return next;
+    }
+    clearRandomCache();
+    return buildDefaultTiles(projects);
+  }, [
+    displayMode,
+    projects,
+    imageSize,
+    effectiveBlankTilesPercent,
+    stripLeadCount,
+    panelImageSizeExtent,
+  ]);
+
   const tiles = useMemo(() => {
-    const ordered =
-      displayMode === "chronological"
-        ? buildChronologicalTiles(projects)
-        : displayMode === "random"
-          ? buildRandomTiles(projects)
-          : buildDefaultTiles(projects);
-    const withLeads = orderTilesWithStripLeads(ordered, projects);
+    const withLeads = orderTilesWithStripLeads(orderedStripContentTiles, projects);
     return intersperseBlankTiles(
       duplicateEachStripContentTile(withLeads),
       effectiveBlankTilesPercent,
       {
-      reservedLeadingSlots: stripLeadCount,
+        reservedLeadingSlots: stripLeadCount,
         imageSize,
+        panelImageSizeExtent,
       },
     );
-  }, [displayMode, effectiveBlankTilesPercent, stripLeadCount, imageSize, projects]);
+  }, [
+    orderedStripContentTiles,
+    effectiveBlankTilesPercent,
+    stripLeadCount,
+    imageSize,
+    panelImageSizeExtent,
+    projects,
+  ]);
 
   useLayoutEffect(() => {
     const cur = new Set(
@@ -133,22 +213,32 @@ export function App() {
     setExitingBlankIds((ids) => ids.filter((id) => id !== blankKey));
   }, []);
 
+  /** Persist flex-random `align-self` per strip key; only new keys get a roll. Cleared when leaving flex random. */
+  const flexRandomAlignSelfByKeyRef = useRef(new Map());
+
+  const flexRandomTileKeysSig = useMemo(() => {
+    if (layoutMode !== LAYOUT_FLEX_RANDOM) return "";
+    return JSON.stringify(tiles.map((t) => stripTileListKey(t)));
+  }, [layoutMode, tiles]);
+
   const tileAlignSelfByKey = useMemo(() => {
-    if (layoutMode !== LAYOUT_FLEX_RANDOM) return null;
+    if (layoutMode !== LAYOUT_FLEX_RANDOM) {
+      flexRandomAlignSelfByKeyRef.current.clear();
+      return null;
+    }
     const choices = ["flex-start", "flex-end", "center", "baseline", "stretch"];
-    const map = new Map();
+    const map = flexRandomAlignSelfByKeyRef.current;
     for (const tile of tiles) {
-      if (tile.type === "blank") {
-        map.set(tile.blankId, choices[Math.floor(Math.random() * choices.length)]);
-      } else {
-        map.set(
-          stripTileListKey(tile),
-          choices[Math.floor(Math.random() * choices.length)],
-        );
+      const key = stripTileListKey(tile);
+      if (key && !map.has(key)) {
+        map.set(key, choices[Math.floor(Math.random() * choices.length)]);
       }
     }
-    return map;
-  }, [layoutMode, tiles]);
+    return new Map(map);
+    // `tiles` is read from the render where `flexRandomTileKeysSig` changed; omitting `tiles`
+    // avoids new random rolls when only the tiles array identity changes (e.g. image size).
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed by flexRandomTileKeysSig
+  }, [layoutMode, flexRandomTileKeysSig]);
 
   const tileKeyFn = useCallback((t) => stripTileListKey(t), []);
 
@@ -182,6 +272,7 @@ export function App() {
     tileLayout,
     sizeMode,
     tileSizeApi,
+    layoutMode,
     alignSelfByKey: tileAlignSelfByKey,
     onExitingBlankDone: handleExitingBlankDone,
   });
@@ -191,6 +282,22 @@ export function App() {
     let o = 0;
     return stripTiles.map((t) => (t.type === "asset" ? o++ : null));
   }, [stripTiles]);
+
+  const pauseStripVideos = useCallback(() => {
+    const root = stripRef.current;
+    if (!root) return;
+    root.querySelectorAll("video").forEach((v) => {
+      v.pause();
+    });
+  }, []);
+
+  const resumeStripVideos = useCallback(() => {
+    const root = stripRef.current;
+    if (!root) return;
+    root.querySelectorAll("video").forEach((v) => {
+      v.play().catch(() => {});
+    });
+  }, []);
 
   const flushPendingImageTenthShuffle = useCallback(() => {
     if (!pendingImageTenthShuffleRef.current) return;
@@ -232,11 +339,37 @@ export function App() {
     };
   }, [handleImageSizeGrabEnd]);
 
+  useEffect(() => {
+    const onKeyDown = (e) => {
+      if (e.key !== "d" && e.key !== "D") return;
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      const t = e.target;
+      if (
+        t instanceof HTMLElement &&
+        (t.closest("input, textarea, select") != null || t.isContentEditable)
+      ) {
+        return;
+      }
+      e.preventDefault();
+      setShowDebugPanel((v) => !v);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, []);
+
   /** Top control bar only: crossing 0.1 “tenths” can run `applyImageTenthCrossShuffle` (coarse mode tweaks). */
   const handleImageSize = useCallback(
     (raw) => {
-      const next = roundImageSizeMainBarStep(raw);
-      const t = imageSizeTenthIndex(next);
+      const clamped = Math.min(
+        imageSizeRange.max,
+        Math.max(imageSizeRange.min, raw),
+      );
+      const next = roundImageSizeMainBarStep(clamped);
+      const bounded = Math.min(
+        imageSizeRange.max,
+        Math.max(imageSizeRange.min, next),
+      );
+      const t = imageSizeTenthIndex(bounded);
       if (imageTenthIndexRef.current !== t) {
         pendingImageTenthShuffleRef.current = true;
         if (!imageSliderGrabbedRef.current) {
@@ -244,17 +377,28 @@ export function App() {
         }
       }
       imageTenthIndexRef.current = t;
-      setImageSize(next);
+      setImageSize(bounded);
     },
-    [flushPendingImageTenthShuffle],
+    [flushPendingImageTenthShuffle, imageSizeRange.min, imageSizeRange.max],
   );
 
   /** Debug panel image slider: same `imageSize` / CSS, but no tenth-mark shuffle. */
-  const handleDebugImageSize = useCallback((raw) => {
-    const next = roundImageSizeStep(raw);
-    imageTenthIndexRef.current = imageSizeTenthIndex(next);
-    setImageSize(next);
-  }, []);
+  const handleDebugImageSize = useCallback(
+    (raw) => {
+      const clamped = Math.min(
+        imageSizeRange.max,
+        Math.max(imageSizeRange.min, raw),
+      );
+      const next = roundImageSizeStep(clamped);
+      const bounded = Math.min(
+        imageSizeRange.max,
+        Math.max(imageSizeRange.min, next),
+      );
+      imageTenthIndexRef.current = imageSizeTenthIndex(bounded);
+      setImageSize(bounded);
+    },
+    [imageSizeRange.min, imageSizeRange.max],
+  );
 
   return (
     <div
@@ -268,6 +412,7 @@ export function App() {
         textSize={textSize}
         onTextSize={setTextSize}
         imageSize={imageSize}
+        imageSizeRange={imageSizeRange}
         onImageSize={handleImageSize}
         onDebugImageSize={handleDebugImageSize}
         blankTilesPercent={blankTilesPercent}
@@ -281,6 +426,7 @@ export function App() {
         onLayoutMode={setLayoutMode}
         onImageSizeGrabStart={handleImageSizeGrabStart}
         onImageSizeGrabEnd={handleImageSizeGrabEnd}
+        showDebugPanel={showDebugPanel}
       />
       <main id="main" className="app">
         <SiteIntro project={projects.find((p) => p.staticSiteIntro)} />
@@ -314,7 +460,7 @@ export function App() {
                 }}
                 {...(openLightbox
                   ? {
-                      tabIndex: 0,
+                      tabIndex: -1,
                       role: "button",
                       "aria-haspopup": "dialog",
                       onClick: (e) => {
@@ -359,12 +505,17 @@ export function App() {
             );
           })}
         </ul>
-        <SiteFooter project={projects.find((p) => p.staticSiteFooter)} />
+        <SiteFooter
+          project={projects.find((p) => p.staticSiteFooter)}
+          introProject={projects.find((p) => p.staticSiteIntro)}
+        />
       </main>
       {lightbox && (
         <ProjectLightbox
           project={lightbox.project}
           initialAsset={lightbox.asset}
+          onAfterOpenFade={pauseStripVideos}
+          onExitStart={resumeStripVideos}
           onClose={() => {
             setLightbox(null);
             requestAnimationFrame(() =>

@@ -46,10 +46,16 @@ export function stripTileListKey(t) {
 // —— layout modes ———————————————————————————————————————————————————————
 
 export const LAYOUT_FLEX_START = "flex-start";
+/** Row strip cross-axis: `align-items: center`. */
+export const LAYOUT_FLEX_CENTER = "center";
+/** Row strip cross-axis: `align-items: flex-end`. */
+export const LAYOUT_FLEX_END = "flex-end";
 export const LAYOUT_FLEX_RANDOM = "flex-random";
 
 export const LAYOUT_MODE_OPTIONS = [
   { value: LAYOUT_FLEX_START, label: "Flex start" },
+  { value: LAYOUT_FLEX_CENTER, label: "Align center" },
+  { value: LAYOUT_FLEX_END, label: "Align flex end" },
   { value: LAYOUT_FLEX_RANDOM, label: "Flex random" },
 ];
 
@@ -335,24 +341,51 @@ export const DISPLAY_MODE_OPTIONS = [
 ];
 
 /**
+ * When strip order is Random, min ms between `buildRandomTiles` runs during rapid
+ * recomputes (e.g. image size drag). Changing the project set always reshuffles immediately.
+ */
+export const STRIP_RANDOM_ORDER_THROTTLE_MS = 500;
+
+/**
  * Share of total grid (content + blanks) that should be blank; blanks are added, not converted.
  * Single source for the debug range control in `ControlPanel` and for blank-tile tenth shuffles.
  */
 export const blankTilesPercentRange = { min: 0, max: 60, step: 1, defaultValue: 0 };
 
-/**
- * Must match `imageSizeRange` in `ControlPanel.jsx` (min / max only).
- * Used to map image size → max blank %.
- */
-const PANEL_IMAGE_SIZE_EXTENT = { min: 0.25, max: 3 };
+/** Viewport width &lt; this uses `imageSizeRangeNarrow` for the panel image slider. */
+export const IMAGE_SIZE_VIEWPORT_BREAKPOINT_PX = 600;
+
+/** Main control-bar image size (multiplier); wide viewports (`≥` breakpoint). */
+export const imageSizeRangeWide = { min: 0.25, max: 3, step: 0.01, defaultValue: 1 };
+
+/** Narrow viewports: tighter max so strip tiles stay manageable on small screens. */
+export const imageSizeRangeNarrow = { min: 0.18, max: 1.7, step: 0.01, defaultValue: 1 };
+
+/** @param {boolean} viewportIsNarrow `true` when viewport width is below `IMAGE_SIZE_VIEWPORT_BREAKPOINT_PX` */
+export function getImageSizeRange(viewportIsNarrow) {
+  return viewportIsNarrow ? imageSizeRangeNarrow : imageSizeRangeWide;
+}
+
+/** `{ min, max }` only — for blank % curve and “upper half” blank spacing. */
+export const PANEL_IMAGE_SIZE_EXTENT_WIDE = {
+  min: imageSizeRangeWide.min,
+  max: imageSizeRangeWide.max,
+};
+
+export const PANEL_IMAGE_SIZE_EXTENT_NARROW = {
+  min: imageSizeRangeNarrow.min,
+  max: imageSizeRangeNarrow.max,
+};
 
 /**
- * `true` when the top `.control-bar` image size is in the **upper half** of
- * `PANEL_IMAGE_SIZE_EXTENT` (same range as `imageSizeRange` in `ControlPanel.jsx`).
- * Used to avoid back-to-back blank strip tiles at large image sizes.
+ * `true` when the top `.control-bar` image size is in the **upper half** of the
+ * active panel extent. Used to avoid back-to-back blank strip tiles at large image sizes.
  */
-export function isMainImageSizeControlAboveHalf(imageSize) {
-  const { min: sMin, max: sMax } = PANEL_IMAGE_SIZE_EXTENT;
+export function isMainImageSizeControlAboveHalf(
+  imageSize,
+  extent = PANEL_IMAGE_SIZE_EXTENT_WIDE,
+) {
+  const { min: sMin, max: sMax } = extent;
   return imageSize > (sMin + sMax) / 2;
 }
 
@@ -415,8 +448,11 @@ const BLANK_PERCENT_MAX_AT_MAX_IMAGE = 20;
 /**
  * Max allowed blank-tile share (% of content+blanks) for a given panel image size.
  */
-export function maxBlankTilesPercentForImageSize(imageSize) {
-  const { min: sMin, max: sMax } = PANEL_IMAGE_SIZE_EXTENT;
+export function maxBlankTilesPercentForImageSize(
+  imageSize,
+  extent = PANEL_IMAGE_SIZE_EXTENT_WIDE,
+) {
+  const { min: sMin, max: sMax } = extent;
   const t = (imageSize - sMin) / (sMax - sMin);
   const u = Math.max(0, Math.min(1, t));
   const linear =
@@ -561,9 +597,10 @@ export function countBlankTilesForShare(contentCount, blankPercent) {
 /**
  * @param {Array<{ project: unknown, asset: unknown }>} contentTiles
  * @param {number} blankPercent
- * @param {{ reservedLeadingSlots?: number, imageSize?: number }} [options]
+ * @param {{ reservedLeadingSlots?: number, imageSize?: number, panelImageSizeExtent?: { min: number, max: number } }} [options]
  *   First N positions never get blanks (strip lead block). When `imageSize` is
  *   in the upper half of the main control-bar range, no two blank tiles are adjacent.
+ *   Pass `panelImageSizeExtent` when the slider uses the narrow viewport range.
  * @returns {Array<
  *   | { type: "asset"; project: unknown; asset: unknown }
  *   | { type: "blank"; blankId: string }
@@ -591,8 +628,12 @@ export function intersperseBlankTiles(contentTiles, blankPercent, options = {}) 
     return tagged;
   }
   const imageSize = options.imageSize;
+  const extent =
+    options.panelImageSizeExtent != null
+      ? options.panelImageSizeExtent
+      : PANEL_IMAGE_SIZE_EXTENT_WIDE;
   const useNoAdjacent =
-    imageSize != null && isMainImageSizeControlAboveHalf(imageSize);
+    imageSize != null && isMainImageSizeControlAboveHalf(imageSize, extent);
 
   let k = blankCount;
   if (useNoAdjacent) {

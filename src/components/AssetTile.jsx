@@ -2,6 +2,7 @@ import { useCallback, useState } from "react";
 import { getTextTileBodyProps } from "../renderTextWithLineBreaks";
 import { TILE_LAYOUT_STACKED, TILE_LAYOUT_TEXT_LEFT } from "../functionality";
 import { MuxStripHlsVideo } from "./MuxStripHlsVideo";
+import { ProgressiveProjectImage } from "./ProgressiveProjectImage";
 
 function randomSelectionTheme() {
   const r = Math.floor(Math.random() * 256);
@@ -79,6 +80,7 @@ export function AssetTile({
         <video
           className="asset-tile__video"
           src={asset.src}
+          tabIndex={-1}
           muted
           loop
           playsInline
@@ -86,13 +88,14 @@ export function AssetTile({
           onError={() => setMediaFailed(true)}
         />
       ) : (
-        <img
+        <ProgressiveProjectImage
+          fullSrc={asset.src}
           className="asset-tile__img"
-          src={asset.src}
+          stackClass="asset-tile__img-stack"
           alt=""
           loading="lazy"
           decoding="async"
-          onError={() => setMediaFailed(true)}
+          onErrorFull={() => setMediaFailed(true)}
         />
       )}
     </div>

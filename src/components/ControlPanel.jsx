@@ -3,21 +3,21 @@ import {
   LAYOUT_MODE_OPTIONS,
   SIZE_MODE_OPTIONS,
   blankTilesPercentRange,
+  imageSizeRangeWide,
 } from "../functionality";
-
-/** `false` hides the lower debug controls (order, modes, blank tiles, text/image debug sliders). The top image size bar stays. */
-export const SHOW_DEBUG_PANEL = false;
 
 /** These numbers are exactly `--panel-text-size` / `--panel-image-size` (multipliers). */
 export const textSizeRange = { min: 0.45, max: 5.3, step: 0.01, defaultValue: 1 };
-export const imageSizeRange = { min: 0.25, max: 3, step: 0.01, defaultValue: 1 };
 
-/** Top control bar only: one tenth of `imageSizeRange.step` (finer drag). */
-export const imageSizeMainBarStep = imageSizeRange.step / 10;
+/** @deprecated Use `imageSizeRangeWide` from `functionality.js` or the `imageSizeRange` prop on `ControlPanel`. */
+export const imageSizeRange = imageSizeRangeWide;
 
-/** Rounds to `imageSizeRange.step` (0.01). Debug panel + any 0.01-grid use. */
+/** Top control bar only: one tenth of slider step (finer drag); step is the same for wide/narrow ranges. */
+export const imageSizeMainBarStep = imageSizeRangeWide.step / 10;
+
+/** Rounds to wide/narrow shared step (0.01). Debug panel + any 0.01-grid use. */
 export function roundImageSizeStep(n) {
-  return Math.round(n / imageSizeRange.step) * imageSizeRange.step;
+  return Math.round(n / imageSizeRangeWide.step) * imageSizeRangeWide.step;
 }
 
 /** Rounds to `imageSizeMainBarStep` (0.001). Main image size slider only. */
@@ -40,6 +40,7 @@ function DebugPanel({
   onTextSize,
   imageSize,
   onDebugImageSize,
+  imageSizeRange,
   blankTilesPercent,
   blankTilesPercentMax,
   onBlankTilesPercent,
@@ -174,31 +175,38 @@ export function ControlPanel({
   onLayoutMode,
   onImageSizeGrabStart,
   onImageSizeGrabEnd,
+  /** Active min/max/step for the image size sliders (wide vs narrow viewport). */
+  imageSizeRange = imageSizeRangeWide,
+  /** Lower debug strip (order, modes, blank tiles, text/image sliders). Top image size bar always visible. */
+  showDebugPanel = false,
 }) {
   return (
     <div className="top-chrome">
       <div className="control-bar">
-        <input
-          className="control-bar__input"
-          type="range"
-          aria-label="Image size"
-          min={imageSizeRange.min}
-          max={imageSizeRange.max}
-          step={imageSizeMainBarStep}
-          value={imageSize}
-          onChange={(e) => onImageSize(Number(e.target.value))}
-          onPointerDown={onImageSizeGrabStart}
-          onPointerUp={onImageSizeGrabEnd}
-          onPointerCancel={onImageSizeGrabEnd}
-          onBlur={onImageSizeGrabEnd}
-        />
+        <div className="control-bar__slider-wrap">
+          <input
+            className="control-bar__input"
+            type="range"
+            aria-label="Image size"
+            min={imageSizeRange.min}
+            max={imageSizeRange.max}
+            step={imageSizeMainBarStep}
+            value={imageSize}
+            onChange={(e) => onImageSize(Number(e.target.value))}
+            onPointerDown={onImageSizeGrabStart}
+            onPointerUp={onImageSizeGrabEnd}
+            onPointerCancel={onImageSizeGrabEnd}
+            onBlur={onImageSizeGrabEnd}
+          />
+        </div>
       </div>
-      {SHOW_DEBUG_PANEL ? (
+      {showDebugPanel ? (
         <DebugPanel
           textSize={textSize}
           onTextSize={onTextSize}
           imageSize={imageSize}
           onDebugImageSize={onDebugImageSize}
+          imageSizeRange={imageSizeRange}
           blankTilesPercent={blankTilesPercent}
           blankTilesPercentMax={blankTilesPercentMax}
           onBlankTilesPercent={onBlankTilesPercent}

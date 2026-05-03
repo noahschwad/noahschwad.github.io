@@ -5,7 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "thumbs": "node scripts/generate-image-thumbs.mjs",
+    "thumbs:force": "node scripts/generate-image-thumbs.mjs --force",
+    "build": "node scripts/generate-image-thumbs.mjs && vite build",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -15,6 +17,7 @@
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.3.4",
+    "sharp": "^0.33.5",
     "vite": "^6.2.0"
   }
 }

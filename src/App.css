@@ -3,9 +3,10 @@
   --panel-image-size: 1;
   --control-panel-scale: 0.5;
   /* Slider row (main control) + former control strip (debug) */
-  --control-bar-h: calc(1.1rem * var(--control-panel-scale) + 1.35rem);
+  /* --control-bar-h: calc(1.1rem * var(--control-panel-scale) + 1.35rem + 2.5rem); */
   --debug-panel-h: calc(4.75rem * var(--control-panel-scale));
-  --control-panel-h: 64px;
+  /* Top padding for fixed chrome; keep in sync with `.control-bar__slider-wrap` + range height */
+  --control-panel-h: 80px;
 }
 
 .top-chrome {
@@ -18,7 +19,7 @@
   flex-direction: column;
   align-items: stretch;
   width: 100%;
-  background: var(--bg);
+  /* background: var(--bg); */
   box-sizing: border-box;
 }
 
@@ -26,20 +27,100 @@
   flex: 0 0 auto;
   width: 100%;
   box-sizing: border-box;
-  padding: calc(var(--space) * 0.75) var(--space);
-  min-height: var(--control-bar-h);
+  padding: 0 calc(var(--space) - 2px);
   display: flex;
   align-items: center;
+  height: var(--control-panel-h);
+  min-height: var(--control-panel-h);
+  max-height: var(--control-panel-h);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
-/* Main (top) image size slider: use UA track/thumb colors (not `--accent`). */
-.control-bar__input {
+.control-bar__slider-wrap {
+  display: flex;
+  width: 100%;
+  max-width: 100%;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+  /* padding: 0.65rem 0; */
+  box-sizing: border-box;
+  overflow: visible;
+}
+
+/* `appearance: none` so we own paint; native `auto` ignores most track border overrides (esp. Safari). */
+.control-bar__input[type="range"] {
+  --control-bar-track-fill: linear-gradient(
+    270deg,
+    #95ff49 0%,
+    #b6b6b6 21.15%,
+    #bcbcbc 34.13%,
+    #ff8c00 50%,
+    #3431fd 75%,
+    #cc0d0d 100%
+  );
+  --control-bar-track-inset-glow:
+    0 4px 10px 3px rgba(255, 255, 255, 0.65) inset,
+    0 -4px 10px 3px rgb(0 0 0 / 0.45) inset;
   display: block;
   width: 100%;
   max-width: 100%;
   margin: 0;
   box-sizing: border-box;
-  accent-color: auto;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  height: 72px;
+}
+
+.control-bar__input[type="range"]::-webkit-slider-runnable-track {
+  height: 24px;
+  border: none;
+  border-radius: 9999px;
+  background: var(--control-bar-track-fill);
+  box-shadow: var(--control-bar-track-inset-glow);
+}
+
+.control-bar__input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 52px;
+  height: 52px;
+  margin-top: -14px;
+  border: none;
+  border-radius: 50%;
+  box-shadow: none;
+  background: var(--accent);
+  cursor: pointer;
+}
+
+.control-bar__input[type="range"]::-moz-range-track {
+  height: 24px;
+  border: none;
+  border-radius: 9999px;
+  background: var(--control-bar-track-fill);
+  box-shadow: var(--control-bar-track-inset-glow);
+}
+
+.control-bar__input[type="range"]::-moz-range-progress {
+  background: transparent;
+}
+
+.control-bar__input[type="range"]::-moz-range-thumb {
+  width: 42px;
+  height: 42px;
+  border: none;
+  border-radius: 50%;
+  box-shadow: none;
+  background: var(--accent);
+  cursor: pointer;
+}
+
+.control-bar__input[type="range"]::-moz-focus-outer {
+  border: 0;
 }
 
 /* Former “control panel”: layout / size / text / image (debug) */
@@ -126,52 +207,68 @@
   text-underline-offset: 0.1em;
 }
 
-.site-intro__grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  column-gap: var(--space);
-  row-gap: 1.25rem;
-  align-items: start;
+.site-intro__email-row {
+  display: inline;
+  white-space: normal;
+}
+
+.site-intro__email-btn {
+  display: inline;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  line-height: inherit;
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 0.1em;
+  cursor: pointer;
+}
+
+.site-intro__email-btn:hover,
+.site-intro__email-btn:focus-visible {
+  text-decoration-thickness: 0.07em;
+}
+
+.site-intro__email-btn:focus-visible {
+  outline: 1px solid currentColor;
+  outline-offset: 2px;
+}
+
+.site-intro__email-copied {
+  display: inline;
+  margin-left: 0.35em;
+  font-style: italic;
+  opacity: 0;
+  animation: site-intro-email-copied-fade 2.1s ease forwards;
+}
+
+@keyframes site-intro-email-copied-fade {
+  0% {
+    opacity: 0;
+  }
+  12% {
+    opacity: 1;
+  }
+  58% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
 }
 
 .site-intro__bio {
-  grid-column: 1 / -1;
   margin: 0;
   min-width: 0;
   max-width: 100%;
 }
 
 .site-intro__bio--large {
-  font-size: max(1.2rem, 2vw);
+  font-size: max(1.2rem, 2.2vw);
   line-height: 1.2;
   margin-top: -0.15em;
-}
-
-.site-intro__blurb {
-  min-width: 0;
-}
-
-.site-intro__blurb--rec {
-  grid-column: 1;
-}
-
-.site-intro__blurb--contact {
-  grid-column: 2;
-}
-
-.site-intro__blurb-inner {
-  margin: 0;
-}
-
-@media (max-width: 50em) {
-  .site-intro__grid {
-    grid-template-columns: 1fr;
-  }
-
-  .site-intro__blurb--rec,
-  .site-intro__blurb--contact {
-    grid-column: 1;
-  }
 }
 
 /* Static footer: full-width row below the work strip; not affected by panel controls. */
@@ -185,6 +282,19 @@
   font-size: 0.75rem;
   line-height: 1.55;
   max-width: 400px;
+}
+
+.site-footer__stack {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 1.25rem;
+  min-width: 0;
+}
+
+.site-footer__blurb-inner {
+  margin: 0;
+  min-width: 0;
 }
 
 .site-footer__inner {
@@ -437,6 +547,54 @@
   outline: none;
 }
 
+/* Build-generated `*.thumb.webp` under full-res; full fades in when ready. */
+.asset-tile__img-stack {
+  position: relative;
+  display: block;
+  width: 100%;
+  max-width: 100%;
+}
+
+.asset-tile__img-stack .project-image-stack__thumb {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center;
+  z-index: 0;
+}
+
+.asset-tile__img-stack .project-image-stack__full {
+  position: relative;
+  z-index: 1;
+  display: block;
+  width: 100%;
+  height: auto;
+  opacity: 0;
+  transition: opacity 0.35s ease;
+}
+
+.asset-tile__img-stack .project-image-stack__full.is-loaded {
+  opacity: 1;
+}
+
+.asset-tile--text-left .asset-tile__img-stack {
+  width: auto;
+  height: 100%;
+  max-height: 100%;
+  flex-shrink: 0;
+}
+
+.asset-tile--text-left .asset-tile__img-stack .project-image-stack__thumb,
+.asset-tile--text-left .asset-tile__img-stack .project-image-stack__full {
+  width: auto;
+  height: 100%;
+  max-height: 100%;
+  flex-shrink: 0;
+  object-fit: contain;
+}
+
 /* Wrapper when strip video defers to intersection observer (native video + hls.js). */
 .asset-tile__mux-wrap {
   display: block;
@@ -458,6 +616,23 @@
   flex: 1 1 auto;
   min-width: 10rem;
   background: rgb(0 0 0 / 0.12);
+}
+
+/* Mux thumbnail while strip slot waits or video buffers (see `muxThumbnailUrl`). */
+.asset-tile__mux-standin--thumb {
+  position: relative;
+  overflow: hidden;
+  padding: 0;
+}
+
+.asset-tile__mux-thumb {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center;
+  pointer-events: none;
 }
 
 .asset-tile__placeholder {
@@ -491,6 +666,8 @@
 /* —— project lightbox / carousel —— */
 .lightbox {
   --lightbox-media-inset: 20vw;
+  /* Set in JS from max `.lightbox__slideCell` height (all slides); caps shell vs viewport via min(). */
+  --lightbox-body-content-max: 100dvh;
   position: fixed;
   inset: 0;
   z-index: 200;
@@ -507,8 +684,8 @@
   inset: 0;
   z-index: 0;
   pointer-events: auto;
-  cursor: zoom-out;
-  background: rgb(0 0 0 / 0.2);
+  cursor: default;
+  background: rgb(255 255 255 / 0.4);
   backdrop-filter: blur(0);
   -webkit-backdrop-filter: blur(0);
   opacity: 0;
@@ -522,8 +699,8 @@
 .lightbox--entering .lightbox__scrim,
 .lightbox--has-carousel .lightbox__scrim {
   opacity: 1;
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(30px);
+  -webkit-backdrop-filter: blur(30px);
 }
 
 .lightbox--leaving .lightbox__scrim {
@@ -542,6 +719,7 @@
   z-index: 1;
   display: flex;
   flex-direction: column;
+  justify-content: center;
   min-height: 0;
   max-height: 100%;
   /* padding-bottom: 4.5rem; */
@@ -553,15 +731,22 @@
 .lightbox--has-carousel .lightbox__body {
   opacity: 1;
   pointer-events: auto;
+  cursor: default;
 }
 
 .lightbox__carousel {
   width: 100%;
-  height: 100%;
+  height: auto;
   min-height: 0;
-  flex: 1 1 auto;
+  flex: 0 0 auto;
+  max-height: min(100dvh, var(--lightbox-body-content-max, 100dvh));
   overflow: hidden;
   touch-action: pan-x;
+}
+
+.lightbox__carousel-stage {
+  width: 100%;
+  overflow: hidden;
 }
 
 /* Horizontal row: transform translateX centers the active slide. */
@@ -569,7 +754,8 @@
   display: flex;
   flex-direction: row;
   align-items: center;
-  height: 100%;
+  gap: 3svw;
+  height: auto;
   min-height: 0;
   width: max-content;
   max-width: none;
@@ -577,12 +763,18 @@
   will-change: transform;
   touch-action: none;
   user-select: none;
-  cursor: grab;
+  cursor: default;
 }
 
 .lightbox__track--drag {
   transition: none !important;
   cursor: grabbing;
+}
+
+/* Grab only over image/video tiles, not slide padding or between-slide gaps. */
+.lightbox__track:not(.lightbox__track--drag) img.lightbox__media,
+.lightbox__track:not(.lightbox__track--drag) video.lightbox__media {
+  cursor: grab;
 }
 
 .lightbox__slide {
@@ -592,7 +784,7 @@
   /* Measured for translate; intrinsic + cap, not 100%↔circular with children. */
   width: max-content;
   max-width: min(100%, calc(100vw - var(--lightbox-media-inset)));
-  height: 100%;
+  height: auto;
   min-height: 0;
   min-width: auto;
   box-sizing: border-box;
@@ -664,6 +856,42 @@
   touch-action: none;
 }
 
+.lightbox__img-stack {
+  position: relative;
+  display: block;
+  flex: 0 0 auto;
+  min-width: 0;
+  min-height: 0;
+  max-width: calc(100vw - var(--lightbox-media-inset));
+  max-height: calc(100dvh - var(--lightbox-media-inset));
+}
+
+.lightbox__img-stack .lightbox__media.project-image-stack__thumb {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  object-position: center;
+  touch-action: none;
+  z-index: 0;
+}
+
+.lightbox__img-stack .lightbox__media.project-image-stack__full {
+  position: relative;
+  z-index: 1;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  touch-action: none;
+}
+
+.lightbox__img-stack .lightbox__media.project-image-stack__full.is-loaded {
+  opacity: 1;
+}
+
 p.lightbox__text.lightbox__media {
   object-fit: unset;
   object-position: unset;
@@ -698,29 +926,70 @@ p.lightbox__text.lightbox__media a {
 }
 
 .lightbox__bar {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  z-index: 3;
   display: flex;
   flex-direction: row;
   justify-content: center;
   align-items: center;
-  gap: 0.75rem;
-  padding: 0.75rem 1.25rem;
+  gap: 10px;
+  padding: 0;
+  margin: 0;
   pointer-events: auto;
-  background: linear-gradient(transparent, rgb(0 0 0 / 0.25));
+  background: transparent;
+  border: none;
 }
 
 .lightbox__btn {
   font: inherit;
-  font-size: 0.9rem;
-  padding: 0.4rem 0.85rem;
+  margin: 0;
+  padding: 0.45rem 1rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
-  color: #fff;
-  text-shadow: 0 0 0.3rem #000;
+  color: #000;
+  /* background: #FFFFFF77; */
   background: transparent;
-  border: 1px solid rgb(255 255 255 / 0.4);
-  border-radius: 0.25rem;
+  border: 0.7px solid #333;
+  border-radius: 9999px;
+  box-shadow: none;
+  transition:
+    opacity 0.2s ease,
+    transform 0.15s ease;
+  width: 100vw;
+  max-width: 167px;
+}
+
+.lightbox__btn:hover:not(:disabled) {
+  transform: scale(1.04);
+}
+
+.lightbox__btn:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.lightbox__btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+  box-shadow: none;
+}
+
+.lightbox__btn-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 0;
+}
+
+.lightbox__btn-icon svg {
+  width: clamp(1rem, 3.2vw, 1.35rem);
+  height: auto;
+  display: block;
+}
+
+.lightbox__btn-icon path {
+  stroke-width: 0.7px;
+}
+
+.lightbox__btn--prev .lightbox__btn-icon {
+  transform: scaleX(-1);
 }
