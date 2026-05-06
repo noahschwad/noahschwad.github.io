@@ -53,9 +53,16 @@ function stripAlignItemsFromLayoutMode(layoutMode) {
 
 const LERP = 0.15;
 const SNAP = 0.45;
-/** Max update rate for strip position/size lerp (avoids 120+ tick/s on ProMotion / high-refresh). */
+/**
+ * When true, strip lerp is capped at `STRIP_ANIMATION_MAX_FPS`. When false, every `requestAnimationFrame`
+ * tick runs the lerp (matches display refresh, e.g. 120 Hz on ProMotion).
+ */
+const STRIP_ANIMATION_FPS_LIMIT_ENABLED = true;
+/** Used only when `STRIP_ANIMATION_FPS_LIMIT_ENABLED` is true. */
 const STRIP_ANIMATION_MAX_FPS = 60;
-const STRIP_ANIMATION_MIN_FRAME_MS = 1000 / STRIP_ANIMATION_MAX_FPS;
+const STRIP_ANIMATION_MIN_FRAME_MS = STRIP_ANIMATION_FPS_LIMIT_ENABLED
+  ? 1000 / STRIP_ANIMATION_MAX_FPS
+  : 0;
 
 /**
  * @param {string} key
