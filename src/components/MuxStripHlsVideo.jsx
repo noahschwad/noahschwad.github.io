@@ -71,7 +71,8 @@ const muxHlsDefaultCompare = (prev, next) =>
   prev.playbackId === next.playbackId &&
   prev.tokens === next.tokens &&
   prev.onError === next.onError &&
-  prev.stripLoadOrder === next.stripLoadOrder;
+  prev.stripLoadOrder === next.stripLoadOrder &&
+  prev.onStripLayoutReady === next.onStripLayoutReady;
 
 /**
  * Native &lt;video&gt; + hls.js (no mux-player). Muted, looping, no controls.
@@ -82,6 +83,8 @@ const muxHlsDefaultCompare = (prev, next) =>
  * @param {import('react').CSSProperties} [props.style] Inline style on the video (lightbox sizing).
  * @param {() => void} [props.onLoadedData]
  * @param {() => void} [props.onLoadedMetadata]
+ * @param {(naturalW?: number, naturalH?: number) => void} [props.onStripLayoutReady]
+ *   Strip: poster decoded (optional dims) or stand-in / metadata so layout can reserve the box.
  */
 export const MuxHlsVideo = memo(
   forwardRef(function MuxHlsVideo(
@@ -95,6 +98,7 @@ export const MuxHlsVideo = memo(
       onError: onErrorProp,
       onLoadedData,
       onLoadedMetadata,
+      onStripLayoutReady,
       playbackId,
       tokens,
     },
@@ -137,6 +141,57 @@ export const MuxHlsVideo = memo(
     );
     const onErrorRef = useRef(onErrorProp);
     onErrorRef.current = onErrorProp;
+
+    const stripLayoutHintFiredRef = useRef(false);
+    const tryFireStripLayout = useCallback(
+      (nw, nh) => {
+        if (!onStripLayoutReady) return;
+        if (stripLayoutHintFiredRef.current) return;
+        stripLayoutHintFiredRef.current = true;
+        if (
+          typeof nw === "number" &&
+          typeof nh === "number" &&
+          nw > 0 &&
+          nh > 0
+        ) {
+          onStripLayoutReady(nw, nh);
+        } else {
+          onStripLayoutReady();
+        }
+      },
+      [onStripLayoutReady],
+    );
+
+    useLayoutEffect(() => {
+      stripLayoutHintFiredRef.current = false;
+    }, [playbackId, src]);
+
+    useLayoutEffect(() => {
+      if (!onStripLayoutReady) return undefined;
+      if (!deferMount) return undefined;
+      if (show) return undefined;
+      if (posterUrl) return undefined;
+      tryFireStripLayout();
+      return undefined;
+    }, [
+      deferMount,
+      show,
+      posterUrl,
+      src,
+      onStripLayoutReady,
+      tryFireStripLayout,
+    ]);
+
+    const handleLoadedMetadata = useCallback(
+      (e) => {
+        onLoadedMetadata?.(e);
+        if (deferMount) {
+          const v = e.currentTarget;
+          tryFireStripLayout(v.videoWidth, v.videoHeight);
+        }
+      },
+      [onLoadedMetadata, deferMount, tryFireStripLayout],
+    );
 
     useEffect(() => {
       if (stripPlaybackManaged) return undefined;
@@ -267,6 +322,10 @@ export const MuxHlsVideo = memo(
                 decoding="async"
                 loading="lazy"
                 draggable={false}
+                onLoad={(ev) => {
+                  const t = ev.currentTarget;
+                  tryFireStripLayout(t.naturalWidth, t.naturalHeight);
+                }}
               />
             </div>
           ) : (
@@ -296,7 +355,7 @@ export const MuxHlsVideo = memo(
           : {})}
         onError={onErrorProp}
         onLoadedData={onLoadedData}
-        onLoadedMetadata={onLoadedMetadata}
+        onLoadedMetadata={handleLoadedMetadata}
       />
     );
 
@@ -321,7 +380,8 @@ export const MuxHlsVideo = memo(
     prev.tokens === next.tokens &&
     prev.onError === next.onError &&
     prev.onLoadedData === next.onLoadedData &&
-    prev.onLoadedMetadata === next.onLoadedMetadata,
+    prev.onLoadedMetadata === next.onLoadedMetadata &&
+    prev.onStripLayoutReady === next.onStripLayoutReady,
 );
 
 /**
@@ -329,7 +389,14 @@ export const MuxHlsVideo = memo(
  * DRM (`tokens.drm`) is not supported.
  */
 export const MuxStripHlsVideo = memo(
-  function MuxStripHlsVideo({ className, onError, playbackId, stripLoadOrder, tokens }) {
+  function MuxStripHlsVideo({
+    className,
+    onError,
+    onStripLayoutReady,
+    playbackId,
+    stripLoadOrder,
+    tokens,
+  }) {
     return (
       <MuxHlsVideo
         className={className}
@@ -338,6 +405,7 @@ export const MuxStripHlsVideo = memo(
         stripPlaybackManaged
         wrapClassName="asset-tile__mux-wrap"
         onError={onError}
+        onStripLayoutReady={onStripLayoutReady}
         playbackId={playbackId}
         tokens={tokens}
       />

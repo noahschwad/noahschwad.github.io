@@ -64,6 +64,9 @@ const STRIP_ANIMATION_MIN_FRAME_MS = STRIP_ANIMATION_FPS_LIMIT_ENABLED
   ? 1000 / STRIP_ANIMATION_MAX_FPS
   : 0;
 
+/** Min interval between full strip flex recomputes for any layout input change. */
+const STRIP_LAYOUT_RECALC_MIN_MS = 333;
+
 /**
  * @param {string} key
  * @param {Map<string, string>|null|undefined} alignSelfByKey
@@ -362,6 +365,31 @@ export function useJsFlexStrip({
     [stripTiles],
   );
 
+  const rowFillMode = sizeMode === SIZE_MODE_RANDOM_TIERS_ROW_FILL;
+
+  const stripLayoutInputsRef = useRef(null);
+  stripLayoutInputsRef.current = {
+    stripTiles,
+    tileKeyFn,
+    imageSize,
+    textSize,
+    tileLayout,
+    sizeMode,
+    tileSizeApi,
+    layoutMode,
+    alignSelfByKey,
+    containerSize,
+    measureTick,
+    rowFillMode,
+    tileKeySetSig,
+    layoutTiles,
+  };
+
+  const layoutRecalcThrottleTimerRef = useRef(null);
+  const layoutRecalcLastFireRef = useRef(0);
+  const layoutRecalcThrottleSkipMountRef = useRef(true);
+  const [layoutRecalcTick, setLayoutRecalcTick] = useState(0);
+
   useEffect(() => {
     onExitingBlankDoneRef.current = onExitingBlankDone;
   }, [onExitingBlankDone]);
@@ -372,7 +400,54 @@ export function useJsFlexStrip({
     else m.delete(key);
   }, []);
 
-  const rowFillMode = sizeMode === SIZE_MODE_RANDOM_TIERS_ROW_FILL;
+  useEffect(() => {
+    if (layoutRecalcThrottleSkipMountRef.current) {
+      layoutRecalcThrottleSkipMountRef.current = false;
+      layoutRecalcLastFireRef.current = performance.now();
+      return undefined;
+    }
+    const minMs = STRIP_LAYOUT_RECALC_MIN_MS;
+    const now = performance.now();
+    const elapsed = now - layoutRecalcLastFireRef.current;
+
+    const fire = () => {
+      layoutRecalcLastFireRef.current = performance.now();
+      setLayoutRecalcTick((x) => x + 1);
+    };
+
+    if (elapsed >= minMs) {
+      fire();
+      return undefined;
+    }
+
+    const delay = minMs - elapsed;
+    layoutRecalcThrottleTimerRef.current = window.setTimeout(() => {
+      layoutRecalcThrottleTimerRef.current = null;
+      fire();
+    }, delay);
+
+    return () => {
+      if (layoutRecalcThrottleTimerRef.current != null) {
+        clearTimeout(layoutRecalcThrottleTimerRef.current);
+        layoutRecalcThrottleTimerRef.current = null;
+      }
+    };
+  }, [
+    stripTiles,
+    tileKeyFn,
+    imageSize,
+    textSize,
+    tileLayout,
+    sizeMode,
+    tileSizeApi,
+    layoutMode,
+    alignSelfByKey,
+    containerSize,
+    measureTick,
+    rowFillMode,
+    tileKeySetSig,
+    layoutTiles,
+  ]);
 
   useLayoutEffect(() => {
     const root = stripRef.current;
@@ -422,7 +497,38 @@ export function useJsFlexStrip({
 
   useLayoutEffect(() => {
     const root = stripRef.current;
-    if (!root || containerSize.w < 1) return;
+    const snap = stripLayoutInputsRef.current;
+    if (!root || !snap) return;
+
+    const {
+      stripTiles,
+      tileKeyFn,
+      imageSize,
+      textSize,
+      tileLayout,
+      sizeMode,
+      tileSizeApi,
+      layoutMode,
+      alignSelfByKey,
+      rowFillMode,
+      tileKeySetSig,
+      layoutTiles,
+    } = snap;
+
+    // `containerSize` state can still be {0,0} on the first layout pass (ResizeObserver runs
+    // earlier in this same commit). Read live strip box so first paint matches without waiting
+    // for a throttled `layoutRecalcTick` bump.
+    const containerSize = {
+      w:
+        snap.containerSize.w >= 1
+          ? snap.containerSize.w
+          : root.clientWidth || 0,
+      h:
+        snap.containerSize.h >= 1
+          ? snap.containerSize.h
+          : root.clientHeight || 0,
+    };
+    if (containerSize.w < 1) return;
 
     const rem =
       parseFloat(
@@ -853,21 +959,7 @@ export function useJsFlexStrip({
         });
       }
     };
-  }, [
-    stripRef,
-    stripTiles,
-    tileKeyFn,
-    imageSize,
-    textSize,
-    tileLayout,
-    sizeMode,
-    tileSizeApi,
-    layoutMode,
-    alignSelfByKey,
-    containerSize,
-    measureTick,
-    rowFillMode,
-  ]);
+  }, [layoutRecalcTick]);
 
   return { registerTileEl: registerEl };
 }

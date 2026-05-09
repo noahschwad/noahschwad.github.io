@@ -4,6 +4,8 @@ import { projectAssetThumbUrl } from "../imageThumbUrl";
 /**
  * Low-res `*.thumb.webp` (build-generated) while full-res loads, then the thumb
  * is removed. Falls back to a single `img` when there is no thumb or the thumb 404s.
+ * @param {(naturalWidth: number, naturalHeight: number) => void} [onIntrinsicLayoutReady]
+ *   After the thumb (or full-only `img`) decodes so layout can reserve the correct aspect ratio.
  */
 export function ProgressiveProjectImage({
   fullSrc,
@@ -18,6 +20,7 @@ export function ProgressiveProjectImage({
   onLoadFull,
   onErrorFull,
   fetchPriority,
+  onIntrinsicLayoutReady,
 }) {
   const thumbFromPath = projectAssetThumbUrl(fullSrc);
   const [noThumb, setNoThumb] = useState(!thumbFromPath);
@@ -35,6 +38,16 @@ export function ProgressiveProjectImage({
     [onLoadFull],
   );
 
+  const reportIntrinsic = useCallback(
+    (e) => {
+      const el = e.currentTarget;
+      const w = el.naturalWidth || 0;
+      const h = el.naturalHeight || 0;
+      if (w > 0 && h > 0) onIntrinsicLayoutReady?.(w, h);
+    },
+    [onIntrinsicLayoutReady],
+  );
+
   if (noThumb || !thumbFromPath) {
     return (
       <img
@@ -45,7 +58,10 @@ export function ProgressiveProjectImage({
         loading={loading}
         decoding={decoding}
         draggable={draggableProp}
-        onLoad={onLoadFull}
+        onLoad={(e) => {
+          reportIntrinsic(e);
+          onLoadFull?.(e);
+        }}
         onError={onErrorFull}
         fetchPriority={fetchPriority}
       />
@@ -73,6 +89,7 @@ export function ProgressiveProjectImage({
           decoding="async"
           draggable={false}
           onError={onThumbError}
+          onLoad={reportIntrinsic}
         />
       ) : null}
       <img
