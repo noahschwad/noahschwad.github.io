@@ -79,6 +79,7 @@ export function AssetTile({
       ) : asset.kind === "video" ? (
         <video
           className="asset-tile__video"
+          data-strip-playback-managed=""
           src={asset.src}
           tabIndex={-1}
           muted

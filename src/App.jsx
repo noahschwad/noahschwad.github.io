@@ -7,6 +7,7 @@ import {
   useState,
 } from "react";
 import { useJsFlexStrip } from "./useJsFlexStrip";
+import { useStripMobileManagedVideoPlayback } from "./useStripMobileManagedVideoPlayback";
 import { AssetTile } from "./components/AssetTile";
 import { ProjectLightbox } from "./components/ProjectLightbox";
 import { SiteFooter } from "./components/SiteFooter";
@@ -275,6 +276,13 @@ export function App() {
     layoutMode,
     alignSelfByKey: tileAlignSelfByKey,
     onExitingBlankDone: handleExitingBlankDone,
+  });
+
+  useStripMobileManagedVideoPlayback({
+    stripRef,
+    narrowViewport: imageSizeViewportNarrow,
+    lightboxOpen: lightbox != null,
+    stripTiles,
   });
 
   /** Order among **assets** only (0,1,2,…). Stable when blank count/positions change so Mux memo + load order are not disturbed by interleaved blanks. */

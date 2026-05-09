@@ -90,6 +90,7 @@ export const MuxHlsVideo = memo(
       style,
       deferMount = false,
       stripLoadOrder,
+      stripPlaybackManaged = false,
       wrapClassName = "asset-tile__mux-wrap",
       onError: onErrorProp,
       onLoadedData,
@@ -138,6 +139,7 @@ export const MuxHlsVideo = memo(
     onErrorRef.current = onErrorProp;
 
     useEffect(() => {
+      if (stripPlaybackManaged) return undefined;
       if (deferMount && !show) return undefined;
       const resumeIfNeeded = () => {
         if (document.visibilityState !== "visible") return;
@@ -148,7 +150,7 @@ export const MuxHlsVideo = memo(
       document.addEventListener("visibilitychange", resumeIfNeeded);
       return () =>
         document.removeEventListener("visibilitychange", resumeIfNeeded);
-    }, [deferMount, show]);
+    }, [stripPlaybackManaged, deferMount, show]);
 
     useEffect(() => {
       if (!deferMount) return undefined;
@@ -289,6 +291,9 @@ export const MuxHlsVideo = memo(
         controls={false}
         disablePictureInPicture
         disableRemotePlayback
+        {...(stripPlaybackManaged
+          ? { "data-strip-playback-managed": "" }
+          : {})}
         onError={onErrorProp}
         onLoadedData={onLoadedData}
         onLoadedMetadata={onLoadedMetadata}
@@ -308,6 +313,7 @@ export const MuxHlsVideo = memo(
   (prev, next) =>
     prev.deferMount === next.deferMount &&
     prev.stripLoadOrder === next.stripLoadOrder &&
+    prev.stripPlaybackManaged === next.stripPlaybackManaged &&
     prev.wrapClassName === next.wrapClassName &&
     prev.className === next.className &&
     prev.style === next.style &&
@@ -329,6 +335,7 @@ export const MuxStripHlsVideo = memo(
         className={className}
         deferMount
         stripLoadOrder={stripLoadOrder}
+        stripPlaybackManaged
         wrapClassName="asset-tile__mux-wrap"
         onError={onError}
         playbackId={playbackId}
