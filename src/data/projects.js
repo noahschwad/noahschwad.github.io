@@ -77,7 +77,7 @@ export const projects = [
     id: "untitled-catalog",
     title: "New Museum Store",
     category: "Website",
-    year: 2021,
+    year: 2025,
     assets: [
       {
         id: "hero",
@@ -127,7 +127,7 @@ export const projects = [
   { // kabaj
     id: "kabaj",
     title: "Kabaj",
-    category: "Identity",
+    category: "Data Identity",
     year: 2024,
     assets: [
       {
@@ -179,8 +179,8 @@ export const projects = [
   {
     id: "brocade",
     title: "Brocade",
-    category: "Motion",
-    year: 2025,
+    category: "Generative Tool",
+    year: 2024,
     assets: [
       {
         id: "brocade-generator",
@@ -220,7 +220,7 @@ export const projects = [
     id: "deviated-septum",
     title: "Deviated Septum",
     category: "Print",
-    year: 2025,
+    year: 2022,
     assets: [
       {
         id: "deviated-septum-scan-closeup",
@@ -238,8 +238,8 @@ export const projects = [
   {
     id: "sinus-relief",
     title: "Sinus Relief",
-    category: "Print",
-    year: 2025,
+    category: "Poster",
+    year: 2023,
     assets: [
       {
         id: "sinus-relief-5x4",
@@ -251,8 +251,8 @@ export const projects = [
   {
     id: "super-pulse",
     title: "Super Pulse",
-    category: "Print",
-    year: 2025,
+    category: "Cycling Kit",
+    year: 2023,
     assets: [
       {
         id: "super-pulse-jersey",
@@ -265,7 +265,7 @@ export const projects = [
     id: "magazine-for-snails",
     title: "Magazine for Snails",
     category: "Print",
-    year: 2025,
+    year: 2023,
     assets: [
       {
         id: "magazine-for-snails-v2-6-7",
@@ -277,8 +277,8 @@ export const projects = [
   {
     id: "boundary",
     title: "Boundary",
-    category: "Web",
-    year: 2025,
+    category: "Brand Identity",
+    year: 2024,
     assets: [
       {
         id: "boundary-main-lockup",
@@ -303,6 +303,7 @@ export const projects = [
         playbackId: "y9JAAl2lDg5vuC9ueHo2d2NnRr601IioL7lmI2J01KWJY",
         metadata: { video_title: "boundary-generator-tool" },
         selected: true,
+        category: "Image Generator",
       },
       {
         id: "boundary-system-grid",
@@ -343,13 +344,14 @@ export const projects = [
   {
     id: "backslash",
     title: "Backslash",
-    category: "Web",
+    category: "Website",
     year: 2025,
     assets: [
       {
         id: "backslash-composition-books",
         kind: "image",
         src: "/project-assets/backslash/composition-books.jpg",
+        category: "Brand Identity",
       },
       {
         id: "backslash-patterns",
@@ -357,6 +359,7 @@ export const projects = [
         playbackId: "UioExKMeEokfhtoDLoATOzsSpzxEqczGAk00LwPRMd00E",
         metadata: { video_title: "backslash-patterns" },
         selected: true,
+        category: "Brand Identity",
       },
       {
         id: "backslash-index",
@@ -391,8 +394,8 @@ export const projects = [
   {
     id: "system",
     title: "System",
-    category: "Web",
-    year: 2025,
+    category: "Motion",
+    year: 2026,
     assets: [
       {
         id: "system-one-activates-another",
@@ -432,7 +435,7 @@ export const projects = [
   {
     id: "yellow",
     title: "Yellow",
-    category: "Web",
+    category: "Brand Identity",
     year: 2025,
     assets: [
       {
@@ -477,8 +480,8 @@ export const projects = [
   {
     id: "creative-week",
     title: "Creative Week",
-    category: "Web",
-    year: 2025,
+    category: "Brand Identity",
+    year: 2024,
     assets: [
       {
         id: "creative-week-generator",
@@ -511,7 +514,7 @@ export const projects = [
   {
     id: "eternal-research",
     title: "Eternal Research",
-    category: "Web",
+    category: "Brand Identity",
     year: 2025,
     assets: [
       {
@@ -519,6 +522,7 @@ export const projects = [
         kind: "mux",
         playbackId: "yPQm0102J01MJtvMergKAvuHPL9C01NNGVyRn00T202ceaILQ",
         metadata: { video_title: "stills-animating" },
+        category: "Generative Motif",
       },
       {
         id: "eternal-research-pattern-logo-screen",
@@ -533,6 +537,7 @@ export const projects = [
         playbackId: "XK34eiFk01500tMH00PCNhzCySk4RZgm9rHXDRfT9369n4",
         metadata: { video_title: "pattern-generator-tool" },
         selected: true,
+        category: "Generative Tool",
       },
       {
         id: "eternal-research-stone-video",
@@ -546,6 +551,7 @@ export const projects = [
         kind: "image",
         src: "/project-assets/eternal-research/db-interface.jpg",
         selected: true,
+        category: "Physical Interface",
       },
       {
         id: "eternal-research-db-schematic",
