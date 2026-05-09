@@ -15,7 +15,13 @@ import {
   SIZE_MODE_RANDOM_TIERS_ROW_FILL,
   stripTileBumpBasisRem,
   TILE_LAYOUT_TEXT_LEFT,
+  tileLayoutFromImageSize,
 } from "./functionality";
+import {
+  applyAspectsToStripSketch,
+  applyTargetsToStripSketch,
+  reconcileStripSketchTiles,
+} from "./stripSketchModel";
 import {
   ALIGN_CENTER,
   ALIGN_CONTENT_STRETCH,
@@ -27,6 +33,7 @@ import {
   FLEX_WRAP,
   JUSTIFY_FLEX_START,
   computeFlexLayout,
+  flexLineKeyGroupsFromItems,
 } from "./jsFlexLayout";
 
 /** Matches legacy `.selected-strip` CSS flex container (`alignItems` from `layoutMode`). */
@@ -63,9 +70,6 @@ const STRIP_ANIMATION_MAX_FPS = 60;
 const STRIP_ANIMATION_MIN_FRAME_MS = STRIP_ANIMATION_FPS_LIMIT_ENABLED
   ? 1000 / STRIP_ANIMATION_MAX_FPS
   : 0;
-
-/** Min interval between full strip flex recomputes for any layout input change. */
-const STRIP_LAYOUT_RECALC_MIN_MS = 333;
 
 /**
  * @param {string} key
@@ -137,39 +141,18 @@ function rowFillKeysForLines(lines, textLeftKeys, fillKeyByRowSig) {
   return next;
 }
 
-/**
- * @param {import("./jsFlexLayout.js").FlexItemInput[]} items in visual order
- * @param {number} innerMain
- * @param {number} mainGap
- * @param {boolean} isWrap
- */
-function breakLinesByMain(items, innerMain, mainGap, isWrap) {
-  if (!isWrap) return [items.map((it) => it.key)];
-  /** @type {string[][]} */
-  const lines = [];
-  let cur = [];
-  let sumMain = 0;
-  for (const it of items) {
-    const base = Math.min(
-      it.maxMain ?? 1e9,
-      Math.max(it.minMain ?? 0, it.flexBasisMain),
-    );
-    const g = cur.length > 0 ? mainGap : 0;
-    const nextSum = sumMain + g + base;
-    if (cur.length > 0 && nextSum > innerMain + 0.5) {
-      lines.push(cur);
-      cur = [];
-      sumMain = 0;
-    }
-    cur.push(it.key);
-    sumMain += (cur.length > 1 ? mainGap : 0) + base;
-  }
-  if (cur.length) lines.push(cur);
-  return lines;
-}
-
 function lerp(a, b, t) {
   return a + (b - a) * t;
+}
+
+/**
+ * Smaller displayed edge of media in a **stacked** tile (`width:100%`, `height:auto` on the media):
+ * width ≈ `wUsed`, height ≈ `wUsed / aspect` where `aspect` = naturalWidth / naturalHeight.
+ */
+function stackedMediaMinShortSideFromWidth(wUsed, aspectNaturalWidthOverHeight) {
+  const ar = aspectNaturalWidthOverHeight;
+  if (!(wUsed > 0) || !(ar > 0) || !Number.isFinite(ar)) return 0;
+  return wUsed * Math.min(1, 1 / ar);
 }
 
 /**
@@ -195,6 +178,56 @@ function measureTextLeftMainSize(stripItemEl, cap) {
 }
 
 /**
+ * Fingerprint of tile content + typographic strip inputs. Used to reuse DOM text
+ * measures until copy, layout mode, or scale inputs change.
+ * @param {{ type: string, blankId?: string, project?: { title?: unknown, category?: unknown, year?: unknown }, asset?: { kind?: string, text?: string, textHtml?: boolean, textLarge?: boolean, category?: unknown, year?: unknown, playbackId?: string, tokens?: { playback?: string }, src?: string }, exiting?: boolean }} tile
+ */
+function stripTileLayoutContentSig(tile, tileLayout, textSize, imageSize, rem) {
+  const parts = [
+    tileLayout,
+    String(textSize),
+    String(imageSize),
+    String(Math.round(rem * 1000) / 1000),
+  ];
+  if (tile.type === "blank") {
+    parts.push(
+      "blank",
+      String(tile.blankId ?? ""),
+      tile.exiting ? "1" : "0",
+    );
+    return parts.join("\0");
+  }
+  const p = tile.project;
+  const a = tile.asset;
+  if (!a) return parts.join("\0");
+  const kind = a.kind ?? "";
+  parts.push(kind);
+  if (kind === "text") {
+    parts.push(
+      String(a.text ?? ""),
+      a.textHtml ? "1" : "0",
+      a.textLarge === false ? "0" : "1",
+    );
+  } else if (kind === "mux") {
+    parts.push(
+      String(a.playbackId ?? "").trim(),
+      String(a.tokens?.playback ?? ""),
+    );
+  } else if (kind === "video") {
+    parts.push(String(a.src ?? ""));
+  } else {
+    parts.push(String(a.src ?? ""));
+  }
+  const category = a.category ?? p?.category ?? "";
+  parts.push(
+    String(p?.title ?? ""),
+    String(category),
+    String(a.year ?? p?.year ?? ""),
+  );
+  return parts.join("\0");
+}
+
+/**
  * `--tile-size-factor` on the strip item is set from React from
  * `getEffectiveFactor(…)`. Resolver mutations do not re-render, so the inline
  * style can lag. Keep the var in sync when we read a factor or position tiles.
@@ -208,7 +241,7 @@ function syncStripItemTileSizeFactor(stripItemEl, factor) {
 /**
  * Stacked blank: `16*rem*imageSize*factor` flex basis. Text-left blanks + image/video/mux: media
  * height is `10*rem*imageSize*factor` — also bumps. Text-left without `el` still uses 16* for the
- * fallback row basis. Stacked and text-left **text** copy tiles: no `factor`–driven media box to enforce.
+ * fallback row basis. Stacked / text-left **text** copy: cross-size is math + cache (no tile `offsetHeight`).
  */
 function tileUsesSizeModeForStripBumps(tile, el, tileLayout) {
   if (tile.type === "blank") return true;
@@ -216,27 +249,310 @@ function tileUsesSizeModeForStripBumps(tile, el, tileLayout) {
   return true;
 }
 
+/** `.asset-tile` column `gap: 0.3rem` (main axis gap between meta and media when stacked). */
+function assetTileColumnGapPx(rem) {
+  return 0.3 * rem;
+}
+
 /**
- * Recompute row `y` / target heights from real `offsetHeight` at resolved widths.
- * Fixes under-estimated line cross sizes when `height: auto` content is taller than
- * the pre-layout intrinsic measure (e.g. random tier widths changing text wrap).
+ * DOM-measured `.asset-tile__meta` box + computed tile `gap` / `columnGap`, anchored to the tile
+ * article width when measured (`anchorW` ≈ flex `W`).
+ *
+ * @typedef {object} StripTileMetaMetrics
+ * @property {number} metaW
+ * @property {number} metaH
+ * @property {number} gapPx
+ * @property {number} anchorW
+ */
+
+/**
+ * Use cached meta + gap when the tile was measured at a width close to laid-out `W`.
+ * @param {string} key
+ * @param {number} W
+ * @param {Map<string, StripTileMetaMetrics>|null|undefined} metaMetricsByKey
+ * @param {number} rem
+ * @returns {{ metaH: number, metaW: number, gapPx: number } | null}
+ */
+function resolveCachedStripTileMetaGap(key, W, metaMetricsByKey, rem) {
+  const m = metaMetricsByKey?.get(key);
+  if (!m || !(W > 0)) return null;
+  const anchorW = m.anchorW;
+  if (!(anchorW > 0)) return null;
+  const tol = Math.max(2, W * 0.025);
+  if (Math.abs(anchorW - W) > tol) return null;
+  const gapPx =
+    typeof m.gapPx === "number" && Number.isFinite(m.gapPx) && m.gapPx >= 0
+      ? m.gapPx
+      : assetTileColumnGapPx(rem);
+  return {
+    metaH: Math.max(0, m.metaH ?? 0),
+    metaW: Math.max(0, m.metaW ?? 0),
+    gapPx,
+  };
+}
+
+/**
+ * Approximate stacked meta block height from title/sub fields (matches `.asset-tile` font scale).
+ */
+function estimateStackedMetaHeightPx(tile, rem, textSize) {
+  if (tile.type !== "asset") return 0;
+  const p = tile.project;
+  const a = tile.asset;
+  if (!p && !a) return 0;
+  const title = p?.title;
+  const category = a?.category ?? p?.category;
+  const year = a?.year ?? p?.year;
+  const hasTitle = title != null && String(title).trim() !== "";
+  const hasSub =
+    (category != null && String(category).trim() !== "") ||
+    (year != null && String(year).trim() !== "");
+  if (!hasTitle && !hasSub) return 0;
+  const fs = 0.75 * rem * textSize;
+  const line = 1.2 * fs;
+  return (hasTitle ? 1.45 * line : 0) + (hasSub ? line : 0);
+}
+
+/** Stacked blank placeholder media: `min-height: 8rem` and `aspect-ratio: 4 / 3` on `.asset-tile__media`. */
+function stackedBlankMediaHeightPx(W, rem) {
+  return Math.max(8 * rem, (3 * Math.max(W, 1)) / 4);
+}
+
+/** Round for debug overlay / math strings. */
+function rx(x) {
+  if (!Number.isFinite(x)) return "?";
+  const a = Math.abs(x);
+  if (a >= 1000) return String(Math.round(x));
+  if (a >= 100) return String(Math.round(x * 10) / 10);
+  return String(Math.round(x * 100) / 100);
+}
+
+/**
+ * Approximate stacked / text-left **copy** block height from string length and width
+ * (`.asset-tile__text-block`: line-height 1.35, font 1em or 1.5em large).
+ */
+function estimateStackedTextCopyBlockHeightPx(tile, contentWidthPx, rem, textSize) {
+  if (tile.type !== "asset" || tile.asset?.kind !== "text") return 0;
+  const raw = String(tile.asset.text ?? "");
+  const plainLen = tile.asset.textHtml
+    ? raw.replace(/<[^>]+>/g, " ").length
+    : raw.length;
+  const chars = Math.max(plainLen, 8);
+  const large = tile.asset.textLarge !== false;
+  const fontPx = 0.75 * rem * textSize * (large ? 1.5 : 1);
+  const linePx = 1.35 * fontPx;
+  const avgCharPx = 0.55 * fontPx;
+  const w = Math.max(40, contentWidthPx);
+  const cpl = Math.max(8, Math.floor(w / avgCharPx));
+  const lines = Math.max(1, Math.ceil(chars / cpl));
+  const paddingBottom = 0.5 * fontPx;
+  return lines * linePx + paddingBottom;
+}
+
+/**
+ * Strip cross size + one-line derivation (keeps `estimateStripTileCrossPx` in sync for debug).
+ * @param {object} p same shape as `estimateStripTileCrossPx`
+ * @returns {{ cross: number, math: string }}
+ */
+function computeStripTileCrossWithMath(p) {
+  const {
+    tile,
+    key,
+    W,
+    tileLayout,
+    textSize,
+    imageSize,
+    rem,
+    factor,
+    aspect,
+    crossFallback,
+    stackedTextCrossCache,
+    metaMetricsByKey,
+  } = p;
+  if (!(W > 0) || !Number.isFinite(W)) {
+    return { cross: crossFallback, math: `W invalid → ${rx(crossFallback)}` };
+  }
+
+  const fallbackGap = assetTileColumnGapPx(rem);
+  const cachedMeta = resolveCachedStripTileMetaGap(key, W, metaMetricsByKey, rem);
+  const gap = cachedMeta?.gapPx ?? fallbackGap;
+  const estimatedMeta = estimateStackedMetaHeightPx(tile, rem, textSize);
+  const metaH =
+    cachedMeta != null
+      ? Math.max(estimatedMeta, cachedMeta.metaH)
+      : estimatedMeta;
+  const metaNote = cachedMeta != null ? "m=max(est,dom)" : "m=est";
+  const ar = typeof aspect === "number" && aspect > 0 ? aspect : 0;
+
+  if (tileLayout === TILE_LAYOUT_TEXT_LEFT) {
+    const mediaColH = 10 * rem * imageSize * factor;
+    if (tile.type === "blank") {
+      return {
+        cross: mediaColH,
+        math: `tl blank 10·rem·img·f=${rx(10)}·${rx(rem)}·${imageSize}·${rx(factor)}=${rx(mediaColH)}`,
+      };
+    }
+    if (tile.type === "asset") {
+      if (tile.asset?.kind === "text") {
+        const wR = Math.round(W * 100) / 100;
+        const stSig = `${stripTileLayoutContentSig(
+          tile,
+          tileLayout,
+          textSize,
+          imageSize,
+          rem,
+        )}\0stx\0${wR}`;
+        const cc = stackedTextCrossCache.get(key);
+        const textBodyW = Math.min(W, 22 * rem);
+        const textFromCache = cc && cc.sig === stSig;
+        const textH = textFromCache
+          ? cc.crossPx
+          : estimateStackedTextCopyBlockHeightPx(
+              tile,
+              textBodyW,
+              rem,
+              textSize,
+            );
+        const v = Math.max(metaH, textH, mediaColH);
+        const tSrc = textFromCache ? "T(cache)" : "T(est)";
+        return {
+          cross: v,
+          math: `tl max(m,${tSrc},10rem·img·f)=max(${rx(metaH)},${rx(textH)},${rx(mediaColH)})=${rx(v)} (${metaNote})`,
+        };
+      }
+      const v = Math.max(metaH, mediaColH);
+      return {
+        cross: v,
+        math: `tl max(m,10rem·img·f)=max(${rx(metaH)},${rx(mediaColH)})=${rx(v)} (${metaNote})`,
+      };
+    }
+    return { cross: crossFallback, math: `tl fb ${rx(crossFallback)}` };
+  }
+
+  if (tile.type === "blank") {
+    const v = stackedBlankMediaHeightPx(W, rem);
+    const eight = 8 * rem;
+    const threeFour = (3 * Math.max(W, 1)) / 4;
+    return {
+      cross: v,
+      math: `stack blank max(8rem,3W/4)=max(${rx(eight)},${rx(threeFour)})=${rx(v)}`,
+    };
+  }
+  if (tile.type !== "asset") {
+    return { cross: crossFallback, math: `fb ${rx(crossFallback)}` };
+  }
+
+  if (tile.asset?.kind === "text") {
+    const wR = Math.round(W * 100) / 100;
+    const stSig = `${stripTileLayoutContentSig(
+      tile,
+      tileLayout,
+      textSize,
+      imageSize,
+      rem,
+    )}\0stx\0${wR}`;
+    const cc = stackedTextCrossCache.get(key);
+    const bodyFromCache = cc && cc.sig === stSig;
+    const bodyH = bodyFromCache
+      ? cc.crossPx
+      : estimateStackedTextCopyBlockHeightPx(tile, W, rem, textSize);
+    const v = metaH + gap + bodyH;
+    const bSrc = bodyFromCache ? "body(cache)" : "body(est)";
+    return {
+      cross: v,
+      math: `stack m+g+${bSrc}=${rx(metaH)}+${rx(gap)}+${rx(bodyH)}=${rx(v)} (${metaNote})`,
+    };
+  }
+  if (ar > 0) {
+    const v = metaH + gap + W / ar;
+    return {
+      cross: v,
+      math: `stack m+g+W÷ar=${rx(metaH)}+${rx(gap)}+${rx(W)}÷${rx(ar)}=${rx(v)} (${metaNote})`,
+    };
+  }
+  const ph = stackedBlankMediaHeightPx(W, rem);
+  const v = metaH + gap + ph;
+  return {
+    cross: v,
+    math: `stack no-ar m+g+ph=${rx(metaH)}+${rx(gap)}+${rx(ph)}=${rx(v)} (${metaNote})`,
+  };
+}
+
+/**
+ * Strip cross size (row height contribution) at laid-out width `W` — pure math + bump-pass caches.
+ * @param {object} p
+ */
+function estimateStripTileCrossPx(p) {
+  return computeStripTileCrossWithMath(p).cross;
+}
+
+/**
+ * Recompute row `y` / cross sizes: for each flex line (row), row height = max tile cross-size at that
+ * tile’s laid-out `rects[key].width` (same membership + widths as `computeFlexLayout`).
  *
  * @param {string[][]} lineKeyGroups
  * @param {Record<string, { x: number, y: number, width: number, height: number }>} rects
  * @param {Map<string, string>|null|undefined} alignSelfByKey
  * @param {string} containerAlignItems
  * @param {number} rowGapPx
+ * @param {Map<string, unknown>} tileByKey
+ * @param {string} tileLayout
+ * @param {number} textSize
+ * @param {number} imageSize
+ * @param {number} rem
+ * @param {Map<string, number>} factorByKey
+ * @param {Map<string, number>} crossIntrinsicByKey bump-pass intrinsic per key
+ * @param {Map<string, number>} mediaAspectByKey
+ * @param {Map<string, { sig: string, crossPx: number }>} stackedTextCrossCache stacked: text **body** height only
+ * @param {Map<string, StripTileMetaMetrics>} metaMetricsByKey
  */
-function reflowStripRowsByActualHeights(
+function reflowStripRowsMathHeights(
   lineKeyGroups,
   rects,
   alignSelfByKey,
   containerAlignItems,
   rowGapPx,
-  elMapRef,
+  tileByKey,
+  tileLayout,
+  textSize,
+  imageSize,
+  rem,
+  factorByKey,
+  crossIntrinsicByKey,
+  mediaAspectByKey,
+  stackedTextCrossCache,
+  metaMetricsByKey,
 ) {
-  let yCursor = 0;
+  /** @type {Map<string, number>} */
+  const heightByKey = new Map();
 
+  for (const line of lineKeyGroups) {
+    for (const key of line) {
+      const r = rects[key];
+      const tile = tileByKey.get(key);
+      if (!r || !tile) continue;
+      const W = r.width;
+      const factor = factorByKey.get(key) ?? 1;
+      const aspect = mediaAspectByKey.get(key) ?? 0;
+      const crossFb = crossIntrinsicByKey.get(key) ?? 120;
+      const h = estimateStripTileCrossPx({
+        tile,
+        key,
+        W,
+        tileLayout,
+        textSize,
+        imageSize,
+        rem,
+        factor,
+        aspect,
+        crossFallback: crossFb,
+        stackedTextCrossCache,
+        metaMetricsByKey,
+      });
+      heightByKey.set(key, Math.max(0, h));
+    }
+  }
+
+  let yCursor = 0;
   for (const line of lineKeyGroups) {
     /** @type {{ key: string, h: number, stretch: boolean }[]} */
     const row = [];
@@ -244,29 +560,15 @@ function reflowStripRowsByActualHeights(
 
     for (const key of line) {
       const r = rects[key];
-      const el = elMapRef.current.get(key);
-      if (!r || !el) continue;
-
-      const stretch = shouldStretchCrossAxis(key, alignSelfByKey, containerAlignItems);
-      const prevW = el.style.width;
-      const prevH = el.style.height;
-      const prevBox = el.style.boxSizing;
-
-      el.style.boxSizing = "border-box";
-      el.style.width = `${r.width}px`;
-      if (stretch) {
-        el.style.height = `${r.height}px`;
-      } else {
-        el.style.height = "";
-      }
-
-      const h = el.offsetHeight;
+      if (!r) continue;
+      const stretch = shouldStretchCrossAxis(
+        key,
+        alignSelfByKey,
+        containerAlignItems,
+      );
+      const h = heightByKey.get(key) ?? 0;
       lineMax = Math.max(lineMax, h);
       row.push({ key, h, stretch });
-
-      el.style.width = prevW;
-      el.style.height = prevH;
-      el.style.boxSizing = prevBox;
     }
 
     for (const { key, h, stretch } of row) {
@@ -297,6 +599,100 @@ function reflowStripRowsByActualHeights(
 }
 
 /**
+ * @param {Map<string, unknown>} tileByKey
+ * @param {string} key
+ */
+function stripRowDebugTallestLabel(tileByKey, key) {
+  const tile = tileByKey.get(key);
+  if (!tile) return "";
+  if (tile.type === "blank") return "Blank";
+  if (tile.type === "asset") {
+    const p = tile.project;
+    const raw = p?.title;
+    if (raw != null && String(raw).trim() !== "") return String(raw).trim();
+    return "Untitled";
+  }
+  return "";
+}
+
+/**
+ * @typedef {{
+ *   tileLayout: string,
+ *   textSize: number,
+ *   imageSize: number,
+ *   rem: number,
+ *   factorByKey: Map<string, number>,
+ *   crossIntrinsicByKey: Map<string, number>,
+ *   mediaAspectByKey: Map<string, number>,
+ *   stackedTextCrossCache: Map<string, { sig: string, crossPx: number }>,
+ *   metaMetricsByKey: Map<string, StripTileMetaMetrics>,
+ * }} StripRowCrossMathCtx
+ */
+
+/**
+ * Bounding box of tiles in one flex line + tallest tile label + same cross math string as layout.
+ * @param {string[]} line
+ * @param {Record<string, { x: number, y: number, width: number, height: number }>} rects
+ * @param {Map<string, unknown>} tileByKey
+ * @param {StripRowCrossMathCtx} crossCtx
+ * @returns {{ x: number, y: number, width: number, height: number, tallestLabel: string, tallestMath: string } | null}
+ */
+function stripRowDebugBandFromLine(line, rects, tileByKey, crossCtx) {
+  let minY = Infinity;
+  let maxB = -Infinity;
+  let minX = Infinity;
+  let maxR = -Infinity;
+  let tallestKey = "";
+  let tallestH = -1;
+  for (const key of line) {
+    const r = rects[key];
+    if (!r) continue;
+    minY = Math.min(minY, r.y);
+    maxB = Math.max(maxB, r.y + r.height);
+    minX = Math.min(minX, r.x);
+    maxR = Math.max(maxR, r.x + r.width);
+    if (r.height > tallestH) {
+      tallestH = r.height;
+      tallestKey = key;
+    }
+  }
+  if (!(minY < Infinity) || !tallestKey) return null;
+
+  const tr = rects[tallestKey];
+  const tTile = tileByKey.get(tallestKey);
+  let tallestMath = "";
+  if (tr && tTile) {
+    const W = tr.width;
+    const factor = crossCtx.factorByKey.get(tallestKey) ?? 1;
+    const aspect = crossCtx.mediaAspectByKey.get(tallestKey) ?? 0;
+    const crossFb = crossCtx.crossIntrinsicByKey.get(tallestKey) ?? 120;
+    tallestMath = computeStripTileCrossWithMath({
+      tile: tTile,
+      key: tallestKey,
+      W,
+      tileLayout: crossCtx.tileLayout,
+      textSize: crossCtx.textSize,
+      imageSize: crossCtx.imageSize,
+      rem: crossCtx.rem,
+      factor,
+      aspect,
+      crossFallback: crossFb,
+      stackedTextCrossCache: crossCtx.stackedTextCrossCache,
+      metaMetricsByKey: crossCtx.metaMetricsByKey,
+    }).math;
+  }
+
+  return {
+    x: minX,
+    y: minY,
+    width: Math.max(0, maxR - minX),
+    height: Math.max(0, maxB - minY),
+    tallestLabel: stripRowDebugTallestLabel(tileByKey, tallestKey),
+    tallestMath,
+  };
+}
+
+/**
  * @param {Object} params
  * @param {import("react").RefObject<HTMLElement|null>} params.stripRef
  * @param {Array<{ type: string, blankId?: string, project?: unknown, asset?: unknown, exiting?: boolean }>} params.tiles
@@ -309,6 +705,11 @@ function reflowStripRowsByActualHeights(
  * @param {string} params.layoutMode strip cross-axis (`align-items`) except flex random uses per-tile map
  * @param {Map<string, string>|null} params.alignSelfByKey layout-random align-self
  * @param {(blankId: string) => void} [params.onExitingBlankDone]
+ * @param {import("react").MutableRefObject<{ imageSize: number, textSize: number }>|null} [params.stripPanelLiveRef] Live panel multipliers (image/text size); authoritative for strip math when dragging.
+ * @param {import("react").MutableRefObject<boolean>|null} [params.suppressChildStripResizeObserversRef] When true, skip per-tile ResizeObservers (e.g. main image slider grab).
+ * @param {boolean} [params.stripRowHeightDebug] When true, report row bounding boxes after each layout pass.
+ * @param {(bands: Array<{ x: number, y: number, width: number, height: number, tallestLabel: string, tallestMath: string }> | null) => void} [params.onStripRowDebugBands] Target-layout row bands (`null` when overlay off).
+ * @param {(aspectByKey: Record<string, number | null> | null) => void} [params.onStripDebugAspects] Natural width÷height per tile key from strip aspect map (`null` when overlay off).
  */
 export function useJsFlexStrip({
   stripRef,
@@ -322,6 +723,11 @@ export function useJsFlexStrip({
   layoutMode,
   alignSelfByKey,
   onExitingBlankDone,
+  stripPanelLiveRef = null,
+  suppressChildStripResizeObserversRef = null,
+  stripRowHeightDebug = false,
+  onStripRowDebugBands = null,
+  onStripDebugAspects = null,
 }) {
   const elMapRef = useRef(new Map());
   const currentRef = useRef(new Map());
@@ -340,6 +746,18 @@ export function useJsFlexStrip({
   const inRafLerpRef = useRef(false);
   const deferredMeasureTickFromResizeRef = useRef(false);
   const lastLerpFrameTimeRef = useRef(0);
+  /** @type {import("react").MutableRefObject<Map<string, number>>} intrinsic width/height ratio per strip tile key */
+  const mediaAspectByKeyRef = useRef(new Map());
+  const aspectMeasureRafRef = useRef(0);
+  /** @type {import("react").MutableRefObject<Map<string, { sig: string, mainPx: number }>>} */
+  const textLeftMainCacheRef = useRef(new Map());
+  /**
+   * Stacked text tiles: `crossPx` is copy-block height only; `estimateStripTileCrossPx` adds meta + gap.
+   * @type {import("react").MutableRefObject<Map<string, { sig: string, crossPx: number }>>}
+   */
+  const stackedTextCrossCacheRef = useRef(new Map());
+  /** @type {import("react").MutableRefObject<Map<string, StripTileMetaMetrics>>} */
+  const stripTileMetaMetricsRef = useRef(new Map());
   const factorResetRef = useRef({
     image: NaN,
     tileLayout: "",
@@ -350,6 +768,33 @@ export function useJsFlexStrip({
 
   const [containerSize, setContainerSize] = useState({ w: 0, h: 0 });
   const [measureTick, setMeasureTick] = useState(0);
+  /** Avoid rewriting `minHeight` when unchanged (reduces style churn). */
+  const lastStripMinHeightPxRef = useRef(-1);
+
+  /** @type {import("react").MutableRefObject<Map<string, import("./stripSketchModel.js").StripSketchTile>>} */
+  const stripSketchByKeyRef = useRef(new Map());
+  const stripLayoutPassRef = useRef(() => {});
+  const panelLayoutRafRef = useRef(0);
+
+  const scheduleStripLayout = useCallback(() => {
+    if (panelLayoutRafRef.current !== 0) return;
+    panelLayoutRafRef.current = requestAnimationFrame(() => {
+      panelLayoutRafRef.current = 0;
+      stripLayoutPassRef.current();
+    });
+  }, []);
+
+  const scheduleMeasureTickAfterDomReport = useCallback(() => {
+    if (inRafLerpRef.current) {
+      deferredMeasureTickFromResizeRef.current = true;
+      return;
+    }
+    cancelAnimationFrame(aspectMeasureRafRef.current);
+    aspectMeasureRafRef.current = requestAnimationFrame(() => {
+      aspectMeasureRafRef.current = 0;
+      setMeasureTick((x) => x + 1);
+    });
+  }, []);
 
   /** Order of strip positions changes when blanks are re-interleaved; observer + keyset sync need only the set of keys, not the order. */
   const tileKeySetSig = useMemo(
@@ -365,97 +810,117 @@ export function useJsFlexStrip({
     [stripTiles],
   );
 
-  const rowFillMode = sizeMode === SIZE_MODE_RANDOM_TIERS_ROW_FILL;
-
-  const stripLayoutInputsRef = useRef(null);
-  stripLayoutInputsRef.current = {
-    stripTiles,
-    tileKeyFn,
-    imageSize,
-    textSize,
-    tileLayout,
-    sizeMode,
-    tileSizeApi,
-    layoutMode,
-    alignSelfByKey,
-    containerSize,
-    measureTick,
-    rowFillMode,
-    tileKeySetSig,
-    layoutTiles,
-  };
-
-  const layoutRecalcThrottleTimerRef = useRef(null);
-  const layoutRecalcLastFireRef = useRef(0);
-  const layoutRecalcThrottleSkipMountRef = useRef(true);
-  const [layoutRecalcTick, setLayoutRecalcTick] = useState(0);
-
   useEffect(() => {
     onExitingBlankDoneRef.current = onExitingBlankDone;
   }, [onExitingBlankDone]);
 
+  const onStripRowDebugBandsRef = useRef(onStripRowDebugBands);
+  useEffect(() => {
+    onStripRowDebugBandsRef.current = onStripRowDebugBands;
+  }, [onStripRowDebugBands]);
+
+  const onStripDebugAspectsRef = useRef(onStripDebugAspects);
+  useEffect(() => {
+    onStripDebugAspectsRef.current = onStripDebugAspects;
+  }, [onStripDebugAspects]);
+
+  useEffect(
+    () => () => {
+      cancelAnimationFrame(aspectMeasureRafRef.current);
+      cancelAnimationFrame(panelLayoutRafRef.current);
+    },
+    [],
+  );
+
   const registerEl = useCallback((key, el) => {
     const m = elMapRef.current;
     if (el) m.set(key, el);
-    else m.delete(key);
+    else {
+      m.delete(key);
+      /* Keep `mediaAspectByKeyRef` on ref-callback `null` (new inline fn each parent render, Strict
+       * Mode remounts). Otherwise intrinsic ratio is wiped after first decode and never re-reported. */
+      stripTileMetaMetricsRef.current.delete(key);
+      textLeftMainCacheRef.current.delete(key);
+      stackedTextCrossCacheRef.current.delete(key);
+      stripSketchByKeyRef.current.delete(key);
+    }
   }, []);
 
-  useEffect(() => {
-    if (layoutRecalcThrottleSkipMountRef.current) {
-      layoutRecalcThrottleSkipMountRef.current = false;
-      layoutRecalcLastFireRef.current = performance.now();
-      return undefined;
+  /**
+   * Report natural media aspect (width ÷ height) once decoded, or `null` to clear.
+   * Triggers a single coalesced layout pass (no per-frame DOM reads for bump `minDim` when stacked).
+   */
+  const registerStripMediaAspect = useCallback((key, aspectWOverH) => {
+    const map = mediaAspectByKeyRef.current;
+    const next =
+      typeof aspectWOverH === "number" &&
+      aspectWOverH > 0 &&
+      Number.isFinite(aspectWOverH)
+        ? aspectWOverH
+        : null;
+
+    let changed = false;
+    if (next == null) {
+      if (!map.has(key)) return;
+      map.delete(key);
+      changed = true;
+    } else if (map.get(key) === next) {
+      return;
+    } else {
+      map.set(key, next);
+      changed = true;
     }
-    const minMs = STRIP_LAYOUT_RECALC_MIN_MS;
-    const now = performance.now();
-    const elapsed = now - layoutRecalcLastFireRef.current;
+    if (!changed) return;
 
-    const fire = () => {
-      layoutRecalcLastFireRef.current = performance.now();
-      setLayoutRecalcTick((x) => x + 1);
-    };
+    scheduleMeasureTickAfterDomReport();
+  }, [scheduleMeasureTickAfterDomReport]);
 
-    if (elapsed >= minMs) {
-      fire();
-      return undefined;
-    }
-
-    const delay = minMs - elapsed;
-    layoutRecalcThrottleTimerRef.current = window.setTimeout(() => {
-      layoutRecalcThrottleTimerRef.current = null;
-      fire();
-    }, delay);
-
-    return () => {
-      if (layoutRecalcThrottleTimerRef.current != null) {
-        clearTimeout(layoutRecalcThrottleTimerRef.current);
-        layoutRecalcThrottleTimerRef.current = null;
+  /**
+   * Report measured `.asset-tile__meta` size + computed tile `gap` (see `AssetTile`), or `null` to clear.
+   */
+  const registerStripTileMetaLayout = useCallback(
+    (key, payload) => {
+      const map = stripTileMetaMetricsRef.current;
+      if (payload == null) {
+        if (!map.has(key)) return;
+        map.delete(key);
+        scheduleMeasureTickAfterDomReport();
+        return;
       }
-    };
-  }, [
-    stripTiles,
-    tileKeyFn,
-    imageSize,
-    textSize,
-    tileLayout,
-    sizeMode,
-    tileSizeApi,
-    layoutMode,
-    alignSelfByKey,
-    containerSize,
-    measureTick,
-    rowFillMode,
-    tileKeySetSig,
-    layoutTiles,
-  ]);
+      const prev = map.get(key);
+      if (
+        prev &&
+        Math.abs(prev.metaW - payload.metaW) < 0.5 &&
+        Math.abs(prev.metaH - payload.metaH) < 0.5 &&
+        Math.abs(prev.gapPx - payload.gapPx) < 0.25 &&
+        Math.abs(prev.anchorW - payload.anchorW) < 0.5
+      ) {
+        return;
+      }
+      map.set(key, payload);
+      scheduleMeasureTickAfterDomReport();
+    },
+    [scheduleMeasureTickAfterDomReport],
+  );
+
+  const rowFillMode = sizeMode === SIZE_MODE_RANDOM_TIERS_ROW_FILL;
 
   useLayoutEffect(() => {
     const root = stripRef.current;
     if (!root) return undefined;
+    /**
+     * Row strip layout only depends on **width**. We set `minHeight` on this same node after each
+     * pass; height-only ResizeObserver notifications would re-trigger `setContainerSize` → full
+     * layout again and show as forced reflow chains in DevTools.
+     */
     const ro = new ResizeObserver((entries) => {
       const cr = entries[0]?.contentRect;
       if (!cr) return;
-      setContainerSize({ w: cr.width, h: cr.height });
+      const w = cr.width;
+      setContainerSize((prev) => {
+        if (Math.abs(prev.w - w) < 0.5) return prev;
+        return { w, h: prev.h };
+      });
     });
     ro.observe(root);
     setContainerSize({
@@ -466,6 +931,9 @@ export function useJsFlexStrip({
   }, [stripRef]);
 
   useLayoutEffect(() => {
+    if (suppressChildStripResizeObserversRef?.current) {
+      return undefined;
+    }
     let scheduled = false;
     const bump = () => {
       if (inRafLerpRef.current) {
@@ -496,39 +964,27 @@ export function useJsFlexStrip({
   }, [tileKeySetSig, tileKeyFn]);
 
   useLayoutEffect(() => {
+    stripLayoutPassRef.current = () => {
     const root = stripRef.current;
-    const snap = stripLayoutInputsRef.current;
-    if (!root || !snap) return;
+    if (!root || containerSize.w < 1) {
+      if (stripRowHeightDebug) {
+        onStripRowDebugBandsRef.current?.(null);
+        onStripDebugAspectsRef.current?.(null);
+      }
+      return;
+    }
 
-    const {
-      stripTiles,
-      tileKeyFn,
-      imageSize,
-      textSize,
-      tileLayout,
-      sizeMode,
-      tileSizeApi,
-      layoutMode,
-      alignSelfByKey,
-      rowFillMode,
-      tileKeySetSig,
-      layoutTiles,
-    } = snap;
-
-    // `containerSize` state can still be {0,0} on the first layout pass (ResizeObserver runs
-    // earlier in this same commit). Read live strip box so first paint matches without waiting
-    // for a throttled `layoutRecalcTick` bump.
-    const containerSize = {
-      w:
-        snap.containerSize.w >= 1
-          ? snap.containerSize.w
-          : root.clientWidth || 0,
-      h:
-        snap.containerSize.h >= 1
-          ? snap.containerSize.h
-          : root.clientHeight || 0,
-    };
-    if (containerSize.w < 1) return;
+    const panelLive = stripPanelLiveRef?.current;
+    const effImageSize =
+      typeof panelLive?.imageSize === "number" ? panelLive.imageSize : imageSize;
+    const effTextSize =
+      typeof panelLive?.textSize === "number" ? panelLive.textSize : textSize;
+    const effTileLayout = tileLayoutFromImageSize(effImageSize);
+    const appRootEl = root.closest(".app-root");
+    if (appRootEl instanceof HTMLElement) {
+      appRootEl.style.setProperty("--panel-image-size", String(effImageSize));
+      appRootEl.style.setProperty("--panel-text-size", String(effTextSize));
+    }
 
     const rem =
       parseFloat(
@@ -537,15 +993,18 @@ export function useJsFlexStrip({
 
     const r = factorResetRef.current;
     if (
-      r.image !== imageSize
-      || r.tileLayout !== tileLayout
+      r.image !== effImageSize
+      || r.tileLayout !== effTileLayout
       || r.sizeMode !== sizeMode
       || r.rem !== rem
       || r.layoutMode !== layoutMode
     ) {
       tileSizeApi.resetLayoutExtraSteps();
-      r.image = imageSize;
-      r.tileLayout = tileLayout;
+      textLeftMainCacheRef.current.clear();
+      stackedTextCrossCacheRef.current.clear();
+      stripTileMetaMetricsRef.current.clear();
+      r.image = effImageSize;
+      r.tileLayout = effTileLayout;
       r.sizeMode = sizeMode;
       r.rem = rem;
       r.layoutMode = layoutMode;
@@ -553,13 +1012,13 @@ export function useJsFlexStrip({
 
     const containerAlignItems = stripAlignItemsFromLayoutMode(layoutMode);
     const colGapRem =
-      tileLayout === TILE_LAYOUT_TEXT_LEFT
+      effTileLayout === TILE_LAYOUT_TEXT_LEFT
         ? MAX_GAP_REM_MAIN_TEXT_LEFT
         : MAX_GAP_REM_MAIN;
     const columnGap = rem * colGapRem;
     const rowGap = rem * MAX_GAP_REM_CROSS;
 
-    const textTileMin = 30 * 0.75 * rem * textSize;
+    const textTileMin = 30 * 0.75 * rem * effTextSize;
 
     const isRow =
       STRIP_CONTAINER_FLEX.flexDirection === FLEX_ROW ||
@@ -572,6 +1031,18 @@ export function useJsFlexStrip({
       }
       for (const k of exitNotifiedRef.current) {
         if (!nextKeys.has(k)) exitNotifiedRef.current.delete(k);
+      }
+      for (const k of mediaAspectByKeyRef.current.keys()) {
+        if (!nextKeys.has(k)) mediaAspectByKeyRef.current.delete(k);
+      }
+      for (const k of textLeftMainCacheRef.current.keys()) {
+        if (!nextKeys.has(k)) textLeftMainCacheRef.current.delete(k);
+      }
+      for (const k of stackedTextCrossCacheRef.current.keys()) {
+        if (!nextKeys.has(k)) stackedTextCrossCacheRef.current.delete(k);
+      }
+      for (const k of stripSketchByKeyRef.current.keys()) {
+        if (!nextKeys.has(k)) stripSketchByKeyRef.current.delete(k);
       }
       tileKeySetSigRef.current = tileKeySetSig;
     }
@@ -587,7 +1058,7 @@ export function useJsFlexStrip({
 
     /** @type {Set<string>} */
     const textLeftKeySet = new Set();
-    if (tileLayout === TILE_LAYOUT_TEXT_LEFT) {
+    if (effTileLayout === TILE_LAYOUT_TEXT_LEFT) {
       for (const t of layoutTiles) {
         if (t.type === "asset" || t.type === "blank") {
           textLeftKeySet.add(tileKeyFn(t));
@@ -600,6 +1071,16 @@ export function useJsFlexStrip({
       tileByKey.set(tileKeyFn(t0), t0);
     }
 
+    reconcileStripSketchTiles(
+      stripSketchByKeyRef.current,
+      layoutTiles,
+      tileKeyFn,
+    );
+    applyAspectsToStripSketch(
+      stripSketchByKeyRef.current,
+      mediaAspectByKeyRef.current,
+    );
+
     /** @type {import("./jsFlexLayout.js").FlexItemInput[]} */
     const baseItems = [];
 
@@ -607,8 +1088,8 @@ export function useJsFlexStrip({
       const tile = layoutTiles[docIdx];
       const key = tileKeyFn(tile);
       const el = elMapRef.current.get(key);
-      const canBump = tileUsesSizeModeForStripBumps(tile, el, tileLayout);
-      const bumpBasisRem = stripTileBumpBasisRem(tile, tileLayout);
+      const canBump = tileUsesSizeModeForStripBumps(tile, el, effTileLayout);
+      const bumpBasisRem = stripTileBumpBasisRem(tile, effTileLayout);
 
       let flexBasisMain = 0;
       let minMain = 0;
@@ -621,35 +1102,49 @@ export function useJsFlexStrip({
           sizeMode,
           key,
           rem,
-          imageSize,
+          effImageSize,
           bumpBasisRem,
         );
         if (el) {
           syncStripItemTileSizeFactor(el, factor);
         }
 
-        if (tile.type === "blank" && tileLayout !== TILE_LAYOUT_TEXT_LEFT) {
-          flexBasisMain = 16 * rem * imageSize * factor;
-          maxMain = 26 * rem * imageSize * factor;
-        } else if (tileLayout === TILE_LAYOUT_TEXT_LEFT) {
+        if (tile.type === "blank" && effTileLayout !== TILE_LAYOUT_TEXT_LEFT) {
+          flexBasisMain = 16 * rem * effImageSize * factor;
+          maxMain = 26 * rem * effImageSize * factor;
+        } else if (effTileLayout === TILE_LAYOUT_TEXT_LEFT) {
           // Text-left historically behaved as fit-content up to full row width.
           // Do not apply the 26rem media cap used by stacked tiles.
           // Blanks: same article layout as other text-left tiles (10rem media height in CSS).
           const cap = containerSize.w;
           maxMain = cap;
           if (el) {
-            const pw = el.style.width;
-            const pm = el.style.maxWidth;
-            const pb = el.style.boxSizing;
-            el.style.boxSizing = "border-box";
-            el.style.maxWidth = "none";
-            el.style.width = "auto";
-            flexBasisMain = measureTextLeftMainSize(el, cap);
-            el.style.width = pw;
-            el.style.maxWidth = pm;
-            el.style.boxSizing = pb;
+            const baseSig = stripTileLayoutContentSig(
+              tile,
+              effTileLayout,
+              effTextSize,
+              effImageSize,
+              rem,
+            );
+            const sig = `${baseSig}\0tlw\0${cap}\0${factor}`;
+            const cached = textLeftMainCacheRef.current.get(key);
+            if (cached && cached.sig === sig) {
+              flexBasisMain = cached.mainPx;
+            } else {
+              const pw = el.style.width;
+              const pm = el.style.maxWidth;
+              const pb = el.style.boxSizing;
+              el.style.boxSizing = "border-box";
+              el.style.maxWidth = "none";
+              el.style.width = "auto";
+              flexBasisMain = measureTextLeftMainSize(el, cap);
+              el.style.width = pw;
+              el.style.maxWidth = pm;
+              el.style.boxSizing = pb;
+              textLeftMainCacheRef.current.set(key, { sig, mainPx: flexBasisMain });
+            }
           } else {
-            flexBasisMain = 16 * rem * imageSize * factor;
+            flexBasisMain = 16 * rem * effImageSize * factor;
           }
           flexBasisMain = Math.min(flexBasisMain, cap);
           // Match prior CSS behavior for text-left tiles (`flex: 0 0 auto`):
@@ -662,33 +1157,60 @@ export function useJsFlexStrip({
           minMain = Math.min(w, containerSize.w);
           maxMain = w;
         } else {
-          flexBasisMain = 16 * rem * imageSize * factor;
-          maxMain = 26 * rem * imageSize * factor;
+          flexBasisMain = 16 * rem * effImageSize * factor;
+          maxMain = 26 * rem * effImageSize * factor;
         }
 
-        crossIntrinsic = el?.offsetHeight ?? 120;
-        if (el) {
-          const prevW = el.style.width;
-          const prevMaxW = el.style.maxWidth;
-          const prevBox = el.style.boxSizing;
-          el.style.height = "";
-          el.style.boxSizing = "border-box";
-          el.style.maxWidth = `${maxMain}px`;
-          el.style.width = `${Math.min(
-            maxMain,
-            Math.max(minMain, flexBasisMain),
-          )}px`;
-          crossIntrinsic = el.offsetHeight;
-          el.style.width = prevW;
-          el.style.maxWidth = prevMaxW;
-          el.style.boxSizing = prevBox;
+        const wProbe = Math.min(maxMain, Math.max(minMain, flexBasisMain));
+        const aspectNow = mediaAspectByKeyRef.current.get(key) ?? 0;
+        crossIntrinsic = estimateStripTileCrossPx({
+          tile,
+          key,
+          W: wProbe,
+          tileLayout: effTileLayout,
+          textSize: effTextSize,
+          imageSize: effImageSize,
+          rem,
+          factor,
+          aspect: aspectNow,
+          crossFallback: 120,
+          stackedTextCrossCache: stackedTextCrossCacheRef.current,
+          metaMetricsByKey: stripTileMetaMetricsRef.current,
+        });
+        if (
+          effTileLayout !== TILE_LAYOUT_TEXT_LEFT &&
+          tile.type === "asset" &&
+          tile.asset?.kind === "text"
+        ) {
+          const wR = Math.round(wProbe * 100) / 100;
+          const stSig = `${stripTileLayoutContentSig(
+            tile,
+            effTileLayout,
+            effTextSize,
+            effImageSize,
+            rem,
+          )}\0stx\0${wR}`;
+          stackedTextCrossCacheRef.current.set(key, {
+            sig: stSig,
+            crossPx: estimateStackedTextCopyBlockHeightPx(
+              tile,
+              wProbe,
+              rem,
+              effTextSize,
+            ),
+          });
         }
 
         if (!canBump) break;
         if (!el) break;
         const mediaEl = el.querySelector(".asset-tile__media");
+        const wUsed = Math.min(maxMain, Math.max(minMain, flexBasisMain));
         let minDim = 0;
-        if (mediaEl) {
+        const cachedAspect = mediaAspectByKeyRef.current.get(key);
+        if (effTileLayout !== TILE_LAYOUT_TEXT_LEFT && cachedAspect > 0) {
+          minDim = stackedMediaMinShortSideFromWidth(wUsed, cachedAspect);
+        }
+        if (!(minDim > 0) && mediaEl) {
           const mw = mediaEl.offsetWidth;
           const mh = mediaEl.offsetHeight;
           if (mw > 0 && mh > 0) {
@@ -696,10 +1218,6 @@ export function useJsFlexStrip({
           }
         }
         if (minDim === 0) {
-          const wUsed = Math.min(
-            maxMain,
-            Math.max(minMain, flexBasisMain),
-          );
           minDim = Math.min(wUsed, crossIntrinsic);
         }
         if (minDim >= MIN_STRIP_TILE_PX) break;
@@ -708,7 +1226,7 @@ export function useJsFlexStrip({
             sizeMode,
             key,
             rem,
-            imageSize,
+            effImageSize,
             bumpBasisRem,
           )
         ) {
@@ -735,34 +1253,47 @@ export function useJsFlexStrip({
       });
     }
 
+    const factorByKey = new Map();
+    const crossIntrinsicByKey = new Map();
+    for (const it of baseItems) {
+      crossIntrinsicByKey.set(it.key, it.crossSizeIntrinsic);
+    }
     for (const t of layoutTiles) {
       const k = tileKeyFn(t);
+      const f = tileSizeApi.getEffectiveFactor(
+        sizeMode,
+        k,
+        rem,
+        effImageSize,
+        stripTileBumpBasisRem(t, effTileLayout),
+      );
+      factorByKey.set(k, f);
       const li = elMapRef.current.get(k);
       if (li) {
-        syncStripItemTileSizeFactor(
-          li,
-          tileSizeApi.getEffectiveFactor(
-            sizeMode,
-            k,
-            rem,
-            imageSize,
-            stripTileBumpBasisRem(t, tileLayout),
-          ),
-        );
+        syncStripItemTileSizeFactor(li, f);
       }
     }
 
     const innerMain = isRow
       ? Math.max(containerSize.w, 1)
       : Math.max(containerSize.h, 320);
-    const mainGap = isRow ? columnGap : rowGap;
-    const isWrap = STRIP_CONTAINER_FLEX.flexWrap !== "nowrap";
+    const innerHeightForLayout = isRow ? 1e9 : innerMain;
 
-    const lineKeyGroups = breakLinesByMain(
+    const stripFlexContainer = {
+      width: Math.max(containerSize.w, 1),
+      height: innerHeightForLayout,
+      flexDirection: STRIP_CONTAINER_FLEX.flexDirection,
+      flexWrap: STRIP_CONTAINER_FLEX.flexWrap,
+      justifyContent: STRIP_CONTAINER_FLEX.justifyContent,
+      alignItems: containerAlignItems,
+      alignContent: STRIP_CONTAINER_FLEX.alignContent,
+      rowGap,
+      columnGap,
+    };
+
+    const lineKeyGroups = flexLineKeyGroupsFromItems(
       baseItems,
-      innerMain,
-      mainGap,
-      isWrap,
+      stripFlexContainer,
     );
 
     let rowFillSet = new Set();
@@ -778,30 +1309,75 @@ export function useJsFlexStrip({
       it.flexGrow = rowFillSet.has(it.key) ? 1 : 0;
     }
 
-    const innerHeightForLayout = isRow ? 1e9 : innerMain;
-
-    const { rects } = computeFlexLayout(baseItems, {
-      width: containerSize.w,
-      height: innerHeightForLayout,
-      flexDirection: STRIP_CONTAINER_FLEX.flexDirection,
-      flexWrap: STRIP_CONTAINER_FLEX.flexWrap,
-      justifyContent: STRIP_CONTAINER_FLEX.justifyContent,
-      alignItems: containerAlignItems,
-      alignContent: STRIP_CONTAINER_FLEX.alignContent,
-      rowGap,
-      columnGap,
-    });
+    const { rects, lineKeyGroups: lineKeyGroupsFromLayout } =
+      computeFlexLayout(baseItems, stripFlexContainer);
 
     if (isRow) {
-      reflowStripRowsByActualHeights(
-        lineKeyGroups,
+      reflowStripRowsMathHeights(
+        lineKeyGroupsFromLayout,
         rects,
         alignSelfByKey,
         containerAlignItems,
         rowGap,
-        elMapRef,
+        tileByKey,
+        effTileLayout,
+        effTextSize,
+        effImageSize,
+        rem,
+        factorByKey,
+        crossIntrinsicByKey,
+        mediaAspectByKeyRef.current,
+        stackedTextCrossCacheRef.current,
+        stripTileMetaMetricsRef.current,
       );
+
+      if (!stripRowHeightDebug) {
+        onStripRowDebugBandsRef.current?.(null);
+        onStripDebugAspectsRef.current?.(null);
+      } else {
+        const reportRows = onStripRowDebugBandsRef.current;
+        if (typeof reportRows === "function") {
+          /** @type {{ x: number, y: number, width: number, height: number, tallestLabel: string, tallestMath: string }[]} */
+          const bands = [];
+          /** @type {StripRowCrossMathCtx} */
+          const crossMathCtx = {
+            tileLayout: effTileLayout,
+            textSize: effTextSize,
+            imageSize: effImageSize,
+            rem,
+            factorByKey,
+            crossIntrinsicByKey,
+            mediaAspectByKey: mediaAspectByKeyRef.current,
+            stackedTextCrossCache: stackedTextCrossCacheRef.current,
+            metaMetricsByKey: stripTileMetaMetricsRef.current,
+          };
+          for (const line of lineKeyGroupsFromLayout) {
+            if (line.length === 0) continue;
+            const b = stripRowDebugBandFromLine(line, rects, tileByKey, crossMathCtx);
+            if (b) bands.push(b);
+          }
+          reportRows(bands);
+        }
+
+        const reportAsp = onStripDebugAspectsRef.current;
+        if (typeof reportAsp === "function") {
+          /** @type {Record<string, number | null>} */
+          const aspectByKey = {};
+          for (const t of layoutTiles) {
+            const k = tileKeyFn(t);
+            const v = mediaAspectByKeyRef.current.get(k);
+            aspectByKey[k] =
+              typeof v === "number" && v > 0 && Number.isFinite(v) ? v : null;
+          }
+          reportAsp(aspectByKey);
+        }
+      }
+    } else {
+      onStripRowDebugBandsRef.current?.(null);
+      onStripDebugAspectsRef.current?.(null);
     }
+
+    applyTargetsToStripSketch(stripSketchByKeyRef.current, rects);
 
     for (const k of Object.keys(rects)) {
       const r = rects[k];
@@ -820,7 +1396,11 @@ export function useJsFlexStrip({
 
     const bottoms = Object.values(rects).map((r) => r.y + r.height);
     const bottomExtent = bottoms.length > 0 ? Math.max(0, ...bottoms) : 0;
-    root.style.minHeight = `${Math.max(bottomExtent, 0)}px`;
+    const minHPx = Math.max(0, Math.round(bottomExtent));
+    if (lastStripMinHeightPxRef.current !== minHPx) {
+      lastStripMinHeightPxRef.current = minHPx;
+      root.style.minHeight = `${minHPx}px`;
+    }
 
     cancelAnimationFrame(rafRef.current);
     lastLerpFrameTimeRef.current = 0;
@@ -834,6 +1414,10 @@ export function useJsFlexStrip({
         }
       }
       lastLerpFrameTimeRef.current = now;
+      const lp = stripPanelLiveRef?.current;
+      const tickImg =
+        typeof lp?.imageSize === "number" ? lp.imageSize : imageSize;
+      const tickLay = tileLayoutFromImageSize(tickImg);
       let busy = false;
       const containerAlign = containerAlignItems;
       for (const key of Object.keys(rects)) {
@@ -919,8 +1503,8 @@ export function useJsFlexStrip({
                 sizeMode,
                 key,
                 rem,
-                imageSize,
-                stripTileBumpBasisRem(tTile, tileLayout),
+                tickImg,
+                stripTileBumpBasisRem(tTile, tickLay),
               )
               : 1,
           );
@@ -948,6 +1532,9 @@ export function useJsFlexStrip({
       }
     };
     rafRef.current = requestAnimationFrame(tick);
+    };
+
+    stripLayoutPassRef.current();
 
     return () => {
       cancelAnimationFrame(rafRef.current);
@@ -959,7 +1546,25 @@ export function useJsFlexStrip({
         });
       }
     };
-  }, [layoutRecalcTick]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- panel multipliers read from `stripPanelLiveRef` + `scheduleStripLayout` for slider-driven passes; props `imageSize`/`textSize`/`tileLayout` are fallbacks only.
+  }, [
+    stripRef,
+    stripTiles,
+    tileKeyFn,
+    sizeMode,
+    tileSizeApi,
+    layoutMode,
+    alignSelfByKey,
+    containerSize,
+    measureTick,
+    rowFillMode,
+    stripRowHeightDebug,
+  ]);
 
-  return { registerTileEl: registerEl };
+  return {
+    registerTileEl: registerEl,
+    registerStripMediaAspect,
+    registerStripTileMetaLayout,
+    scheduleStripLayout,
+  };
 }

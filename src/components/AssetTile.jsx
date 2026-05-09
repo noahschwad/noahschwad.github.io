@@ -1,10 +1,4 @@
-import {
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useMemo,
-  useState,
-} from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { getTextTileBodyProps } from "../renderTextWithLineBreaks";
 import { TILE_LAYOUT_STACKED, TILE_LAYOUT_TEXT_LEFT } from "../functionality";
 import { MuxStripHlsVideo } from "./MuxStripHlsVideo";
@@ -17,11 +11,6 @@ function randomSelectionTheme() {
   const luma = 0.299 * r + 0.587 * g + 0.114 * b;
   const fg = luma > 160 ? 0 : 255;
   return { r, g, b, fg };
-}
-
-function randomGrowOriginCss() {
-  const corners = ["0% 0%", "100% 0%", "0% 100%", "100% 100%"];
-  return corners[Math.floor(Math.random() * corners.length)];
 }
 
 function hasSrc(src) {
@@ -49,90 +38,140 @@ function assetReady(asset) {
   return hasSrc(asset.src);
 }
 
-/** One corner grow-in per page load per strip asset (survives tile remount / flex reflow). */
-const stripAssetIntroPlayed = new Set();
-
-function stripAssetIntroKey(project, asset) {
-  const pid = project?.id ?? "";
-  const aid =
-    asset?.id ??
-    (asset.kind === "mux" ? asset.playbackId : null) ??
-    asset?.src ??
-    "";
-  const kind = asset?.kind ?? "image";
-  return `${pid}\0${String(aid)}\0${kind}`;
-}
-
 export function AssetTile({
   project,
   asset,
   tileLayout = TILE_LAYOUT_STACKED,
   stripListIndex,
+  stripTileKey,
+  registerStripMediaAspect,
+  registerStripTileMetaLayout,
+  textSize = 1,
 }) {
-  const introKey = useMemo(
-    () => stripAssetIntroKey(project, asset),
-    [
-      project?.id,
-      asset?.id,
-      asset?.kind,
-      asset?.src,
-      asset?.playbackId,
-    ],
-  );
-
   const [mediaFailed, setMediaFailed] = useState(false);
   const [selectionTheme] = useState(randomSelectionTheme);
-  const [mediaAspect, setMediaAspect] = useState(
-    /** @type {{ w: number; h: number } | null} */ (null),
+  const articleRef = useRef(null);
+  const stripNativeVideoRef = useRef(null);
+
+  const reportAspect = useCallback(
+    (w, h) => {
+      if (!stripTileKey || !registerStripMediaAspect) return;
+      if (w > 0 && h > 0) registerStripMediaAspect(stripTileKey, w / h);
+    },
+    [stripTileKey, registerStripMediaAspect],
   );
-  const [mediaRevealed, setMediaRevealed] = useState(
-    () => asset.kind === "text" || stripAssetIntroPlayed.has(introKey),
-  );
-  const [introCssDone, setIntroCssDone] = useState(() =>
-    asset.kind === "text" || stripAssetIntroPlayed.has(introKey),
-  );
-  const growOrigin = useMemo(() => randomGrowOriginCss(), []);
+
+  const clearStripAspect = useCallback(() => {
+    if (!stripTileKey || !registerStripMediaAspect) return;
+    registerStripMediaAspect(stripTileKey, null);
+  }, [stripTileKey, registerStripMediaAspect]);
 
   useEffect(() => {
-    if (asset.kind === "text") return;
-    const played = stripAssetIntroPlayed.has(introKey);
-    setIntroCssDone(played);
-    setMediaRevealed(played);
-    if (!played) setMediaAspect(null);
-  }, [introKey, asset.kind]);
+    if (!stripTileKey || !registerStripMediaAspect) return undefined;
+    return () => registerStripMediaAspect(stripTileKey, null);
+  }, [
+    stripTileKey,
+    registerStripMediaAspect,
+    asset.kind,
+    asset.src,
+    asset.playbackId,
+  ]);
+
+  const onMuxError = useCallback(() => {
+    setMediaFailed(true);
+    clearStripAspect();
+  }, [clearStripAspect]);
+
+  const measureStripTileMetaAndGap = useCallback(() => {
+    if (!stripTileKey || !registerStripTileMetaLayout) return;
+    const article = articleRef.current;
+    if (!article) return;
+    const anchorW = article.offsetWidth;
+    if (anchorW < 1) return;
+
+    const rootFs =
+      parseFloat(getComputedStyle(document.documentElement).fontSize || "16") ||
+      16;
+    const cs = getComputedStyle(article);
+    const flexDir = cs.flexDirection || "column";
+    const isColumn =
+      flexDir === "column" || flexDir === "column-reverse" || flexDir === "";
+    /* Column flex: inter-item spacing is row-gap; column-gap is for wrapped columns. */
+    let gapPx = parseFloat(
+      (isColumn ? cs.rowGap : cs.columnGap) || cs.columnGap || "",
+    );
+    if (!Number.isFinite(gapPx) || gapPx < 0) {
+      gapPx = parseFloat(cs.gap || "");
+    }
+    if (!Number.isFinite(gapPx) || gapPx < 0) {
+      gapPx = 0.3 * rootFs;
+    }
+
+    const metaEl = article.querySelector(".asset-tile__meta");
+    if (metaEl) {
+      const br = metaEl.getBoundingClientRect();
+      registerStripTileMetaLayout(stripTileKey, {
+        metaW: br.width,
+        metaH: br.height,
+        gapPx,
+        anchorW,
+      });
+    } else {
+      registerStripTileMetaLayout(stripTileKey, {
+        metaW: 0,
+        metaH: 0,
+        gapPx,
+        anchorW,
+      });
+    }
+  }, [
+    stripTileKey,
+    registerStripTileMetaLayout,
+    project.title,
+    project.year,
+    project.category,
+    asset.category,
+    tileLayout,
+    textSize,
+  ]);
 
   useLayoutEffect(() => {
-    if (asset.kind === "text" || !mediaRevealed || introCssDone) return;
-    if (typeof window === "undefined") return;
-    if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      return;
-    }
-    stripAssetIntroPlayed.add(introKey);
-    setIntroCssDone(true);
-  }, [asset.kind, mediaRevealed, introCssDone, introKey]);
+    measureStripTileMetaAndGap();
+    const el = articleRef.current;
+    if (!el || !stripTileKey || !registerStripTileMetaLayout) return undefined;
+    const ro = new ResizeObserver(() => {
+      measureStripTileMetaAndGap();
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [measureStripTileMetaAndGap, stripTileKey, registerStripTileMetaLayout]);
 
-  const onMuxStripLayoutReady = useCallback((w, h) => {
-    if (typeof w === "number" && typeof h === "number" && w > 0 && h > 0) {
-      setMediaAspect({ w, h });
-    }
-    setMediaRevealed(true);
-  }, []);
+  useEffect(() => {
+    if (!stripTileKey || !registerStripTileMetaLayout) return undefined;
+    return () => {
+      registerStripTileMetaLayout(stripTileKey, null);
+    };
+  }, [stripTileKey, registerStripTileMetaLayout]);
 
-  const onImageIntrinsic = useCallback((w, h) => {
-    setMediaAspect({ w, h });
-    setMediaRevealed(true);
-  }, []);
-
-  const onMediaGrowInEnd = useCallback(
+  const onVideoMetadata = useCallback(
     (e) => {
-      if (e.animationName !== "asset-tile-media-grow-in") return;
-      stripAssetIntroPlayed.add(introKey);
-      setIntroCssDone(true);
+      const v = e.currentTarget;
+      const w = v.videoWidth;
+      const h = v.videoHeight;
+      if (w > 0 && h > 0) reportAspect(w, h);
     },
-    [introKey],
+    [reportAspect],
   );
 
-  const onMuxError = useCallback(() => setMediaFailed(true), []);
+  useLayoutEffect(() => {
+    if (asset.kind !== "video" || mediaFailed || !hasSrc(asset.src)) return;
+    const v = stripNativeVideoRef.current;
+    if (!v || v.readyState < 1) return;
+    const w = v.videoWidth;
+    const h = v.videoHeight;
+    if (w > 0 && h > 0) reportAspect(w, h);
+  }, [asset.kind, asset.src, mediaFailed, reportAspect]);
+
   const missing = !assetReady(asset) || mediaFailed;
   const category = asset.category ?? project.category;
   const textFirst = tileLayout === TILE_LAYOUT_TEXT_LEFT;
@@ -142,23 +181,8 @@ export function AssetTile({
   const showSub = hasCategory || hasYear;
   const textTileLarge = asset.textLarge !== false;
 
-  const useStripMediaSizer =
-    !missing && asset.kind !== "text";
-
-  const fallbackAspect =
-    asset.kind === "mux" || asset.kind === "video" ? "16 / 9" : "4 / 3";
-
-  const sizerStyle = useStripMediaSizer
-    ? {
-        "--media-grow-origin": growOrigin,
-        aspectRatio: mediaAspect
-          ? `${mediaAspect.w} / ${mediaAspect.h}`
-          : fallbackAspect,
-      }
-    : undefined;
-
-  const mediaBody = (
-    <>
+  const media = (
+    <div className="asset-tile__media" data-kind={asset.kind}>
       {missing ? (
         <div className="asset-tile__placeholder" role="img" aria-label="No media loaded">
           {!assetReady(asset) ? "No asset specified" : "Asset missing"}
@@ -176,10 +200,12 @@ export function AssetTile({
           playbackId={asset.playbackId.trim()}
           tokens={asset.tokens}
           onError={onMuxError}
-          onStripLayoutReady={onMuxStripLayoutReady}
+          onLoadedMetadata={onVideoMetadata}
+          onThumbnailNaturalSize={reportAspect}
         />
       ) : asset.kind === "video" ? (
         <video
+          ref={stripNativeVideoRef}
           className="asset-tile__video"
           data-strip-playback-managed=""
           src={asset.src}
@@ -188,14 +214,11 @@ export function AssetTile({
           loop
           playsInline
           autoPlay
-          onLoadedMetadata={(e) => {
-            const v = e.currentTarget;
-            const w = v.videoWidth || 0;
-            const h = v.videoHeight || 0;
-            if (w > 0 && h > 0) setMediaAspect({ w, h });
-            setMediaRevealed(true);
+          onLoadedMetadata={onVideoMetadata}
+          onError={() => {
+            setMediaFailed(true);
+            clearStripAspect();
           }}
-          onError={() => setMediaFailed(true)}
         />
       ) : (
         <ProgressiveProjectImage
@@ -203,13 +226,16 @@ export function AssetTile({
           className="asset-tile__img"
           stackClass="asset-tile__img-stack"
           alt=""
-          loading="lazy"
+          loading="eager"
           decoding="async"
-          onErrorFull={() => setMediaFailed(true)}
-          onIntrinsicLayoutReady={onImageIntrinsic}
+          onNaturalSize={reportAspect}
+          onErrorFull={() => {
+            setMediaFailed(true);
+            clearStripAspect();
+          }}
         />
       )}
-    </>
+    </div>
   );
 
   const meta =
@@ -232,6 +258,7 @@ export function AssetTile({
 
   return (
     <article
+      ref={articleRef}
       className={`asset-tile${textFirst ? " asset-tile--text-left" : ""}`}
       style={{
         "--tile-sel-r": selectionTheme.r,
@@ -242,27 +269,7 @@ export function AssetTile({
     >
       {/* Always meta then media so the media subtree (Mux) keeps the same React position when layout toggles; stacked mode uses CSS order to show media first. */}
       {meta}
-      <div className="asset-tile__media" data-kind={asset.kind}>
-        {useStripMediaSizer ? (
-          <div
-            className={`asset-tile__media-sizer${
-              textFirst ? " asset-tile__media-sizer--text-left" : ""
-            }${mediaRevealed ? " asset-tile__media-sizer--revealed" : ""}`}
-            style={sizerStyle}
-          >
-            <div
-              className={`asset-tile__media-sizer__inner${
-                introCssDone ? " is-intro-done" : ""
-              }`}
-              onAnimationEnd={onMediaGrowInEnd}
-            >
-              {mediaBody}
-            </div>
-          </div>
-        ) : (
-          mediaBody
-        )}
-      </div>
+      {media}
     </article>
   );
 }

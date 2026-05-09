@@ -1,3 +1,4 @@
+import { useLayoutEffect, useRef } from "react";
 import {
   DISPLAY_MODE_OPTIONS,
   LAYOUT_MODE_OPTIONS,
@@ -50,6 +51,8 @@ function DebugPanel({
   onSizeMode,
   layoutMode,
   onLayoutMode,
+  stripRowHeightDebug,
+  onStripRowHeightDebug,
 }) {
   return (
     <div className="debug-panel" role="region" aria-label="Debug panel">
@@ -151,6 +154,17 @@ function DebugPanel({
           }
         />
       </div>
+      <div className="control control--strip-row-debug">
+        <label className="control__label control__label--checkbox" htmlFor="control-strip-row-debug">
+          <input
+            id="control-strip-row-debug"
+            type="checkbox"
+            checked={stripRowHeightDebug}
+            onChange={(e) => onStripRowHeightDebug(e.target.checked)}
+          />{" "}
+          Show strip row height overlay
+        </label>
+      </div>
     </div>
   );
 }
@@ -175,28 +189,84 @@ export function ControlPanel({
   onLayoutMode,
   onImageSizeGrabStart,
   onImageSizeGrabEnd,
+  onImageSizeStripLive,
+  imageSliderGrabbedRef = null,
   /** Active min/max/step for the image size sliders (wide vs narrow viewport). */
   imageSizeRange = imageSizeRangeWide,
   /** Lower debug strip (order, modes, blank tiles, text/image sliders). Top image size bar always visible. */
   showDebugPanel = false,
+  stripRowHeightDebug = false,
+  onStripRowHeightDebug = () => {},
 }) {
+  const imageBarRef = useRef(null);
+  const liveMainImageStrip =
+    typeof onImageSizeStripLive === "function";
+
+  useLayoutEffect(() => {
+    if (!liveMainImageStrip || imageSliderGrabbedRef?.current) return;
+    const el = imageBarRef.current;
+    if (el) el.value = String(imageSize);
+  }, [imageSize, liveMainImageStrip, imageSliderGrabbedRef]);
+
   return (
     <div className="top-chrome">
       <div className="control-bar">
         <div className="control-bar__slider-wrap">
           <input
+            ref={imageBarRef}
             className="control-bar__input"
             type="range"
             aria-label="Image size"
             min={imageSizeRange.min}
             max={imageSizeRange.max}
             step={imageSizeMainBarStep}
-            value={imageSize}
-            onChange={(e) => onImageSize(Number(e.target.value))}
+            {...(liveMainImageStrip
+              ? {
+                  defaultValue: imageSize,
+                  onInput: (e) => {
+                    const raw = Number(e.currentTarget.value);
+                    const clamped = Math.min(
+                      imageSizeRange.max,
+                      Math.max(imageSizeRange.min, raw),
+                    );
+                    onImageSizeStripLive(clamped);
+                  },
+                  onPointerUp: (e) => {
+                    onImageSizeGrabEnd?.();
+                    const raw = Number(e.currentTarget.value);
+                    const clamped = Math.min(
+                      imageSizeRange.max,
+                      Math.max(imageSizeRange.min, raw),
+                    );
+                    onImageSize(roundImageSizeMainBarStep(clamped));
+                  },
+                  onPointerCancel: (e) => {
+                    onImageSizeGrabEnd?.();
+                    const raw = Number(e.currentTarget.value);
+                    const clamped = Math.min(
+                      imageSizeRange.max,
+                      Math.max(imageSizeRange.min, raw),
+                    );
+                    onImageSize(roundImageSizeMainBarStep(clamped));
+                  },
+                  onBlur: (e) => {
+                    onImageSizeGrabEnd?.();
+                    const raw = Number(e.currentTarget.value);
+                    const clamped = Math.min(
+                      imageSizeRange.max,
+                      Math.max(imageSizeRange.min, raw),
+                    );
+                    onImageSize(roundImageSizeMainBarStep(clamped));
+                  },
+                }
+              : {
+                  value: imageSize,
+                  onChange: (e) => onImageSize(Number(e.target.value)),
+                  onPointerUp: onImageSizeGrabEnd,
+                  onPointerCancel: onImageSizeGrabEnd,
+                  onBlur: onImageSizeGrabEnd,
+                })}
             onPointerDown={onImageSizeGrabStart}
-            onPointerUp={onImageSizeGrabEnd}
-            onPointerCancel={onImageSizeGrabEnd}
-            onBlur={onImageSizeGrabEnd}
           />
         </div>
       </div>
@@ -216,6 +286,8 @@ export function ControlPanel({
           onSizeMode={onSizeMode}
           layoutMode={layoutMode}
           onLayoutMode={onLayoutMode}
+          stripRowHeightDebug={stripRowHeightDebug}
+          onStripRowHeightDebug={onStripRowHeightDebug}
         />
       ) : null}
     </div>

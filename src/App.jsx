@@ -45,6 +45,28 @@ import {
 } from "./functionality";
 import "./App.css";
 
+const STRIP_DEBUG_ASPECT_PRESETS = [
+  [16, 9],
+  [4, 3],
+  [3, 2],
+  [5, 4],
+  [21, 9],
+  [1, 1],
+  [9, 16],
+  [3, 4],
+  [2, 3],
+];
+
+/** `ar` = naturalWidth / naturalHeight (layout map); display as w∶h or decimal∶1. */
+function formatStripDebugAspect(ar) {
+  if (ar == null || !(ar > 0) || !Number.isFinite(ar)) return "—";
+  for (const [w, h] of STRIP_DEBUG_ASPECT_PRESETS) {
+    if (Math.abs(ar - w / h) < 0.028) return `${w}∶${h}`;
+  }
+  const rounded = Math.round(ar * 1000) / 1000;
+  return `${rounded}∶1`;
+}
+
 export function App() {
   const [textSize, setTextSize] = useState(textSizeRange.defaultValue);
   const [imageSizeViewportNarrow, setImageSizeViewportNarrow] = useState(() =>
@@ -61,6 +83,12 @@ export function App() {
     [imageSizeRange],
   );
   const [imageSize, setImageSize] = useState(imageSizeRangeWide.defaultValue);
+  /** Live panel multipliers for strip layout (`useJsFlexStrip`); updated on every render and on main image bar `input` without waiting for React. */
+  const stripPanelLiveRef = useRef({
+    imageSize: imageSizeRangeWide.defaultValue,
+    textSize: textSizeRange.defaultValue,
+  });
+  stripPanelLiveRef.current = { imageSize, textSize };
   const imageTenthIndexRef = useRef(
     imageSizeTenthIndex(roundImageSizeStep(imageSizeRangeWide.defaultValue)),
   );
@@ -77,6 +105,9 @@ export function App() {
   );
   const [layoutMode, setLayoutMode] = useState(LAYOUT_FLEX_START);
   const [showDebugPanel, setShowDebugPanel] = useState(false);
+  const [stripRowHeightDebug, setStripRowHeightDebug] = useState(false);
+  const [stripRowDebugBands, setStripRowDebugBands] = useState(null);
+  const [stripDebugAspectByKey, setStripDebugAspectByKey] = useState(null);
   const [exitingBlankIds, setExitingBlankIds] = useState([]);
   const [lightbox, setLightbox] = useState(null);
   const lightboxReturnFocusRef = useRef(null);
@@ -264,19 +295,68 @@ export function App() {
     [sizeMode, tileSizeApi, imageSize, tileKeyFn, tileLayout, rootRem],
   );
 
-  const { registerTileEl } = useJsFlexStrip({
-    stripRef,
-    tiles: stripTiles,
-    tileKeyFn,
-    imageSize,
-    textSize,
-    tileLayout,
-    sizeMode,
-    tileSizeApi,
-    layoutMode,
-    alignSelfByKey: tileAlignSelfByKey,
-    onExitingBlankDone: handleExitingBlankDone,
-  });
+  const {
+    registerTileEl,
+    registerStripMediaAspect,
+    registerStripTileMetaLayout,
+    scheduleStripLayout,
+  } =
+    useJsFlexStrip({
+      stripRef,
+      tiles: stripTiles,
+      tileKeyFn,
+      imageSize,
+      textSize,
+      tileLayout,
+      sizeMode,
+      tileSizeApi,
+      layoutMode,
+      alignSelfByKey: tileAlignSelfByKey,
+      onExitingBlankDone: handleExitingBlankDone,
+      stripPanelLiveRef,
+      suppressChildStripResizeObserversRef: imageSliderGrabbedRef,
+      stripRowHeightDebug,
+      onStripRowDebugBands: setStripRowDebugBands,
+      onStripDebugAspects: setStripDebugAspectByKey,
+    });
+
+  /** Stable ref identity per `tileKey` so React does not fire `registerTileEl(key, null)` every App render. */
+  const stripListItemElRefByKeyRef = useRef(new Map());
+  const bindStripListItemEl = useCallback(
+    (tileKey) => {
+      let cb = stripListItemElRefByKeyRef.current.get(tileKey);
+      if (!cb) {
+        cb = (el) => registerTileEl(tileKey, el);
+        stripListItemElRefByKeyRef.current.set(tileKey, cb);
+      }
+      return cb;
+    },
+    [registerTileEl],
+  );
+
+  const stripTileKeysSig = useMemo(
+    () => JSON.stringify(stripTiles.map((t) => stripTileListKey(t))),
+    [stripTiles],
+  );
+
+  useEffect(() => {
+    const alive = new Set(stripTiles.map((t) => stripTileListKey(t)));
+    for (const k of stripListItemElRefByKeyRef.current.keys()) {
+      if (!alive.has(k)) stripListItemElRefByKeyRef.current.delete(k);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- prune when key-set sig changes only
+  }, [stripTileKeysSig]);
+
+  const handleImageSizeStripLive = useCallback(
+    (clamped) => {
+      stripPanelLiveRef.current = {
+        ...stripPanelLiveRef.current,
+        imageSize: clamped,
+      };
+      scheduleStripLayout();
+    },
+    [scheduleStripLayout],
+  );
 
   useStripMobileManagedVideoPlayback({
     stripRef,
@@ -346,6 +426,13 @@ export function App() {
       window.removeEventListener("touchend", releaseGrab);
     };
   }, [handleImageSizeGrabEnd]);
+
+  useEffect(() => {
+    if (!stripRowHeightDebug) {
+      setStripRowDebugBands(null);
+      setStripDebugAspectByKey(null);
+    }
+  }, [stripRowHeightDebug]);
 
   useEffect(() => {
     const onKeyDown = (e) => {
@@ -434,7 +521,11 @@ export function App() {
         onLayoutMode={setLayoutMode}
         onImageSizeGrabStart={handleImageSizeGrabStart}
         onImageSizeGrabEnd={handleImageSizeGrabEnd}
+        onImageSizeStripLive={handleImageSizeStripLive}
+        imageSliderGrabbedRef={imageSliderGrabbedRef}
         showDebugPanel={showDebugPanel}
+        stripRowHeightDebug={stripRowHeightDebug}
+        onStripRowHeightDebug={setStripRowHeightDebug}
       />
       <main id="main" className="app">
         <SiteIntro project={projects.find((p) => p.staticSiteIntro)} />
@@ -443,6 +534,39 @@ export function App() {
           aria-label="Selected work"
           ref={stripRef}
         >
+          {stripRowHeightDebug && stripRowDebugBands?.length ? (
+            <div
+              className="selected-strip__row-debug"
+              aria-hidden="true"
+            >
+              {stripRowDebugBands.map((band, ri) => (
+                <div
+                  key={ri}
+                  className="selected-strip__row-debug-band"
+                  style={{
+                    left: band.x,
+                    top: band.y,
+                    width: band.width,
+                    height: band.height,
+                  }}
+                  title={band.tallestMath || undefined}
+                >
+                  <div className="selected-strip__row-debug-band-stack">
+                    {band.tallestMath ? (
+                      <span className="selected-strip__row-debug-band-math">
+                        {band.tallestMath}
+                      </span>
+                    ) : null}
+                    {band.tallestLabel ? (
+                      <span className="selected-strip__row-debug-band-label">
+                        {band.tallestLabel}
+                      </span>
+                    ) : null}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : null}
           {stripTiles.map((tile, i) => {
             const tileKey = stripTileListKey(tile);
             const factor = getTileSizeFactor(tile);
@@ -462,7 +586,7 @@ export function App() {
                 key={tileKey}
                 data-tile-key={tileKey}
                 className={itemClasses}
-                ref={(el) => registerTileEl(tileKey, el)}
+                ref={bindStripListItemEl(tileKey)}
                 style={{
                   "--tile-size-factor": String(factor),
                 }}
@@ -507,8 +631,24 @@ export function App() {
                     asset={tile.asset}
                     tileLayout={tileLayout}
                     stripListIndex={assetStripOrdinalByIndex[i] ?? 0}
+                    stripTileKey={tileKey}
+                    registerStripMediaAspect={registerStripMediaAspect}
+                    registerStripTileMetaLayout={registerStripTileMetaLayout}
+                    textSize={textSize}
                   />
                 )}
+                {stripRowHeightDebug && stripDebugAspectByKey ? (
+                  <span
+                    className="selected-strip__item-aspect-debug"
+                    title={
+                      stripDebugAspectByKey[tileKey] != null
+                        ? `W÷H ≈ ${stripDebugAspectByKey[tileKey]}`
+                        : "No aspect in strip map (fallback height)"
+                    }
+                  >
+                    {formatStripDebugAspect(stripDebugAspectByKey[tileKey])}
+                  </span>
+                ) : null}
               </li>
             );
           })}

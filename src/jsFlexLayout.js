@@ -32,6 +32,79 @@ export const ALIGN_CONTENT_STRETCH = "stretch";
 const EPS = 0.5;
 
 /**
+ * Order flex items for wrap / layout (same as `computeFlexLayout`).
+ * @param {FlexItemInput[]} items
+ * @returns {FlexItemInput[]}
+ */
+export function sortFlexItemsForWrap(items) {
+  return items
+    .map((it, docIndex) => ({ it, docIndex }))
+    .sort((a, b) => {
+      const oa = a.it.order ?? 0;
+      const ob = b.it.order ?? 0;
+      if (oa !== ob) return oa - ob;
+      return a.docIndex - b.docIndex;
+    })
+    .map(({ it }) => it);
+}
+
+/**
+ * Break sorted items into flex lines using clamped basis widths (same rules as `computeFlexLayout`).
+ * @param {FlexItemInput[]} sorted
+ * @param {number} innerMain
+ * @param {number} mainGap
+ * @param {boolean} isWrap
+ * @returns {FlexItemInput[][]}
+ */
+export function splitFlexLinesByBasis(sorted, innerMain, mainGap, isWrap) {
+  if (!isWrap) return [sorted];
+  /** @type {FlexItemInput[][]} */
+  const lines = [];
+  let cur = [];
+  let sumMain = 0;
+  for (const it of sorted) {
+    const base = clamp(it.flexBasisMain, it.minMain ?? 0, it.maxMain ?? 1e9);
+    const g = cur.length > 0 ? mainGap : 0;
+    const nextSum = sumMain + g + base;
+    if (cur.length > 0 && nextSum > innerMain + EPS) {
+      lines.push(cur);
+      cur = [];
+      sumMain = 0;
+    }
+    cur.push(it);
+    sumMain += (cur.length > 1 ? mainGap : 0) + base;
+  }
+  if (cur.length) lines.push(cur);
+  return lines;
+}
+
+/**
+ * Which keys share each flex line (row), from basis widths + gaps — identical to `computeFlexLayout` line split.
+ * @param {FlexItemInput[]} items
+ * @param {FlexContainerInput} container
+ * @returns {string[][]}
+ */
+export function flexLineKeyGroupsFromItems(items, container) {
+  const {
+    width: cw,
+    height: ch,
+    flexDirection = FLEX_ROW,
+    flexWrap = FLEX_WRAP,
+    rowGap = 0,
+    columnGap = 0,
+  } = container;
+  const isRow =
+    flexDirection === FLEX_ROW || flexDirection === FLEX_ROW_REVERSE;
+  const isWrap = flexWrap !== FLEX_NOWRAP;
+  const innerMain = isRow ? cw : ch;
+  const mainGap = isRow ? columnGap : rowGap;
+  const sorted = sortFlexItemsForWrap(items);
+  if (sorted.length === 0) return [];
+  const lines = splitFlexLinesByBasis(sorted, innerMain, mainGap, isWrap);
+  return lines.map((line) => line.map((it) => it.key));
+}
+
+/**
  * @typedef {Object} FlexItemInput
  * @property {string} key
  * @property {number} [order=0]
@@ -62,7 +135,7 @@ const EPS = 0.5;
 /**
  * @param {FlexItemInput[]} items
  * @param {FlexContainerInput} container
- * @returns {{ rects: Record<string, { x: number, y: number, width: number, height: number }>, contentWidth: number, contentHeight: number }}
+ * @returns {{ rects: Record<string, { x: number, y: number, width: number, height: number }>, contentWidth: number, contentHeight: number, lineKeyGroups: string[][] }}
  */
 export function computeFlexLayout(items, container) {
   const {
@@ -89,41 +162,14 @@ export function computeFlexLayout(items, container) {
   const mainGap = isRow ? columnGap : rowGap;
   const crossGap = isRow ? rowGap : columnGap;
 
-  const sorted = items
-    .map((it, docIndex) => ({ it, docIndex }))
-    .sort((a, b) => {
-      const oa = a.it.order ?? 0;
-      const ob = b.it.order ?? 0;
-      if (oa !== ob) return oa - ob;
-      return a.docIndex - b.docIndex;
-    })
-    .map(({ it }) => it);
+  const sorted = sortFlexItemsForWrap(items);
 
   if (sorted.length === 0) {
-    return { rects: {}, contentWidth: cw, contentHeight: ch };
+    return { rects: {}, contentWidth: cw, contentHeight: ch, lineKeyGroups: [] };
   }
 
-  /** @type {FlexItemInput[][]} */
-  let lines = [];
-  if (!isWrap) {
-    lines = [sorted];
-  } else {
-    let cur = [];
-    let sumMain = 0;
-    for (const it of sorted) {
-      const base = clamp(it.flexBasisMain, it.minMain ?? 0, it.maxMain ?? 1e9);
-      const g = cur.length > 0 ? mainGap : 0;
-      const nextSum = sumMain + g + base;
-      if (cur.length > 0 && nextSum > innerMain + EPS) {
-        lines.push(cur);
-        cur = [];
-        sumMain = 0;
-      }
-      cur.push(it);
-      sumMain += (cur.length > 1 ? mainGap : 0) + base;
-    }
-    if (cur.length) lines.push(cur);
-  }
+  const lines = splitFlexLinesByBasis(sorted, innerMain, mainGap, isWrap);
+  const lineKeyGroups = lines.map((line) => line.map((it) => it.key));
 
   const L = lines.length;
   /** @type {number[]} */
@@ -417,7 +463,7 @@ export function computeFlexLayout(items, container) {
     contentW = innerCrossDefinite > 1e7 ? right : cw;
   }
 
-  return { rects, contentWidth: contentW, contentHeight: contentH };
+  return { rects, contentWidth: contentW, contentHeight: contentH, lineKeyGroups };
 }
 
 function clamp(v, lo, hi) {

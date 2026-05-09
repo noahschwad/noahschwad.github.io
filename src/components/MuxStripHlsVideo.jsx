@@ -72,7 +72,7 @@ const muxHlsDefaultCompare = (prev, next) =>
   prev.tokens === next.tokens &&
   prev.onError === next.onError &&
   prev.stripLoadOrder === next.stripLoadOrder &&
-  prev.onStripLayoutReady === next.onStripLayoutReady;
+  prev.onThumbnailNaturalSize === next.onThumbnailNaturalSize;
 
 /**
  * Native &lt;video&gt; + hls.js (no mux-player). Muted, looping, no controls.
@@ -83,8 +83,7 @@ const muxHlsDefaultCompare = (prev, next) =>
  * @param {import('react').CSSProperties} [props.style] Inline style on the video (lightbox sizing).
  * @param {() => void} [props.onLoadedData]
  * @param {() => void} [props.onLoadedMetadata]
- * @param {(naturalW?: number, naturalH?: number) => void} [props.onStripLayoutReady]
- *   Strip: poster decoded (optional dims) or stand-in / metadata so layout can reserve the box.
+ * @param {(naturalW: number, naturalH: number) => void} [props.onThumbnailNaturalSize] Deferred stand-in Mux thumbnail `img` (e.g. strip layout aspect before video).
  */
 export const MuxHlsVideo = memo(
   forwardRef(function MuxHlsVideo(
@@ -98,7 +97,7 @@ export const MuxHlsVideo = memo(
       onError: onErrorProp,
       onLoadedData,
       onLoadedMetadata,
-      onStripLayoutReady,
+      onThumbnailNaturalSize,
       playbackId,
       tokens,
     },
@@ -141,57 +140,53 @@ export const MuxHlsVideo = memo(
     );
     const onErrorRef = useRef(onErrorProp);
     onErrorRef.current = onErrorProp;
+    const muxThumbImgRef = useRef(null);
+    const onThumbnailNaturalSizeRef = useRef(onThumbnailNaturalSize);
+    useEffect(() => {
+      onThumbnailNaturalSizeRef.current = onThumbnailNaturalSize;
+    }, [onThumbnailNaturalSize]);
 
-    const stripLayoutHintFiredRef = useRef(false);
-    const tryFireStripLayout = useCallback(
-      (nw, nh) => {
-        if (!onStripLayoutReady) return;
-        if (stripLayoutHintFiredRef.current) return;
-        stripLayoutHintFiredRef.current = true;
-        if (
-          typeof nw === "number" &&
-          typeof nh === "number" &&
-          nw > 0 &&
-          nh > 0
-        ) {
-          onStripLayoutReady(nw, nh);
-        } else {
-          onStripLayoutReady();
-        }
-      },
-      [onStripLayoutReady],
-    );
+    const fireMuxThumbNaturalSize = useCallback((img) => {
+      if (!img || !img.complete) return;
+      const w = img.naturalWidth;
+      const h = img.naturalHeight;
+      if (w > 0 && h > 0) onThumbnailNaturalSizeRef.current?.(w, h);
+    }, []);
+
+    /**
+     * When `STRIP_MUX_LOAD_LIMIT_ENABLED` is false, strip Mux mounts `<video>` immediately and the
+     * stand-in `<img>` is never shown—`onThumbnailNaturalSize` would never run from DOM alone.
+     * `Image()` loads eagerly (strip tiles are `position:absolute`, so `loading="lazy"` on imgs
+     * can stall decode) and shares HTTP cache with the poster / stand-in.
+     */
+    useEffect(() => {
+      if (!posterUrl || !onThumbnailNaturalSize) return undefined;
+      let cancelled = false;
+      const img = new Image();
+      img.onload = () => {
+        if (cancelled) return;
+        fireMuxThumbNaturalSize(img);
+      };
+      img.onerror = () => {};
+      img.src = posterUrl;
+      return () => {
+        cancelled = true;
+        img.onload = null;
+        img.onerror = null;
+      };
+    }, [posterUrl, onThumbnailNaturalSize, fireMuxThumbNaturalSize]);
 
     useLayoutEffect(() => {
-      stripLayoutHintFiredRef.current = false;
-    }, [playbackId, src]);
+      if (show || !deferMount || !posterUrl) return;
+      fireMuxThumbNaturalSize(muxThumbImgRef.current);
+    }, [show, deferMount, posterUrl, fireMuxThumbNaturalSize]);
 
     useLayoutEffect(() => {
-      if (!onStripLayoutReady) return undefined;
-      if (!deferMount) return undefined;
-      if (show) return undefined;
-      if (posterUrl) return undefined;
-      tryFireStripLayout();
-      return undefined;
-    }, [
-      deferMount,
-      show,
-      posterUrl,
-      src,
-      onStripLayoutReady,
-      tryFireStripLayout,
-    ]);
-
-    const handleLoadedMetadata = useCallback(
-      (e) => {
-        onLoadedMetadata?.(e);
-        if (deferMount) {
-          const v = e.currentTarget;
-          tryFireStripLayout(v.videoWidth, v.videoHeight);
-        }
-      },
-      [onLoadedMetadata, deferMount, tryFireStripLayout],
-    );
+      if (!show || !deferMount) return;
+      const v = videoRef.current;
+      if (!v || v.readyState < 1 || v.videoWidth < 1) return;
+      onLoadedMetadata?.({ currentTarget: v });
+    }, [show, deferMount, src, onLoadedMetadata]);
 
     useEffect(() => {
       if (stripPlaybackManaged) return undefined;
@@ -315,17 +310,15 @@ export const MuxHlsVideo = memo(
               aria-hidden
             >
               <img
+                ref={muxThumbImgRef}
                 className="asset-tile__mux-thumb"
                 src={posterUrl}
                 alt=""
                 tabIndex={-1}
                 decoding="async"
-                loading="lazy"
+                loading="eager"
                 draggable={false}
-                onLoad={(ev) => {
-                  const t = ev.currentTarget;
-                  tryFireStripLayout(t.naturalWidth, t.naturalHeight);
-                }}
+                onLoad={(e) => fireMuxThumbNaturalSize(e.currentTarget)}
               />
             </div>
           ) : (
@@ -355,7 +348,7 @@ export const MuxHlsVideo = memo(
           : {})}
         onError={onErrorProp}
         onLoadedData={onLoadedData}
-        onLoadedMetadata={handleLoadedMetadata}
+        onLoadedMetadata={onLoadedMetadata}
       />
     );
 
@@ -381,7 +374,7 @@ export const MuxHlsVideo = memo(
     prev.onError === next.onError &&
     prev.onLoadedData === next.onLoadedData &&
     prev.onLoadedMetadata === next.onLoadedMetadata &&
-    prev.onStripLayoutReady === next.onStripLayoutReady,
+    prev.onThumbnailNaturalSize === next.onThumbnailNaturalSize,
 );
 
 /**
@@ -392,7 +385,8 @@ export const MuxStripHlsVideo = memo(
   function MuxStripHlsVideo({
     className,
     onError,
-    onStripLayoutReady,
+    onLoadedMetadata,
+    onThumbnailNaturalSize,
     playbackId,
     stripLoadOrder,
     tokens,
@@ -405,11 +399,15 @@ export const MuxStripHlsVideo = memo(
         stripPlaybackManaged
         wrapClassName="asset-tile__mux-wrap"
         onError={onError}
-        onStripLayoutReady={onStripLayoutReady}
+        onLoadedMetadata={onLoadedMetadata}
+        onThumbnailNaturalSize={onThumbnailNaturalSize}
         playbackId={playbackId}
         tokens={tokens}
       />
     );
   },
-  muxHlsDefaultCompare,
+  (prev, next) =>
+    muxHlsDefaultCompare(prev, next) &&
+    prev.onLoadedMetadata === next.onLoadedMetadata &&
+    prev.onThumbnailNaturalSize === next.onThumbnailNaturalSize,
 );

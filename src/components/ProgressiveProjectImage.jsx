@@ -1,11 +1,10 @@
-import { useCallback, useState } from "react";
+import { useCallback, useLayoutEffect, useRef, useState } from "react";
 import { projectAssetThumbUrl } from "../imageThumbUrl";
 
 /**
  * Low-res `*.thumb.webp` (build-generated) while full-res loads, then the thumb
  * is removed. Falls back to a single `img` when there is no thumb or the thumb 404s.
- * @param {(naturalWidth: number, naturalHeight: number) => void} [onIntrinsicLayoutReady]
- *   After the thumb (or full-only `img`) decodes so layout can reserve the correct aspect ratio.
+ * @param {(naturalWidth: number, naturalHeight: number) => void} [onNaturalSize] When a decoded `<img>` has intrinsic size (thumb and/or full).
  */
 export function ProgressiveProjectImage({
   fullSrc,
@@ -19,38 +18,68 @@ export function ProgressiveProjectImage({
   fullClass = "",
   onLoadFull,
   onErrorFull,
+  onNaturalSize,
   fetchPriority,
-  onIntrinsicLayoutReady,
 }) {
   const thumbFromPath = projectAssetThumbUrl(fullSrc);
   const [noThumb, setNoThumb] = useState(!thumbFromPath);
   const [fullLoaded, setFullLoaded] = useState(false);
+  const thumbImgRef = useRef(null);
+  const fullImgRef = useRef(null);
+  const singleImgRef = useRef(null);
 
   const onThumbError = useCallback(() => {
     setNoThumb(true);
   }, []);
 
+  const notifyNaturalSize = useCallback(
+    (img) => {
+      if (!img || !img.complete) return;
+      const nw = img.naturalWidth;
+      const nh = img.naturalHeight;
+      if (nw > 0 && nh > 0) onNaturalSize?.(nw, nh);
+    },
+    [onNaturalSize],
+  );
+
+  const fireNaturalSize = useCallback(
+    (e) => {
+      notifyNaturalSize(e.currentTarget);
+    },
+    [notifyNaturalSize],
+  );
+
+  /* Cached decode often skips `onLoad`; sync intrinsic size after paint (thumb then full). */
+  useLayoutEffect(() => {
+    if (noThumb || !thumbFromPath) {
+      notifyNaturalSize(singleImgRef.current);
+      return;
+    }
+    if (!fullLoaded) {
+      notifyNaturalSize(thumbImgRef.current);
+    }
+    notifyNaturalSize(fullImgRef.current);
+  }, [
+    noThumb,
+    fullLoaded,
+    thumbFromPath,
+    fullSrc,
+    notifyNaturalSize,
+  ]);
+
   const onFullLoad = useCallback(
     (e) => {
       setFullLoaded(true);
+      fireNaturalSize(e);
       onLoadFull?.(e);
     },
-    [onLoadFull],
-  );
-
-  const reportIntrinsic = useCallback(
-    (e) => {
-      const el = e.currentTarget;
-      const w = el.naturalWidth || 0;
-      const h = el.naturalHeight || 0;
-      if (w > 0 && h > 0) onIntrinsicLayoutReady?.(w, h);
-    },
-    [onIntrinsicLayoutReady],
+    [onLoadFull, fireNaturalSize],
   );
 
   if (noThumb || !thumbFromPath) {
     return (
       <img
+        ref={singleImgRef}
         className={className}
         src={fullSrc}
         alt={alt}
@@ -59,7 +88,7 @@ export function ProgressiveProjectImage({
         decoding={decoding}
         draggable={draggableProp}
         onLoad={(e) => {
-          reportIntrinsic(e);
+          fireNaturalSize(e);
           onLoadFull?.(e);
         }}
         onError={onErrorFull}
@@ -80,6 +109,7 @@ export function ProgressiveProjectImage({
     <div className={stackCls}>
       {!fullLoaded ? (
         <img
+          ref={thumbImgRef}
           className={thumbCls}
           src={thumbFromPath}
           alt=""
@@ -89,10 +119,11 @@ export function ProgressiveProjectImage({
           decoding="async"
           draggable={false}
           onError={onThumbError}
-          onLoad={reportIntrinsic}
+          onLoad={fireNaturalSize}
         />
       ) : null}
       <img
+        ref={fullImgRef}
         className={fullCls}
         src={fullSrc}
         alt={alt}
