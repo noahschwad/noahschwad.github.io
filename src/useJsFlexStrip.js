@@ -15,7 +15,6 @@ import {
   SIZE_MODE_RANDOM_TIERS_ROW_FILL,
   stripTileBumpBasisRem,
   TILE_LAYOUT_TEXT_LEFT,
-  tileLayoutFromImageSize,
 } from "./functionality";
 import {
   applyAspectsToStripSketch,
@@ -979,7 +978,8 @@ export function useJsFlexStrip({
       typeof panelLive?.imageSize === "number" ? panelLive.imageSize : imageSize;
     const effTextSize =
       typeof panelLive?.textSize === "number" ? panelLive.textSize : textSize;
-    const effTileLayout = tileLayoutFromImageSize(effImageSize);
+    /** Must track React `tileLayout` (from committed `imageSize`), not live ref `effImageSize`, or strip math can run text-left measures while DOM is still stacked (`width:auto` on tiles → ~100vw intrinsic). */
+    const effTileLayout = tileLayout;
     const appRootEl = root.closest(".app-root");
     if (appRootEl instanceof HTMLElement) {
       appRootEl.style.setProperty("--panel-image-size", String(effImageSize));
@@ -1417,7 +1417,7 @@ export function useJsFlexStrip({
       const lp = stripPanelLiveRef?.current;
       const tickImg =
         typeof lp?.imageSize === "number" ? lp.imageSize : imageSize;
-      const tickLay = tileLayoutFromImageSize(tickImg);
+      const tickLay = tileLayout;
       let busy = false;
       const containerAlign = containerAlignItems;
       for (const key of Object.keys(rects)) {
@@ -1546,11 +1546,14 @@ export function useJsFlexStrip({
         });
       }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- panel multipliers read from `stripPanelLiveRef` + `scheduleStripLayout` for slider-driven passes; props `imageSize`/`textSize`/`tileLayout` are fallbacks only.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `effImageSize` / `effTextSize` read from `stripPanelLiveRef` during slider drag; `tileLayout` must stay in deps so it cannot drift from DOM via `tileLayoutFromImageSize(effImageSize)`.
   }, [
     stripRef,
     stripTiles,
     tileKeyFn,
+    imageSize,
+    textSize,
+    tileLayout,
     sizeMode,
     tileSizeApi,
     layoutMode,

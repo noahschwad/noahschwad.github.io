@@ -1,4 +1,11 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { getTextTileBodyProps } from "../renderTextWithLineBreaks";
 import { TILE_LAYOUT_STACKED, TILE_LAYOUT_TEXT_LEFT } from "../functionality";
 import { MuxStripHlsVideo } from "./MuxStripHlsVideo";
@@ -52,6 +59,23 @@ export function AssetTile({
   const [selectionTheme] = useState(randomSelectionTheme);
   const articleRef = useRef(null);
   const stripNativeVideoRef = useRef(null);
+
+  const stripAssetMediaKey = useMemo(() => {
+    const k = asset.kind;
+    const pid = project?.id ?? "";
+    const aid = asset?.id ?? "";
+    if (k === "mux") {
+      const tok =
+        typeof asset.tokens?.playback === "string" ? asset.tokens.playback : "";
+      return `mux:${pid}:${aid}:${String(asset.playbackId ?? "").trim()}:${tok}`;
+    }
+    if (k === "text") return `text:${pid}:${aid}`;
+    return `${k}:${pid}:${aid}:${String(asset.src ?? "").trim()}`;
+  }, [project?.id, asset]);
+
+  useEffect(() => {
+    setMediaFailed(false);
+  }, [stripAssetMediaKey]);
 
   const reportAspect = useCallback(
     (w, h) => {

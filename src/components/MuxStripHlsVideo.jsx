@@ -14,6 +14,9 @@ import {
   STRIP_MUX_LOAD_LIMIT_ENABLED,
 } from "../muxStripLoadScheduler";
 
+/** Max combined fatal `NETWORK_ERROR` / `MEDIA_ERROR` recoveries per Hls instance before surfacing `onError`. */
+const HLS_FATAL_RECOVERY_BUDGET = 3;
+
 /**
  * Mux HLS URL (public or signed via `tokens.playback` JWT).
  * `min_resolution` + `rendition_order=desc` bias the master playlist toward high
@@ -112,6 +115,8 @@ export const MuxHlsVideo = memo(
     const wrapRef = useRef(null);
     const videoRef = useRef(null);
     const stripSlotReleaseRef = useRef(null);
+    /** `video.load()` / `hls.destroy()` during effect teardown often emit `error`; ignore those. */
+    const suppressSourceTeardownErrorRef = useRef(false);
     const setVideoRef = useCallback(
       (node) => {
         videoRef.current = node;
@@ -140,6 +145,14 @@ export const MuxHlsVideo = memo(
     );
     const onErrorRef = useRef(onErrorProp);
     onErrorRef.current = onErrorProp;
+
+    const onVideoError = useCallback(
+      (e) => {
+        if (suppressSourceTeardownErrorRef.current) return;
+        onErrorProp?.(e);
+      },
+      [onErrorProp],
+    );
     const muxThumbImgRef = useRef(null);
     const onThumbnailNaturalSizeRef = useRef(onThumbnailNaturalSize);
     useEffect(() => {
@@ -243,16 +256,25 @@ export const MuxHlsVideo = memo(
       let hls;
       let onNativeData;
       const teardown = () => {
-        if (onNativeData) {
-          video.removeEventListener("loadeddata", onNativeData);
+        suppressSourceTeardownErrorRef.current = true;
+        try {
+          if (onNativeData) {
+            video.removeEventListener("loadeddata", onNativeData);
+          }
+          if (hls) {
+            hls.destroy();
+            hls = undefined;
+          }
+          video.removeAttribute("src");
+          video.load();
+          releaseStripSlotOnce();
+        } finally {
+          requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+              suppressSourceTeardownErrorRef.current = false;
+            });
+          });
         }
-        if (hls) {
-          hls.destroy();
-          hls = undefined;
-        }
-        video.removeAttribute("src");
-        video.load();
-        releaseStripSlotOnce();
       };
 
       if (canPlayNativeHls(video)) {
@@ -279,11 +301,32 @@ export const MuxHlsVideo = memo(
           tryPlay();
           releaseStripSlotOnce();
         });
+        let hlsFatalRecoveryLeft = HLS_FATAL_RECOVERY_BUDGET;
         hls.on(Hls.Events.ERROR, (_, data) => {
-          if (data.fatal) {
-            onErrorRef.current?.();
-            releaseStripSlotOnce();
+          if (!data.fatal || suppressSourceTeardownErrorRef.current) return;
+          const { type } = data;
+          if (type === Hls.ErrorTypes.NETWORK_ERROR && hlsFatalRecoveryLeft > 0) {
+            hlsFatalRecoveryLeft -= 1;
+            try {
+              hls.startLoad();
+            } catch {
+              onErrorRef.current?.();
+              releaseStripSlotOnce();
+            }
+            return;
           }
+          if (type === Hls.ErrorTypes.MEDIA_ERROR && hlsFatalRecoveryLeft > 0) {
+            hlsFatalRecoveryLeft -= 1;
+            try {
+              hls.recoverMediaError();
+            } catch {
+              onErrorRef.current?.();
+              releaseStripSlotOnce();
+            }
+            return;
+          }
+          onErrorRef.current?.();
+          releaseStripSlotOnce();
         });
         hls.loadSource(src);
         hls.attachMedia(video);
@@ -346,7 +389,7 @@ export const MuxHlsVideo = memo(
         {...(stripPlaybackManaged
           ? { "data-strip-playback-managed": "" }
           : {})}
-        onError={onErrorProp}
+        onError={onVideoError}
         onLoadedData={onLoadedData}
         onLoadedMetadata={onLoadedMetadata}
       />
