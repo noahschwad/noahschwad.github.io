@@ -341,12 +341,6 @@ export const DISPLAY_MODE_OPTIONS = [
 ];
 
 /**
- * When strip order is Random, min ms between `buildRandomTiles` runs during rapid
- * recomputes (e.g. image size drag). Changing the project set always reshuffles immediately.
- */
-export const STRIP_RANDOM_ORDER_THROTTLE_MS = 500;
-
-/**
  * Share of total grid (content + blanks) that should be blank; blanks are added, not converted.
  * Single source for the debug range control in `ControlPanel` and for blank-tile tenth shuffles.
  */
@@ -479,6 +473,14 @@ export function maxBlankTilesPercentForImageSize(
  * @typedef {{ apply: (setters: Record<string, (value: string | number) => void>) => void }} TenthShuffleApply
  * @type {(TenthShuffleOptionPick | TenthShuffleApply)[]}
  */
+/**
+ * Min ms between successive `applyImageTenthCrossShuffle` runs. Caps how
+ * frequently rapid drag motion across multiple 0.1 bands can re-roll the
+ * coarse modes (size mode / layout mode / blank tiles) and the random strip
+ * order nonce.
+ */
+export const IMAGE_TENTH_CROSS_SHUFFLE_THROTTLE_MS = 200;
+
 export const IMAGE_TENTH_CROSS_SHUFFLE = [
   {
     key: "sizeMode",
@@ -553,6 +555,49 @@ function fisherYatesInPlace(array) {
 
 export function buildRandomTiles(projects) {
   return fisherYatesInPlace([...buildDefaultTiles(projects)]);
+}
+
+/**
+ * When the random strip order is re-rolled (e.g. tenth-cross shuffle in
+ * `App.jsx`), pick between two methods:
+ *   - With `STRIP_RANDOM_PARTIAL_PROBABILITY` chance, mutate the previous
+ *     order by lifting `STRIP_RANDOM_PARTIAL_FRACTION` of the tiles out (chosen
+ *     uniformly at random, without replacement) and re-inserting each at a
+ *     uniformly random position. Most tiles stay where they were.
+ *   - Otherwise, do a full Fisher-Yates reshuffle from the default order.
+ * The first roll has no previous order to permute and always uses the full
+ * shuffle (regardless of probability).
+ */
+export const STRIP_RANDOM_PARTIAL_PROBABILITY = 0.999;
+export const STRIP_RANDOM_PARTIAL_FRACTION = 0.33;
+
+/**
+ * Returns a new array. Selects `max(1, round(arr.length * fraction))` tile
+ * positions uniformly at random without replacement, lifts those values out
+ * (preserving original relative order of the remaining values), then
+ * re-inserts each one at a uniformly random position in the growing result.
+ * Used by `App.jsx` to nudge the random strip order between full re-rolls
+ * — see `STRIP_RANDOM_PARTIAL_PROBABILITY`.
+ */
+export function partialShuffleTiles(arr, fraction) {
+  const n = arr.length;
+  if (n < 2 || fraction <= 0) return [...arr];
+  const k = Math.min(n, Math.max(1, Math.round(n * fraction)));
+  const idxs = [];
+  for (let i = 0; i < n; i += 1) idxs.push(i);
+  fisherYatesInPlace(idxs);
+  const pickIdxs = new Set(idxs.slice(0, k));
+  const result = [];
+  const displaced = [];
+  for (let i = 0; i < n; i += 1) {
+    if (pickIdxs.has(i)) displaced.push(arr[i]);
+    else result.push(arr[i]);
+  }
+  for (const v of displaced) {
+    const pos = Math.floor(Math.random() * (result.length + 1));
+    result.splice(pos, 0, v);
+  }
+  return result;
 }
 
 /**

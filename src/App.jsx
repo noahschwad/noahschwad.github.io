@@ -23,9 +23,9 @@ import {
 import { projects } from "./data/projects";
 import {
   LAYOUT_FLEX_RANDOM,
-  LAYOUT_FLEX_START,
+  LAYOUT_MODE_OPTIONS,
   applyImageTenthCrossShuffle,
-  SIZE_MODE_UNIFORM,
+  SIZE_MODE_OPTIONS,
   buildChronologicalTiles,
   buildDefaultTiles,
   buildRandomTiles,
@@ -33,11 +33,14 @@ import {
   createTileSizeFactorResolver,
   duplicateEachStripContentTile,
   getImageSizeRange,
+  IMAGE_TENTH_CROSS_SHUFFLE_THROTTLE_MS,
   imageSizeRangeWide,
   intersperseBlankTiles,
   maxBlankTilesPercentForImageSize,
   orderTilesWithStripLeads,
-  STRIP_RANDOM_ORDER_THROTTLE_MS,
+  partialShuffleTiles,
+  STRIP_RANDOM_PARTIAL_FRACTION,
+  STRIP_RANDOM_PARTIAL_PROBABILITY,
   stripTileBumpBasisRem,
   stripTileListKey,
   tileLayoutFromImageSize,
@@ -93,17 +96,37 @@ export function App() {
     imageSizeTenthIndex(roundImageSizeStep(imageSizeRangeWide.defaultValue)),
   );
   const [displayMode, setDisplayMode] = useState("random");
-  /** Throttles `buildRandomTiles` during slider/window churn; see `STRIP_RANDOM_ORDER_THROTTLE_MS`. */
+  /**
+   * Persists the previous random order (and the `projects` signature that
+   * produced it) so the next re-roll can use it as a seed for partial shuffles
+   * (see `STRIP_RANDOM_PARTIAL_PROBABILITY`). Cleared implicitly when the
+   * `projects` signature no longer matches — that path forces a full shuffle.
+   */
   const randomStripOrderRef = useRef({
     order: null,
-    lastAt: 0,
     projSig: "",
   });
-  const [sizeMode, setSizeMode] = useState(SIZE_MODE_UNIFORM);
+  /**
+   * Bumped by `maybeApplyImageTenthShuffle` to force `orderedStripContentTiles`
+   * to re-roll in `random` mode at each 0.1-band crossing (throttled to
+   * `IMAGE_TENTH_CROSS_SHUFFLE_THROTTLE_MS` along with the rest of the shuffle).
+   */
+  const [randomOrderNonce, setRandomOrderNonce] = useState(0);
+  /**
+   * Initial `sizeMode` / `layoutMode` are picked uniformly at random from the
+   * same option lists that `applyImageTenthCrossShuffle` rolls against, so the
+   * page lands on a different combination each load. Lazy `useState`
+   * initializers run exactly once per mount.
+   */
+  const [sizeMode, setSizeMode] = useState(
+    () => SIZE_MODE_OPTIONS[Math.floor(Math.random() * SIZE_MODE_OPTIONS.length)].value,
+  );
   const [blankTilesPercent, setBlankTilesPercent] = useState(
     blankTilesPercentRange.defaultValue,
   );
-  const [layoutMode, setLayoutMode] = useState(LAYOUT_FLEX_START);
+  const [layoutMode, setLayoutMode] = useState(
+    () => LAYOUT_MODE_OPTIONS[Math.floor(Math.random() * LAYOUT_MODE_OPTIONS.length)].value,
+  );
   const [showDebugPanel, setShowDebugPanel] = useState(false);
   const [stripRowHeightDebug, setStripRowHeightDebug] = useState(false);
   const [stripRowDebugBands, setStripRowDebugBands] = useState(null);
@@ -114,7 +137,8 @@ export function App() {
   const stripRef = useRef(null);
   const prevLayoutBlankIdsRef = useRef(new Set());
   const imageSliderGrabbedRef = useRef(false);
-  const pendingImageTenthShuffleRef = useRef(false);
+  /** Last `applyImageTenthCrossShuffle` timestamp (perf clock); throttles rapid drag crossings. */
+  const lastImageTenthShuffleAtRef = useRef(0);
 
   const tileSizeApi = useMemo(() => createTileSizeFactorResolver(), []);
 
@@ -148,53 +172,62 @@ export function App() {
     maxBlankForImageSize,
   );
 
-  const tileLayout = useMemo(
-    () => tileLayoutFromImageSize(imageSize),
-    [imageSize],
+  /**
+   * `tileLayout` is owned as state (not a memo of `imageSize`) so the main
+   * image bar can flip it live during drag — see `handleImageSizeStripLive`
+   * — instead of waiting for slider release. A `useEffect` below keeps it in
+   * sync with the committed `imageSize` (release / keyboard / viewport-range
+   * clamp). State updates bail out via reference equality on the string
+   * constants returned by `tileLayoutFromImageSize`, so non-breakpoint-crossing
+   * drag inputs don't re-render.
+   */
+  const [tileLayout, setTileLayout] = useState(() =>
+    tileLayoutFromImageSize(imageSizeRangeWide.defaultValue),
   );
+
+  useEffect(() => {
+    setTileLayout((prev) => {
+      const next = tileLayoutFromImageSize(imageSize);
+      return next === prev ? prev : next;
+    });
+  }, [imageSize]);
 
   const stripLeadCount = useMemo(() => countStripLeadTiles(projects), [projects]);
 
+  /**
+   * Builds the strip content order (default / chronological / random).
+   *
+   * Deps are intentionally only `displayMode`, `projects`, and
+   * `randomOrderNonce`. None of the three build helpers reads `imageSize` /
+   * `blankTilesPercent` / etc., so adding those would only invalidate this
+   * memo (and re-roll `random`) on slider release or blank-tile shuffles for
+   * no reason. Re-rolls of the random order are driven explicitly through
+   * `randomOrderNonce`, bumped by `maybeApplyImageTenthShuffle` (which is
+   * already gated by `IMAGE_TENTH_CROSS_SHUFFLE_THROTTLE_MS`).
+   */
   const orderedStripContentTiles = useMemo(() => {
-    const clearRandomCache = () => {
-      randomStripOrderRef.current = { order: null, lastAt: 0, projSig: "" };
-    };
-    if (displayMode === "chronological") {
-      clearRandomCache();
-      return buildChronologicalTiles(projects);
-    }
-    if (displayMode === "default") {
-      clearRandomCache();
-      return buildDefaultTiles(projects);
-    }
+    if (displayMode === "chronological") return buildChronologicalTiles(projects);
+    if (displayMode === "default") return buildDefaultTiles(projects);
     if (displayMode === "random") {
-      const now = performance.now();
       const r = randomStripOrderRef.current;
       const projSig = projects.map((p) => p.id).join("\0");
       const projectsChanged = r.projSig !== projSig;
-      if (
-        r.order != null &&
-        !projectsChanged &&
-        now - r.lastAt < STRIP_RANDOM_ORDER_THROTTLE_MS
-      ) {
-        return r.order;
-      }
-      const next = buildRandomTiles(projects);
+      // Partial-vs-full coin flip: when a previous random order exists for the
+      // same project set, prefer a partial permutation (most tiles stay put)
+      // with `STRIP_RANDOM_PARTIAL_PROBABILITY`, otherwise full Fisher-Yates.
+      const canPartial =
+        r.order != null && !projectsChanged && r.order.length >= 2;
+      const next =
+        canPartial && Math.random() < STRIP_RANDOM_PARTIAL_PROBABILITY
+          ? partialShuffleTiles(r.order, STRIP_RANDOM_PARTIAL_FRACTION)
+          : buildRandomTiles(projects);
       r.order = next;
-      r.lastAt = now;
       r.projSig = projSig;
       return next;
     }
-    clearRandomCache();
     return buildDefaultTiles(projects);
-  }, [
-    displayMode,
-    projects,
-    imageSize,
-    effectiveBlankTilesPercent,
-    stripLeadCount,
-    panelImageSizeExtent,
-  ]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `randomOrderNonce` is an opaque trigger; not read inside.
+  }, [displayMode, projects, randomOrderNonce]);
 
   const tiles = useMemo(() => {
     const withLeads = orderTilesWithStripLeads(orderedStripContentTiles, projects);
@@ -347,6 +380,45 @@ export function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- prune when key-set sig changes only
   }, [stripTileKeysSig]);
 
+  /**
+   * Runs `applyImageTenthCrossShuffle` (size mode / layout mode / blank tiles)
+   * iff `bounded` lands in a new 0.1 band AND we haven't shuffled in the last
+   * `IMAGE_TENTH_CROSS_SHUFFLE_THROTTLE_MS` ms. The tenth index ref is
+   * advanced unconditionally so a band change "consumes" itself even when the
+   * shuffle is throttled (otherwise every subsequent input event would
+   * re-trigger until we leave the band).
+   */
+  const maybeApplyImageTenthShuffle = useCallback((bounded) => {
+    const t = imageSizeTenthIndex(bounded);
+    if (imageTenthIndexRef.current === t) return;
+    imageTenthIndexRef.current = t;
+    const now =
+      typeof performance !== "undefined" ? performance.now() : Date.now();
+    if (now - lastImageTenthShuffleAtRef.current < IMAGE_TENTH_CROSS_SHUFFLE_THROTTLE_MS) {
+      return;
+    }
+    lastImageTenthShuffleAtRef.current = now;
+    applyImageTenthCrossShuffle({
+      sizeMode: setSizeMode,
+      layoutMode: setLayoutMode,
+      blankTilesPercent: setBlankTilesPercent,
+      // e.g. displayMode: setDisplayMode,
+    });
+    // Re-roll strip content order (random mode). The memo reads
+    // `randomStripOrderRef.current.order` as the partial-shuffle seed, so we
+    // leave the ref intact and just bump the nonce.
+    setRandomOrderNonce((n) => n + 1);
+  }, []);
+
+  /**
+   * Live strip layout during main image bar drag — bypasses React state for
+   * `imageSize` (avoids per-frame re-renders) but still fires
+   * `applyImageTenthCrossShuffle` on 0.1-band crossings so size mode / layout
+   * mode / blank tiles re-roll while dragging, not just on release. Also
+   * flips `tileLayout` live across the `TILE_LAYOUT_IMAGE_SIZE_BREAKPOINT`
+   * (React bails on the set when the value is unchanged, so non-crossing
+   * inputs stay free of re-renders).
+   */
   const handleImageSizeStripLive = useCallback(
     (clamped) => {
       stripPanelLiveRef.current = {
@@ -354,8 +426,13 @@ export function App() {
         imageSize: clamped,
       };
       scheduleStripLayout();
+      maybeApplyImageTenthShuffle(roundImageSizeMainBarStep(clamped));
+      setTileLayout((prev) => {
+        const next = tileLayoutFromImageSize(clamped);
+        return next === prev ? prev : next;
+      });
     },
-    [scheduleStripLayout],
+    [scheduleStripLayout, maybeApplyImageTenthShuffle],
   );
 
   useStripMobileManagedVideoPlayback({
@@ -387,33 +464,18 @@ export function App() {
     });
   }, []);
 
-  const flushPendingImageTenthShuffle = useCallback(() => {
-    if (!pendingImageTenthShuffleRef.current) return;
-    pendingImageTenthShuffleRef.current = false;
-    applyImageTenthCrossShuffle({
-      sizeMode: setSizeMode,
-      layoutMode: setLayoutMode,
-      blankTilesPercent: setBlankTilesPercent,
-      // e.g. displayMode: setDisplayMode,
-    });
-  }, []);
-
   const handleImageSizeGrabStart = useCallback(() => {
     imageSliderGrabbedRef.current = true;
   }, []);
 
   const handleImageSizeGrabEnd = useCallback(() => {
-    const wasGrabbed = imageSliderGrabbedRef.current;
     imageSliderGrabbedRef.current = false;
-    if (wasGrabbed || pendingImageTenthShuffleRef.current) {
-      flushPendingImageTenthShuffle();
-    }
-  }, [flushPendingImageTenthShuffle]);
+  }, []);
 
   useEffect(() => {
     const releaseGrab = () => {
       if (!imageSliderGrabbedRef.current) return;
-      handleImageSizeGrabEnd();
+      imageSliderGrabbedRef.current = false;
     };
     window.addEventListener("pointerup", releaseGrab);
     window.addEventListener("pointercancel", releaseGrab);
@@ -425,7 +487,7 @@ export function App() {
       window.removeEventListener("mouseup", releaseGrab);
       window.removeEventListener("touchend", releaseGrab);
     };
-  }, [handleImageSizeGrabEnd]);
+  }, []);
 
   useEffect(() => {
     if (!stripRowHeightDebug) {
@@ -452,7 +514,13 @@ export function App() {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, []);
 
-  /** Top control bar only: crossing 0.1 “tenths” can run `applyImageTenthCrossShuffle` (coarse mode tweaks). */
+  /**
+   * Top control bar only: commits the slider value to React state on release
+   * (or click-on-track). Tenth crossings during a drag are handled live by
+   * `handleImageSizeStripLive`; the same check here covers the case where the
+   * commit value lands in a new band without an `input` event having fired
+   * (e.g. keyboard nudge, click on track). Shares the same throttle gate.
+   */
   const handleImageSize = useCallback(
     (raw) => {
       const clamped = Math.min(
@@ -464,17 +532,10 @@ export function App() {
         imageSizeRange.max,
         Math.max(imageSizeRange.min, next),
       );
-      const t = imageSizeTenthIndex(bounded);
-      if (imageTenthIndexRef.current !== t) {
-        pendingImageTenthShuffleRef.current = true;
-        if (!imageSliderGrabbedRef.current) {
-          flushPendingImageTenthShuffle();
-        }
-      }
-      imageTenthIndexRef.current = t;
+      maybeApplyImageTenthShuffle(bounded);
       setImageSize(bounded);
     },
-    [flushPendingImageTenthShuffle, imageSizeRange.min, imageSizeRange.max],
+    [maybeApplyImageTenthShuffle, imageSizeRange.min, imageSizeRange.max],
   );
 
   /** Debug panel image slider: same `imageSize` / CSS, but no tenth-mark shuffle. */
