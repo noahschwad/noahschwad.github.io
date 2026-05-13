@@ -15,7 +15,6 @@ import { SiteIntro } from "./components/SiteIntro";
 import {
   ControlPanel,
   blankTilesPercentRange,
-  imageSizeTenthIndex,
   roundImageSizeStep,
   roundImageSizeMainBarStep,
   textSizeRange,
@@ -35,6 +34,7 @@ import {
   getImageSizeRange,
   IMAGE_TENTH_CROSS_SHUFFLE_THROTTLE_MS,
   imageSizeRangeWide,
+  imageSizeShuffleStopIndex,
   intersperseBlankTiles,
   maxBlankTilesPercentForImageSize,
   orderTilesWithStripLeads,
@@ -93,7 +93,11 @@ export function App() {
   });
   stripPanelLiveRef.current = { imageSize, textSize };
   const imageTenthIndexRef = useRef(
-    imageSizeTenthIndex(roundImageSizeStep(imageSizeRangeWide.defaultValue)),
+    imageSizeShuffleStopIndex(
+      roundImageSizeStep(imageSizeRangeWide.defaultValue),
+      imageSizeRangeWide,
+      typeof window !== "undefined" ? window.innerWidth : 0,
+    ),
   );
   const [displayMode, setDisplayMode] = useState("random");
   /**
@@ -182,15 +186,15 @@ export function App() {
    * drag inputs don't re-render.
    */
   const [tileLayout, setTileLayout] = useState(() =>
-    tileLayoutFromImageSize(imageSizeRangeWide.defaultValue),
+    tileLayoutFromImageSize(imageSizeRangeWide.defaultValue, imageSizeRangeWide),
   );
 
   useEffect(() => {
     setTileLayout((prev) => {
-      const next = tileLayoutFromImageSize(imageSize);
+      const next = tileLayoutFromImageSize(imageSize, imageSizeRange);
       return next === prev ? prev : next;
     });
-  }, [imageSize]);
+  }, [imageSize, imageSizeRange]);
 
   const stripLeadCount = useMemo(() => countStripLeadTiles(projects), [projects]);
 
@@ -382,14 +386,16 @@ export function App() {
 
   /**
    * Runs `applyImageTenthCrossShuffle` (size mode / layout mode / blank tiles)
-   * iff `bounded` lands in a new 0.1 band AND we haven't shuffled in the last
-   * `IMAGE_TENTH_CROSS_SHUFFLE_THROTTLE_MS` ms. The tenth index ref is
+   * iff `bounded` lands in a new shuffle-stop band AND we haven't shuffled in
+   * the last `IMAGE_TENTH_CROSS_SHUFFLE_THROTTLE_MS` ms. The band index ref is
    * advanced unconditionally so a band change "consumes" itself even when the
    * shuffle is throttled (otherwise every subsequent input event would
-   * re-trigger until we leave the band).
+   * re-trigger until we leave the band). Band count adapts to viewport width
+   * via `imageSizeShuffleStopIndex` (`IMAGE_SHUFFLE_STOP_MIN_PX`).
    */
   const maybeApplyImageTenthShuffle = useCallback((bounded) => {
-    const t = imageSizeTenthIndex(bounded);
+    const vw = typeof window !== "undefined" ? window.innerWidth : 0;
+    const t = imageSizeShuffleStopIndex(bounded, imageSizeRange, vw);
     if (imageTenthIndexRef.current === t) return;
     imageTenthIndexRef.current = t;
     const now =
@@ -408,7 +414,28 @@ export function App() {
     // `randomStripOrderRef.current.order` as the partial-shuffle seed, so we
     // leave the ref intact and just bump the nonce.
     setRandomOrderNonce((n) => n + 1);
-  }, []);
+  }, [imageSizeRange]);
+
+  /**
+   * Re-anchors `imageTenthIndexRef` to the current `imageSize` whenever the
+   * shuffle-stop mapping changes — i.e. the active slider range switches
+   * (narrow ↔ wide) or the viewport is resized — so the next drag tick doesn't
+   * fire a phantom shuffle just because the band count changed underneath us.
+   */
+  useEffect(() => {
+    const reanchor = () => {
+      const vw = typeof window !== "undefined" ? window.innerWidth : 0;
+      imageTenthIndexRef.current = imageSizeShuffleStopIndex(
+        roundImageSizeStep(stripPanelLiveRef.current.imageSize),
+        imageSizeRange,
+        vw,
+      );
+    };
+    reanchor();
+    if (typeof window === "undefined") return undefined;
+    window.addEventListener("resize", reanchor);
+    return () => window.removeEventListener("resize", reanchor);
+  }, [imageSizeRange]);
 
   /**
    * Live strip layout during main image bar drag — bypasses React state for
@@ -428,11 +455,11 @@ export function App() {
       scheduleStripLayout();
       maybeApplyImageTenthShuffle(roundImageSizeMainBarStep(clamped));
       setTileLayout((prev) => {
-        const next = tileLayoutFromImageSize(clamped);
+        const next = tileLayoutFromImageSize(clamped, imageSizeRange);
         return next === prev ? prev : next;
       });
     },
-    [scheduleStripLayout, maybeApplyImageTenthShuffle],
+    [scheduleStripLayout, maybeApplyImageTenthShuffle, imageSizeRange],
   );
 
   useStripMobileManagedVideoPlayback({
@@ -550,7 +577,12 @@ export function App() {
         imageSizeRange.max,
         Math.max(imageSizeRange.min, next),
       );
-      imageTenthIndexRef.current = imageSizeTenthIndex(bounded);
+      const vw = typeof window !== "undefined" ? window.innerWidth : 0;
+      imageTenthIndexRef.current = imageSizeShuffleStopIndex(
+        bounded,
+        imageSizeRange,
+        vw,
+      );
       setImageSize(bounded);
     },
     [imageSizeRange.min, imageSizeRange.max],

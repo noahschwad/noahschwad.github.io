@@ -14,6 +14,7 @@ import {
   MIN_STRIP_TILE_PX,
   SIZE_MODE_RANDOM_TIERS_ROW_FILL,
   stripTileBumpBasisRem,
+  TILE_LAYOUT_NO_TEXT,
   TILE_LAYOUT_TEXT_LEFT,
 } from "./functionality";
 import {
@@ -292,8 +293,10 @@ function resolveCachedStripTileMetaGap(key, W, metaMetricsByKey, rem) {
 
 /**
  * Approximate stacked meta block height from title/sub fields (matches `.asset-tile` font scale).
+ * Returns 0 in `TILE_LAYOUT_NO_TEXT` since the meta block isn't rendered.
  */
-function estimateStackedMetaHeightPx(tile, rem, textSize) {
+function estimateStackedMetaHeightPx(tile, rem, textSize, tileLayout) {
+  if (tileLayout === TILE_LAYOUT_NO_TEXT) return 0;
   if (tile.type !== "asset") return 0;
   const p = tile.project;
   const a = tile.asset;
@@ -371,15 +374,24 @@ function computeStripTileCrossWithMath(p) {
     return { cross: crossFallback, math: `W invalid → ${rx(crossFallback)}` };
   }
 
+  const noText = tileLayout === TILE_LAYOUT_NO_TEXT;
   const fallbackGap = assetTileColumnGapPx(rem);
   const cachedMeta = resolveCachedStripTileMetaGap(key, W, metaMetricsByKey, rem);
-  const gap = cachedMeta?.gapPx ?? fallbackGap;
-  const estimatedMeta = estimateStackedMetaHeightPx(tile, rem, textSize);
-  const metaH =
-    cachedMeta != null
+  /* No-text mode renders no meta block, so neither the meta-to-media gap nor
+     a stale cached metaH from a previous layout should contribute to the row
+     height calc. */
+  const gap = noText ? 0 : (cachedMeta?.gapPx ?? fallbackGap);
+  const estimatedMeta = estimateStackedMetaHeightPx(tile, rem, textSize, tileLayout);
+  const metaH = noText
+    ? 0
+    : cachedMeta != null
       ? Math.max(estimatedMeta, cachedMeta.metaH)
       : estimatedMeta;
-  const metaNote = cachedMeta != null ? "m=max(est,dom)" : "m=est";
+  const metaNote = noText
+    ? "m=0"
+    : cachedMeta != null
+      ? "m=max(est,dom)"
+      : "m=est";
   const ar = typeof aspect === "number" && aspect > 0 ? aspect : 0;
 
   if (tileLayout === TILE_LAYOUT_TEXT_LEFT) {

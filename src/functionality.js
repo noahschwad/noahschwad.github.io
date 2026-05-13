@@ -64,10 +64,14 @@ export const LAYOUT_MODE_OPTIONS = [
 /** How title/meta sit relative to media inside each asset tile. */
 export const TILE_LAYOUT_STACKED = "stacked";
 export const TILE_LAYOUT_TEXT_LEFT = "text-left";
+/** Media only — meta line is omitted from the tile entirely. Auto-engaged on
+ *  narrow viewports for the lower part of the slider (see `tileLayoutFromImageSize`). */
+export const TILE_LAYOUT_NO_TEXT = "no-text";
 
 export const TILE_LAYOUT_OPTIONS = [
   { value: TILE_LAYOUT_STACKED, label: "Text below media" },
   { value: TILE_LAYOUT_TEXT_LEFT, label: "Text left of media" },
+  { value: TILE_LAYOUT_NO_TEXT, label: "Media only (no text)" },
 ];
 
 /**
@@ -78,8 +82,37 @@ export const TILE_LAYOUT_OPTIONS = [
  */
 export const TILE_LAYOUT_IMAGE_SIZE_BREAKPOINT = 0.935;
 
-/** @param {number} imageSize rounded panel image size multiplier */
-export function tileLayoutFromImageSize(imageSize) {
+/**
+ * Fraction of the **narrow** range (from `min`) below which `tileLayoutFromImageSize`
+ * switches to `TILE_LAYOUT_NO_TEXT`. Only applied on the narrow range; the wide
+ * range never uses no-text. Range identity is matched by min/max value, so a
+ * cloned range object still triggers the no-text rule.
+ */
+export const TILE_LAYOUT_NO_TEXT_NARROW_FRACTION = 0.25;
+
+/** @param {{ min: number, max: number } | null | undefined} range */
+function isNarrowImageSizeRange(range) {
+  if (!range) return false;
+  if (range === imageSizeRangeNarrow) return true;
+  return (
+    range.min === imageSizeRangeNarrow.min &&
+    range.max === imageSizeRangeNarrow.max
+  );
+}
+
+/**
+ * @param {number} imageSize rounded panel image size multiplier
+ * @param {{ min: number, max: number } | null} [range] active slider range —
+ *   when this is `imageSizeRangeNarrow` and `imageSize` is in the lower
+ *   `TILE_LAYOUT_NO_TEXT_NARROW_FRACTION` of it, returns `TILE_LAYOUT_NO_TEXT`.
+ *   When omitted, behavior matches the original stacked/text-left split.
+ */
+export function tileLayoutFromImageSize(imageSize, range) {
+  if (isNarrowImageSizeRange(range)) {
+    const cutoff =
+      range.min + TILE_LAYOUT_NO_TEXT_NARROW_FRACTION * (range.max - range.min);
+    if (imageSize <= cutoff) return TILE_LAYOUT_NO_TEXT;
+  }
   return imageSize > TILE_LAYOUT_IMAGE_SIZE_BREAKPOINT
     ? TILE_LAYOUT_STACKED
     : TILE_LAYOUT_TEXT_LEFT;
@@ -456,8 +489,11 @@ export function maxBlankTilesPercentForImageSize(
 }
 
 /**
- * When panel image size (0.01 steps) moves into a new 0.1 "band" (tenth index
- * from `imageSizeTenthIndex`), `applyImageTenthCrossShuffle` runs each listed spec.
+ * When panel image size (0.01 steps) moves into a new shuffle-stop band
+ * (`imageSizeShuffleStopIndex`), `applyImageTenthCrossShuffle` runs each listed
+ * spec. The natural band count is one per 0.1 of slider range (28 wide / 16
+ * narrow); on viewports narrower than `naturalCount * IMAGE_SHUFFLE_STOP_MIN_PX`
+ * fewer, wider bands are used so each shuffle takes a deliberate amount of drag.
  *
  * Each spec is either:
  * - `{ key, getOptions }` — pick uniformly at random from `getOptions()`, then `setters[key](value)`.
@@ -475,11 +511,66 @@ export function maxBlankTilesPercentForImageSize(
  */
 /**
  * Min ms between successive `applyImageTenthCrossShuffle` runs. Caps how
- * frequently rapid drag motion across multiple 0.1 bands can re-roll the
+ * frequently rapid drag motion across multiple bands can re-roll the
  * coarse modes (size mode / layout mode / blank tiles) and the random strip
  * order nonce.
  */
 export const IMAGE_TENTH_CROSS_SHUFFLE_THROTTLE_MS = 200;
+
+/**
+ * Min CSS pixels of horizontal viewport per shuffle stop on the main image-size
+ * slider — narrow viewports get fewer (wider) bands so each layout reshuffle
+ * takes a deliberate amount of drag rather than thrashing through all tenths
+ * over a few hundred pixels. Wide viewports keep the full natural count.
+ */
+export const IMAGE_SHUFFLE_STOP_MIN_PX = 70;
+
+/**
+ * Natural max shuffle-stop count for a slider range — the same end-to-end count
+ * the old fixed 0.1-band tenth index produced (e.g. 28 for the wide range,
+ * 16 for the narrow range). Acts as the upper cap on viewport-driven scaling.
+ * @param {{ min: number, max: number } | null | undefined} range
+ */
+export function imageSizeNaturalShuffleStopCount(range) {
+  if (!range) return 0;
+  const a = Math.floor(range.min * 10 + 1e-4);
+  const b = Math.floor(range.max * 10 + 1e-4);
+  return Math.max(0, b - a);
+}
+
+/**
+ * Effective shuffle-stop count for the active range and viewport width.
+ * `min(naturalStops, floor(viewportWidth / IMAGE_SHUFFLE_STOP_MIN_PX))`,
+ * clamped to at least 1 stop so the slider always retains some quantization.
+ * @param {{ min: number, max: number } | null | undefined} range
+ * @param {number} viewportWidth viewport width in CSS px
+ */
+export function imageSizeEffectiveShuffleStopCount(range, viewportWidth) {
+  const natural = imageSizeNaturalShuffleStopCount(range);
+  if (natural <= 0) return 0;
+  const w = Math.max(0, viewportWidth || 0);
+  const fromViewport = Math.max(1, Math.floor(w / IMAGE_SHUFFLE_STOP_MIN_PX));
+  return Math.min(natural, fromViewport);
+}
+
+/**
+ * Stop-band index for the main image-size slider — monotonically non-decreasing
+ * in `rounded`, scaled down on narrow viewports so each band gets at least
+ * `IMAGE_SHUFFLE_STOP_MIN_PX` of drag distance. On viewports wide enough to fit
+ * the full natural count, this matches the original tenth-band behavior.
+ * @param {number} rounded image size value (slider unit)
+ * @param {{ min: number, max: number } | null | undefined} range active slider range
+ * @param {number} viewportWidth viewport width in CSS px (drag-distance budget)
+ */
+export function imageSizeShuffleStopIndex(rounded, range, viewportWidth) {
+  if (!range) return 0;
+  const stops = imageSizeEffectiveShuffleStopCount(range, viewportWidth);
+  if (stops <= 0) return 0;
+  const span = range.max - range.min;
+  if (!(span > 0)) return 0;
+  const t = Math.max(0, Math.min(1, (rounded - range.min) / span));
+  return Math.min(stops, Math.floor(t * stops + 1e-6));
+}
 
 export const IMAGE_TENTH_CROSS_SHUFFLE = [
   {

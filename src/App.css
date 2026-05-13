@@ -739,6 +739,16 @@
   text-align: center;
 }
 
+/* Mux asset missing/failed: collapse the strip slot entirely so the flex row
+   flows past it, instead of showing the "Asset missing" placeholder card.
+   Catches both the data case (no playbackId) and the runtime case (player
+   errored) — both render `.asset-tile__placeholder` inside the mux media box.
+   Other media kinds (image / native video / text) keep their visible
+   placeholder so broken assets are still discoverable. */
+.selected-strip__item:has(.asset-tile__media[data-kind="mux"] .asset-tile__placeholder) {
+  display: none;
+}
+
 .asset-tile__meta {
   display: flex;
   flex-direction: column;
@@ -761,7 +771,25 @@
 
 /* —— project lightbox / carousel —— */
 .lightbox {
+  /* Outer margin used by the top bar padding and by the floating prev/next
+     pills on narrow viewports — keeps both edges visually consistent. The
+     <600px media query below tightens it for phone screens. */
+  --lightbox-margin: 2rem;
+  /* Top bar height (figma: 98px). Used to keep media clear of the bar and to
+     pad the body so the centered carousel never overlaps the bar. Live-measured
+     in JS for Mux box sizing — keep this expression simple/parseable. */
+  --lightbox-topbar-h: clamp(3.5rem, 8vh + 1rem, 6.125rem);
+  /* Bottom clearance for the carousel. On wide viewports it mirrors the top
+     bar; on narrow viewports the prev/next pills float at the bottom — see the
+     <800px media query — so we reserve room for them there. */
+  --lightbox-bottom-clearance: var(--lightbox-topbar-h);
   --lightbox-media-inset: 20vw;
+  /* Vertical inset for media: at minimum, leave room for the top bar + bottom
+     clearance so the centered media never tucks under either at any aspect. */
+  --lightbox-media-vinset: max(
+    var(--lightbox-media-inset),
+    calc(var(--lightbox-topbar-h) + var(--lightbox-bottom-clearance))
+  );
   /* Set in JS from max `.lightbox__slideCell` height (all slides); caps shell vs viewport via min(). */
   --lightbox-body-content-max: 100dvh;
   position: fixed;
@@ -818,7 +846,12 @@
   justify-content: center;
   min-height: 0;
   max-height: 100%;
-  /* padding-bottom: 4.5rem; */
+  /* Pad top by the bar height and bottom by the bottom-clearance var so the
+     centered carousel never overlaps either; vinset on media keeps pixel caps
+     in sync. The bottom var grows on narrow viewports for the floating nav. */
+  padding-top: var(--lightbox-topbar-h);
+  padding-bottom: var(--lightbox-bottom-clearance);
+  box-sizing: border-box;
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.4s ease;
@@ -835,7 +868,10 @@
   height: auto;
   min-height: 0;
   flex: 0 0 auto;
-  max-height: min(100dvh, var(--lightbox-body-content-max, 100dvh));
+  max-height: min(
+    calc(100dvh - var(--lightbox-topbar-h) - var(--lightbox-bottom-clearance)),
+    var(--lightbox-body-content-max, 100dvh)
+  );
   overflow: hidden;
   touch-action: pan-x;
 }
@@ -898,7 +934,7 @@
   max-width: 100%;
   /* height: 100% stretched the stage and broke %/max-height for tall (portrait) video */
   height: auto;
-  max-height: calc(100dvh - var(--lightbox-media-inset));
+  max-height: calc(100dvh - var(--lightbox-media-vinset));
   min-width: 0;
   min-height: 0;
   box-sizing: border-box;
@@ -913,7 +949,7 @@
   width: max-content;
   max-width: 100%;
   height: auto;
-  max-height: calc(100dvh - var(--lightbox-media-inset));
+  max-height: calc(100dvh - var(--lightbox-media-vinset));
   min-width: 0;
   min-height: 0;
   box-sizing: border-box;
@@ -944,7 +980,7 @@
   min-height: 0;
   /* Viewport caps so height-limited media isn’t tied to a cyclic % parent. */
   max-width: calc(100vw - var(--lightbox-media-inset));
-  max-height: calc(100dvh - var(--lightbox-media-inset));
+  max-height: calc(100dvh - var(--lightbox-media-vinset));
   width: auto;
   height: auto;
   object-fit: contain;
@@ -959,7 +995,7 @@
   min-width: 0;
   min-height: 0;
   max-width: calc(100vw - var(--lightbox-media-inset));
-  max-height: calc(100dvh - var(--lightbox-media-inset));
+  max-height: calc(100dvh - var(--lightbox-media-vinset));
 }
 
 .lightbox__img-stack .lightbox__media.project-image-stack__thumb {
@@ -1021,17 +1057,77 @@ p.lightbox__text.lightbox__media a {
   object-position: center;
 }
 
-.lightbox__bar {
+/* Top bar: title/meta on the left, prev/next/close on the right. Sibling of
+   .lightbox__body (not nested) so clicks on the bar background never reach the
+   body’s click-to-dismiss handler — the X button is the only dismiss path here.
+   Esc / scrim / body-background click still dismiss as before. */
+.lightbox__topbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 5;
   display: flex;
   flex-direction: row;
-  justify-content: center;
-  align-items: center;
-  gap: 10px;
-  padding: 0;
-  margin: 0;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1.5rem;
+  padding: var(--lightbox-margin);
+  box-sizing: border-box;
+  pointer-events: none;
+  opacity: 0;
+  color: #000;
+  transition: opacity 0.4s ease;
+}
+
+.lightbox--has-carousel .lightbox__topbar {
+  opacity: 1;
   pointer-events: auto;
-  background: transparent;
-  border: none;
+}
+
+.lightbox--leaving .lightbox__topbar {
+  opacity: 0 !important;
+}
+
+/* Match the strip tile meta exactly so the lightbox feels continuous with the
+   thumbnail grid below it: same font-size, line-height, and the muted sub. */
+.lightbox__topbar-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+  font-size: calc(0.75rem * var(--panel-text-size, 1));
+  line-height: 0.96;
+}
+
+.lightbox__topbar-title {
+  margin: 0;
+}
+
+.lightbox__topbar-sub {
+  margin: 0;
+  color: #aaa;
+}
+
+.lightbox__topbar-dot {
+  margin-inline: 0.2rem;
+}
+
+.lightbox__topbar-controls {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  /* Figma: 24px between the prev/next group and the X. */
+  gap: 24px;
+  flex: 0 0 auto;
+}
+
+.lightbox__topbar-nav {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  /* Figma: 10px between prev and next. */
+  gap: 10px;
 }
 
 .lightbox__btn {
@@ -1069,6 +1165,18 @@ p.lightbox__text.lightbox__media a {
   box-shadow: none;
 }
 
+/* Close (X): no pill — just the icon. Spacing from the nav comes from
+   .lightbox__topbar-controls `gap`, so no margin here. */
+.lightbox__btn--close {
+  border: none;
+  border-radius: 0;
+  padding: 0;
+  width: 30.5px;
+  max-width: 30.5px;
+  height: 30.5px;
+  flex: 0 0 auto;
+}
+
 .lightbox__btn-icon {
   display: inline-flex;
   align-items: center;
@@ -1082,10 +1190,46 @@ p.lightbox__text.lightbox__media a {
   display: block;
 }
 
+.lightbox__btn--close .lightbox__btn-icon svg {
+  width: 22px;
+  height: 22px;
+}
+
 .lightbox__btn-icon path {
   stroke-width: 0.7px;
 }
 
 .lightbox__btn--prev .lightbox__btn-icon {
   transform: scaleX(-1);
+}
+
+/* Narrow viewports: float the prev/next pills at the bottom of the viewport
+   (matching the original bar position) while leaving the X close where it is
+   in the top-right corner of the bar. */
+@media (max-width: 800px) {
+  .lightbox {
+    /* Reserve room at the bottom for the floating nav: button (~30.5px) +
+       --lightbox-margin from the edge + breathing room. Keeps carousel clear. */
+    --lightbox-bottom-clearance: 5rem;
+  }
+
+  /* Side padding mirrors the top bar so the pills don't kiss the screen edges
+     when the viewport is narrower than their combined max-width (~344px). */
+  .lightbox__topbar-nav {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: var(--lightbox-margin);
+    padding-inline: var(--lightbox-margin);
+    box-sizing: border-box;
+    justify-content: center;
+    z-index: 5;
+  }
+}
+
+/* Phone-sized viewports: tighten the lightbox edge margin. */
+@media (max-width: 600px) {
+  .lightbox {
+    --lightbox-margin: 1.5rem;
+  }
 }

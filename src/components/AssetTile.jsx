@@ -7,7 +7,11 @@ import {
   useState,
 } from "react";
 import { getTextTileBodyProps } from "../renderTextWithLineBreaks";
-import { TILE_LAYOUT_STACKED, TILE_LAYOUT_TEXT_LEFT } from "../functionality";
+import {
+  TILE_LAYOUT_NO_TEXT,
+  TILE_LAYOUT_STACKED,
+  TILE_LAYOUT_TEXT_LEFT,
+} from "../functionality";
 import { MuxStripHlsVideo } from "./MuxStripHlsVideo";
 import { ProgressiveProjectImage } from "./ProgressiveProjectImage";
 
@@ -199,6 +203,7 @@ export function AssetTile({
   const missing = !assetReady(asset) || mediaFailed;
   const category = asset.category ?? project.category;
   const textFirst = tileLayout === TILE_LAYOUT_TEXT_LEFT;
+  const noText = tileLayout === TILE_LAYOUT_NO_TEXT;
   const hasTitle = hasDisplayField(project.title);
   const hasCategory = hasDisplayField(category);
   const hasYear = hasDisplayField(project.year);
@@ -263,7 +268,7 @@ export function AssetTile({
   );
 
   const meta =
-    hasTitle || showSub ? (
+    !noText && (hasTitle || showSub) ? (
       <div className="asset-tile__meta">
         {hasTitle ? <p className="asset-tile__title">{project.title}</p> : null}
         {showSub ? (
@@ -280,10 +285,18 @@ export function AssetTile({
       </div>
     ) : null;
 
+  const articleClass = [
+    "asset-tile",
+    textFirst ? "asset-tile--text-left" : "",
+    noText ? "asset-tile--no-text" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+
   return (
     <article
       ref={articleRef}
-      className={`asset-tile${textFirst ? " asset-tile--text-left" : ""}`}
+      className={articleClass}
       style={{
         "--tile-sel-r": selectionTheme.r,
         "--tile-sel-g": selectionTheme.g,

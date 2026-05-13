@@ -37,6 +37,21 @@ function LightboxNavArrowIcon() {
   );
 }
 
+function LightboxCloseIcon() {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="22"
+      height="22"
+      viewBox="0 0 22 22"
+      fill="none"
+      aria-hidden="true"
+    >
+      <path d="M1 1L21 21M21 1L1 21" stroke="currentColor" />
+    </svg>
+  );
+}
+
 function hasSrc(src) {
   return typeof src === "string" && src.trim().length > 0;
 }
@@ -45,6 +60,13 @@ function hasPlaybackId(id) {
 }
 function hasTextBody(s) {
   return typeof s === "string" && s.trim().length > 0;
+}
+
+function hasDisplayField(value) {
+  if (value == null) return false;
+  if (typeof value === "string") return value.trim().length > 0;
+  if (typeof value === "number" && !Number.isNaN(value)) return true;
+  return false;
 }
 
 function assetReady(asset) {
@@ -108,9 +130,6 @@ const CAROUSEL_DRAG_DISMISS_SUPPRESS_PX = 8;
 /** Pointer `dx` vs carousel width to advance one slide (else snap back to current). */
 const LIGHTBOX_CAROUSEL_DRAG_COMMIT_FRACTION = 0.2;
 
-/** Max distance (px) from viewport bottom to the nav midpoint — keeps arrows from sitting too high in a tall gap. */
-const LIGHTBOX_NAV_MAX_FROM_VIEWPORT_BOTTOM_PX = 40;
-
 /**
  * True when the event path hits media, text, nav, or the “media unavailable” box.
  * Used for click-to-dismiss and for `pointerdown` (capture), because `setPointerCapture`
@@ -124,6 +143,7 @@ function lightboxPathKeepsDialogOpen(path) {
     if (node.classList?.contains("lightbox__text")) return true;
     if (node.classList?.contains("lightbox__media")) return true;
     if (node.classList?.contains("lightbox__btn")) return true;
+    if (node.classList?.contains("lightbox__topbar")) return true;
   }
   return false;
 }
@@ -241,8 +261,14 @@ function LightboxMedia({ asset, priority, onReady, className }) {
         ? window.visualViewport.height
         : window.innerHeight;
     const insetPx = parseCssLengthToPixels(insetRaw, viewW, viewH);
+    /** Live-measured top bar height; the bar consumes `topbarH` at top and we
+     * mirror that as bottom breathing so the centered media never overlaps it. */
+    const topbarEl =
+      lightbox instanceof Element ? lightbox.querySelector(".lightbox__topbar") : null;
+    const topbarH = topbarEl ? topbarEl.getBoundingClientRect().height : 0;
+    const heightInset = Math.max(insetPx, 2 * topbarH);
     const maxW = Math.max(1, viewW - insetPx);
-    const maxH = Math.max(1, viewH - insetPx);
+    const maxH = Math.max(1, viewH - heightInset);
     if (!(maxW > 0) || !(maxH > 0)) return;
 
     const vidW = Number(player.videoWidth) || 0;
@@ -406,19 +432,6 @@ export function ProjectLightbox({
   const onAfterOpenFadeRef = useRef(onAfterOpenFade);
   onAfterOpenFadeRef.current = onAfterOpenFade;
   const remeasureRaf = useRef(0);
-  /** Viewport Y (px) of midpoint between carousel bottom and viewport bottom; drives fixed nav. */
-  const [navMidpointPx, setNavMidpointPx] = useState(null);
-
-  const updateNavMidpoint = useCallback(() => {
-    const el = containerRef.current;
-    if (!el || typeof window === "undefined") return;
-    const rect = el.getBoundingClientRect();
-    const vh = window.visualViewport?.height ?? window.innerHeight;
-    const gap = Math.max(0, vh - rect.bottom);
-    const rawMid = rect.bottom + gap / 2;
-    const minMidY = vh - LIGHTBOX_NAV_MAX_FROM_VIEWPORT_BOTTOM_PX;
-    setNavMidpointPx(Math.max(rawMid, minMidY));
-  }, []);
 
   const runClose = useCallback(() => {
     if (exitingRef.current) return;
@@ -518,8 +531,7 @@ export function ProjectLightbox({
         root.style.removeProperty("--lightbox-body-content-max");
       }
     }
-    updateNavMidpoint();
-  }, [updateNavMidpoint]);
+  }, []);
 
   const scheduleRemeasure = useCallback(() => {
     if (remeasureRaf.current) cancelAnimationFrame(remeasureRaf.current);
@@ -548,29 +560,6 @@ export function ProjectLightbox({
       : m.idealT[activeIndex] != null
         ? m.idealT[activeIndex]
         : 0;
-
-  useLayoutEffect(() => {
-    if (!open) {
-      setNavMidpointPx(null);
-      return undefined;
-    }
-    updateNavMidpoint();
-    window.addEventListener("resize", updateNavMidpoint);
-    const vv = window.visualViewport;
-    vv?.addEventListener("resize", updateNavMidpoint);
-    vv?.addEventListener("scroll", updateNavMidpoint);
-    return () => {
-      window.removeEventListener("resize", updateNavMidpoint);
-      vv?.removeEventListener("resize", updateNavMidpoint);
-      vv?.removeEventListener("scroll", updateNavMidpoint);
-    };
-  }, [open, updateNavMidpoint]);
-
-  useLayoutEffect(() => {
-    if (!open) return undefined;
-    const id = requestAnimationFrame(() => updateNavMidpoint());
-    return () => cancelAnimationFrame(id);
-  }, [open, activeIndex, displayT, exiting, dragT, updateNavMidpoint]);
 
   useEffect(() => {
     if (!open) return undefined;
@@ -764,6 +753,14 @@ export function ProjectLightbox({
     [],
   );
 
+  const safeIndex = Math.max(0, Math.min(activeIndex, Math.max(0, count - 1)));
+  const activeAsset = assets[safeIndex];
+  const activeCategory = activeAsset?.category ?? project.category;
+  const hasTitle = hasDisplayField(project.title);
+  const hasCategory = hasDisplayField(activeCategory);
+  const hasYear = hasDisplayField(project.year);
+  const showSub = hasCategory || hasYear;
+
   return createPortal(
     <div
       ref={rootRef}
@@ -819,44 +816,62 @@ export function ProjectLightbox({
             </div>
           </div>
         </div>
-        <div
-          className="lightbox__bar"
-          style={
-            open && navMidpointPx != null
-              ? {
-                  position: "fixed",
-                  left: "50%",
-                  top: `${navMidpointPx}px`,
-                  transform: "translate(-50%, -50%)",
-                  zIndex: 4,
-                }
-              : undefined
-          }
-        >
+      </div>
+      <div className="lightbox__topbar">
+        <div className="lightbox__topbar-meta">
+          {hasTitle ? (
+            <p className="lightbox__topbar-title">{project.title}</p>
+          ) : null}
+          {showSub ? (
+            <p className="lightbox__topbar-sub">
+              {hasCategory ? <span>{activeCategory}</span> : null}
+              {hasCategory && hasYear ? (
+                <span className="lightbox__topbar-dot" aria-hidden>
+                  ·
+                </span>
+              ) : null}
+              {hasYear ? <span>{project.year}</span> : null}
+            </p>
+          ) : null}
+        </div>
+        <div className="lightbox__topbar-controls">
+          <div className="lightbox__topbar-nav">
+            <button
+              type="button"
+              className="lightbox__btn lightbox__btn--prev"
+              id={prevId}
+              aria-label="Previous"
+              tabIndex={-1}
+              disabled={count < 2 || safeIndex === 0}
+              onClick={goPrev}
+            >
+              <span className="lightbox__btn-icon" aria-hidden="true">
+                <LightboxNavArrowIcon />
+              </span>
+            </button>
+            <button
+              type="button"
+              className="lightbox__btn lightbox__btn--next"
+              id={nextId}
+              aria-label="Next"
+              tabIndex={-1}
+              disabled={count < 2 || safeIndex >= count - 1}
+              onClick={goNext}
+            >
+              <span className="lightbox__btn-icon" aria-hidden="true">
+                <LightboxNavArrowIcon />
+              </span>
+            </button>
+          </div>
           <button
             type="button"
-            className="lightbox__btn lightbox__btn--prev"
-            id={prevId}
-            aria-label="Previous"
+            className="lightbox__btn lightbox__btn--close"
+            aria-label="Close"
             tabIndex={-1}
-            disabled={count < 2 || activeIndex === 0}
-            onClick={goPrev}
+            onClick={runClose}
           >
             <span className="lightbox__btn-icon" aria-hidden="true">
-              <LightboxNavArrowIcon />
-            </span>
-          </button>
-          <button
-            type="button"
-            className="lightbox__btn lightbox__btn--next"
-            id={nextId}
-            aria-label="Next"
-            tabIndex={-1}
-            disabled={count < 2 || activeIndex >= count - 1}
-            onClick={goNext}
-          >
-            <span className="lightbox__btn-icon" aria-hidden="true">
-              <LightboxNavArrowIcon />
+              <LightboxCloseIcon />
             </span>
           </button>
         </div>
