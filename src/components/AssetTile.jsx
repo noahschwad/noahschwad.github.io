@@ -54,6 +54,7 @@ export function AssetTile({
   asset,
   tileLayout = TILE_LAYOUT_STACKED,
   narrowViewport = false,
+  suppressStripTileMetaMeasureRef = null,
   stripListIndex,
   stripTileKey,
   registerStripMediaAspect,
@@ -112,6 +113,7 @@ export function AssetTile({
   }, [clearStripAspect]);
 
   const measureStripTileMetaAndGap = useCallback(() => {
+    if (suppressStripTileMetaMeasureRef?.current) return;
     if (!stripTileKey || !registerStripTileMetaLayout) return;
     const article = articleRef.current;
     if (!article) return;
@@ -162,6 +164,7 @@ export function AssetTile({
     asset.category,
     tileLayout,
     textSize,
+    suppressStripTileMetaMeasureRef,
   ]);
 
   useLayoutEffect(() => {
@@ -169,6 +172,7 @@ export function AssetTile({
     const el = articleRef.current;
     if (!el || !stripTileKey || !registerStripTileMetaLayout) return undefined;
     const ro = new ResizeObserver(() => {
+      if (suppressStripTileMetaMeasureRef?.current) return;
       measureStripTileMetaAndGap();
     });
     ro.observe(el);

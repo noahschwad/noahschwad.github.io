@@ -17,6 +17,7 @@ import {
   blankTilesPercentRange,
   roundImageSizeStep,
   roundImageSizeMainBarStep,
+  quantizeImageSizeStripLive,
   textSizeRange,
 } from "./components/ControlPanel";
 import { projects } from "./data/projects";
@@ -141,6 +142,8 @@ export function App() {
   const stripRef = useRef(null);
   const prevLayoutBlankIdsRef = useRef(new Set());
   const imageSliderGrabbedRef = useRef(false);
+  /** Last quantized `imageSize` pushed to strip layout during a drag (see `quantizeImageSizeStripLive`). */
+  const stripLiveLayoutImageSizeRef = useRef(NaN);
   /** Last `applyImageTenthCrossShuffle` timestamp (perf clock); throttles rapid drag crossings. */
   const lastImageTenthShuffleAtRef = useRef(0);
 
@@ -337,6 +340,7 @@ export function App() {
     registerStripMediaAspect,
     registerStripTileMetaLayout,
     scheduleStripLayout,
+    flushDeferredStripMeasure,
   } =
     useJsFlexStrip({
       stripRef,
@@ -439,25 +443,28 @@ export function App() {
 
   /**
    * Live strip layout during main image bar drag — bypasses React state for
-   * `imageSize` (avoids per-frame re-renders) but still fires
-   * `applyImageTenthCrossShuffle` on 0.1-band crossings so size mode / layout
-   * mode / blank tiles re-roll while dragging, not just on release. Also
-   * flips `tileLayout` live across the `TILE_LAYOUT_IMAGE_SIZE_BREAKPOINT`
-   * (React bails on the set when the value is unchanged, so non-crossing
-   * inputs stay free of re-renders).
+   * `imageSize` (avoids per-frame re-renders). Layout uses `quantizeImageSizeStripLive`
+   * (0.02) so flex passes run ~50–140× per range, not every 0.001 slider tick;
+   * the range input stays uncontrolled at fine step so the thumb does not stick.
+   * Tenth-cross shuffle still sees the full slider value. On release, `handleImageSize`
+   * commits the precise value to React state.
    */
   const handleImageSizeStripLive = useCallback(
     (clamped) => {
-      stripPanelLiveRef.current = {
-        ...stripPanelLiveRef.current,
-        imageSize: clamped,
-      };
-      scheduleStripLayout();
+      const layoutSize = quantizeImageSizeStripLive(clamped, imageSizeRange);
+      if (layoutSize !== stripLiveLayoutImageSizeRef.current) {
+        stripLiveLayoutImageSizeRef.current = layoutSize;
+        stripPanelLiveRef.current = {
+          ...stripPanelLiveRef.current,
+          imageSize: layoutSize,
+        };
+        scheduleStripLayout();
+        setTileLayout((prev) => {
+          const next = tileLayoutFromImageSize(layoutSize, imageSizeRange);
+          return next === prev ? prev : next;
+        });
+      }
       maybeApplyImageTenthShuffle(roundImageSizeMainBarStep(clamped));
-      setTileLayout((prev) => {
-        const next = tileLayoutFromImageSize(clamped, imageSizeRange);
-        return next === prev ? prev : next;
-      });
     },
     [scheduleStripLayout, maybeApplyImageTenthShuffle, imageSizeRange],
   );
@@ -497,12 +504,16 @@ export function App() {
 
   const handleImageSizeGrabEnd = useCallback(() => {
     imageSliderGrabbedRef.current = false;
-  }, []);
+    stripLiveLayoutImageSizeRef.current = NaN;
+    flushDeferredStripMeasure();
+  }, [flushDeferredStripMeasure]);
 
   useEffect(() => {
     const releaseGrab = () => {
       if (!imageSliderGrabbedRef.current) return;
       imageSliderGrabbedRef.current = false;
+      stripLiveLayoutImageSizeRef.current = NaN;
+      flushDeferredStripMeasure();
     };
     window.addEventListener("pointerup", releaseGrab);
     window.addEventListener("pointercancel", releaseGrab);
@@ -514,7 +525,7 @@ export function App() {
       window.removeEventListener("mouseup", releaseGrab);
       window.removeEventListener("touchend", releaseGrab);
     };
-  }, []);
+  }, [flushDeferredStripMeasure]);
 
   useEffect(() => {
     if (!stripRowHeightDebug) {
@@ -724,6 +735,7 @@ export function App() {
                     asset={tile.asset}
                     tileLayout={tileLayout}
                     narrowViewport={imageSizeViewportNarrow}
+                    suppressStripTileMetaMeasureRef={imageSliderGrabbedRef}
                     stripListIndex={assetStripOrdinalByIndex[i] ?? 0}
                     stripTileKey={tileKey}
                     registerStripMediaAspect={registerStripMediaAspect}

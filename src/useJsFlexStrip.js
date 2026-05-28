@@ -797,6 +797,44 @@ function stripRowDebugBandFromLine(line, rects, tileByKey, crossCtx) {
 }
 
 /**
+ * @param {Array<{ x: number, y: number, width: number, height: number }> | null | undefined} a
+ * @param {Array<{ x: number, y: number, width: number, height: number }> | null | undefined} b
+ */
+function stripDebugBandsEqual(a, b) {
+  if (a === b) return true;
+  if (!a || !b || a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i += 1) {
+    const x = a[i];
+    const y = b[i];
+    if (
+      x.x !== y.x
+      || x.y !== y.y
+      || x.width !== y.width
+      || x.height !== y.height
+    ) {
+      return false;
+    }
+  }
+  return true;
+}
+
+/**
+ * @param {Record<string, number | null> | null | undefined} a
+ * @param {Record<string, number | null> | null | undefined} b
+ */
+function stripDebugAspectsEqual(a, b) {
+  if (a === b) return true;
+  if (!a || !b) return false;
+  const keysA = Object.keys(a);
+  const keysB = Object.keys(b);
+  if (keysA.length !== keysB.length) return false;
+  for (const k of keysA) {
+    if (a[k] !== b[k]) return false;
+  }
+  return true;
+}
+
+/**
  * @param {Object} params
  * @param {import("react").RefObject<HTMLElement|null>} params.stripRef
  * @param {Array<{ type: string, blankId?: string, project?: unknown, asset?: unknown, exiting?: boolean }>} params.tiles
@@ -848,8 +886,13 @@ export function useJsFlexStrip({
    * blank tiles (both w+h lerp for layoutBlank). We ignore bumps while lerping, then one tick.
    */
   const inRafLerpRef = useRef(false);
+  /** Blocks strip-root `ResizeObserver` + nested `stripLayoutPass` while a pass is running. */
+  const inStripLayoutPassRef = useRef(false);
   const deferredMeasureTickFromResizeRef = useRef(false);
+  const measureTickRafPendingRef = useRef(false);
   const lastLerpFrameTimeRef = useRef(0);
+  const lastStripDebugBandsRef = useRef(null);
+  const lastStripDebugAspectsRef = useRef(null);
   /** @type {import("react").MutableRefObject<Map<string, number>>} intrinsic width/height ratio per strip tile key */
   const mediaAspectByKeyRef = useRef(new Map());
   const aspectMeasureRafRef = useRef(0);
@@ -888,15 +931,30 @@ export function useJsFlexStrip({
   }, []);
 
   const scheduleMeasureTickAfterDomReport = useCallback(() => {
-    if (inRafLerpRef.current) {
+    if (
+      inRafLerpRef.current
+      || suppressChildStripResizeObserversRef?.current
+    ) {
       deferredMeasureTickFromResizeRef.current = true;
       return;
     }
+    if (measureTickRafPendingRef.current) return;
+    measureTickRafPendingRef.current = true;
     cancelAnimationFrame(aspectMeasureRafRef.current);
     aspectMeasureRafRef.current = requestAnimationFrame(() => {
       aspectMeasureRafRef.current = 0;
+      measureTickRafPendingRef.current = false;
       setMeasureTick((x) => x + 1);
     });
+  }, [suppressChildStripResizeObserversRef]);
+
+  const flushDeferredStripMeasure = useCallback(() => {
+    if (!deferredMeasureTickFromResizeRef.current) return;
+    deferredMeasureTickFromResizeRef.current = false;
+    cancelAnimationFrame(aspectMeasureRafRef.current);
+    aspectMeasureRafRef.current = 0;
+    measureTickRafPendingRef.current = false;
+    setMeasureTick((x) => x + 1);
   }, []);
 
   /** Order of strip positions changes when blanks are re-interleaved; observer + keyset sync need only the set of keys, not the order. */
@@ -1016,6 +1074,7 @@ export function useJsFlexStrip({
      * layout again and show as forced reflow chains in DevTools.
      */
     const ro = new ResizeObserver((entries) => {
+      if (inStripLayoutPassRef.current) return;
       const cr = entries[0]?.contentRect;
       if (!cr) return;
       const w = cr.width;
@@ -1067,12 +1126,11 @@ export function useJsFlexStrip({
 
   useLayoutEffect(() => {
     stripLayoutPassRef.current = () => {
+    if (inStripLayoutPassRef.current) return;
+    inStripLayoutPassRef.current = true;
+    try {
     const root = stripRef.current;
     if (!root || containerSize.w < 1) {
-      if (stripRowHeightDebug) {
-        onStripRowDebugBandsRef.current?.(null);
-        onStripDebugAspectsRef.current?.(null);
-      }
       return;
     }
 
@@ -1414,10 +1472,7 @@ export function useJsFlexStrip({
         stripTileMetaMetricsRef.current,
       );
 
-      if (!stripRowHeightDebug) {
-        onStripRowDebugBandsRef.current?.(null);
-        onStripDebugAspectsRef.current?.(null);
-      } else {
+      if (stripRowHeightDebug) {
         const reportRows = onStripRowDebugBandsRef.current;
         if (typeof reportRows === "function") {
           /** @type {{ x: number, y: number, width: number, height: number, tallestLabel: string, tallestMath: string }[]} */
@@ -1439,7 +1494,10 @@ export function useJsFlexStrip({
             const b = stripRowDebugBandFromLine(line, rects, tileByKey, crossMathCtx);
             if (b) bands.push(b);
           }
-          reportRows(bands);
+          if (!stripDebugBandsEqual(lastStripDebugBandsRef.current, bands)) {
+            lastStripDebugBandsRef.current = bands;
+            reportRows(bands);
+          }
         }
 
         const reportAsp = onStripDebugAspectsRef.current;
@@ -1452,12 +1510,12 @@ export function useJsFlexStrip({
             aspectByKey[k] =
               typeof v === "number" && v > 0 && Number.isFinite(v) ? v : null;
           }
-          reportAsp(aspectByKey);
+          if (!stripDebugAspectsEqual(lastStripDebugAspectsRef.current, aspectByKey)) {
+            lastStripDebugAspectsRef.current = aspectByKey;
+            reportAsp(aspectByKey);
+          }
         }
       }
-    } else {
-      onStripRowDebugBandsRef.current?.(null);
-      onStripDebugAspectsRef.current?.(null);
     }
 
     applyTargetsToStripSketch(stripSketchByKeyRef.current, rects);
@@ -1615,6 +1673,9 @@ export function useJsFlexStrip({
       }
     };
     rafRef.current = requestAnimationFrame(tick);
+    } finally {
+      inStripLayoutPassRef.current = false;
+    }
     };
 
     stripLayoutPassRef.current();
@@ -1652,5 +1713,6 @@ export function useJsFlexStrip({
     registerStripMediaAspect,
     registerStripTileMetaLayout,
     scheduleStripLayout,
+    flushDeferredStripMeasure,
   };
 }

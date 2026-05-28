@@ -27,6 +27,22 @@ export function roundImageSizeMainBarStep(n) {
 }
 
 /**
+ * Coarser grid for live strip layout while dragging. The main bar slider UI keeps
+ * `imageSizeMainBarStep` (0.001); only layout math uses this quantum.
+ */
+export const imageSizeStripLiveQuantum = 0.02;
+
+/**
+ * @param {number} n
+ * @param {{ min: number, max: number }} range
+ */
+export function quantizeImageSizeStripLive(n, range) {
+  const q = imageSizeStripLiveQuantum;
+  const rounded = Math.round(n / q) * q;
+  return Math.min(range.max, Math.max(range.min, rounded));
+}
+
+/**
  * Integer "tenths" index: 0.0–0.09 → 0, 0.1–0.19 → 1, …, 1.0–1.09 → 10, …, 2.9–2.99 → 29, 3.0 → 30.
  * Used when detecting 0.1-size bucket crossings (see `IMAGE_TENTH_CROSS_SHUFFLE` in `functionality.js`).
  */
