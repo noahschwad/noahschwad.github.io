@@ -53,6 +53,7 @@ export function AssetTile({
   project,
   asset,
   tileLayout = TILE_LAYOUT_STACKED,
+  narrowViewport = false,
   stripListIndex,
   stripTileKey,
   registerStripMediaAspect,
@@ -225,6 +226,7 @@ export function AssetTile({
       ) : asset.kind === "mux" ? (
         <MuxStripHlsVideo
           className="asset-tile__video"
+          narrowViewport={narrowViewport}
           stripLoadOrder={stripListIndex}
           playbackId={asset.playbackId.trim()}
           tokens={asset.tokens}

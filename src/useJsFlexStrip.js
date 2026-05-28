@@ -156,25 +156,118 @@ function stackedMediaMinShortSideFromWidth(wUsed, aspectNaturalWidthOverHeight) 
 }
 
 /**
- * Measure text-left tile width as: meta + media + gap.
- * @param {HTMLElement} stripItemEl
- * @param {number} cap
+ * Text-left media column height — matches
+ * `height: calc(10rem * var(--panel-image-size) * var(--tile-size-factor))`.
  */
-function measureTextLeftMainSize(stripItemEl, cap) {
-  const tile = stripItemEl.querySelector(".asset-tile--text-left");
-  if (!tile) return Math.min(stripItemEl.offsetWidth || 0, cap);
+function textLeftMediaColumnHeightPx(rem, imageSize, factor) {
+  return 10 * rem * imageSize * factor;
+}
 
-  const meta = tile.querySelector(".asset-tile__meta");
-  const media = tile.querySelector(".asset-tile__media");
-  const cs = getComputedStyle(tile);
-  const gapPx =
-    parseFloat(cs.columnGap || "") || parseFloat(cs.gap || "") || 0;
+/**
+ * Text-left media column main-axis width at a fixed height (auto width + contain).
+ * @param {number} aspect width ÷ height from intrinsic media (or 0 if unknown)
+ */
+function textLeftMediaMainWidthPx(tile, rem, imageSize, textSize, factor, aspect) {
+  const h = textLeftMediaColumnHeightPx(rem, imageSize, factor);
+  if (tile.type === "blank") {
+    return h * (4 / 3);
+  }
+  if (tile.type !== "asset" || !tile.asset) {
+    return h * (4 / 3);
+  }
+  const kind = tile.asset.kind;
+  if (kind === "text") {
+    const cap = 22 * rem;
+    const raw = String(tile.asset.text ?? "");
+    const plainLen = tile.asset.textHtml
+      ? raw.replace(/<[^>]+>/g, " ").trim().length
+      : raw.trim().length;
+    const large = tile.asset.textLarge !== false;
+    const fontPx = 0.75 * rem * textSize * (large ? 1.5 : 1);
+    const avgCharPx = 0.55 * fontPx;
+    const est = Math.max(40, plainLen * avgCharPx);
+    return Math.min(cap, est);
+  }
+  const ar = typeof aspect === "number" && aspect > 0 ? aspect : 0;
+  if (ar > 0) {
+    return h * ar;
+  }
+  return h * (4 / 3);
+}
 
-  const metaW = meta ? meta.getBoundingClientRect().width : 0;
-  const mediaW = media ? media.getBoundingClientRect().width : 0;
-  const pairGap = meta && media ? gapPx : 0;
-  const total = metaW + mediaW + pairGap;
-  return Math.min(Math.max(total, 0), cap);
+/** Single-line estimate for `.asset-tile__meta` width in text-left. */
+function estimateTextLeftMetaWidthPx(tile, rem, textSize) {
+  if (tile.type !== "asset") return 0;
+  const p = tile.project;
+  const a = tile.asset;
+  if (!p && !a) return 0;
+  const fs = 0.75 * rem * textSize;
+  const avgChar = 0.55 * fs;
+  let w = 0;
+  const title = p?.title;
+  if (title != null && String(title).trim() !== "") {
+    w = Math.max(w, String(title).trim().length * avgChar);
+  }
+  const category = a?.category ?? p?.category;
+  const year = a?.year ?? p?.year;
+  const subBits = [];
+  if (category != null && String(category).trim() !== "") {
+    subBits.push(String(category).trim());
+  }
+  if (year != null && String(year).trim() !== "") {
+    subBits.push(String(year).trim());
+  }
+  if (subBits.length > 0) {
+    const subLen = subBits.join(" · ").length;
+    w = Math.max(w, subLen * avgChar);
+  }
+  return w;
+}
+
+/**
+ * @param {Map<string, StripTileMetaMetrics>|null|undefined} metaMetricsByKey
+ */
+function resolveTextLeftMetaWidthPx(key, tile, rem, textSize, metaMetricsByKey) {
+  const m = metaMetricsByKey?.get(key);
+  if (m && typeof m.metaW === "number" && m.metaW > 0) {
+    return m.metaW;
+  }
+  return estimateTextLeftMetaWidthPx(tile, rem, textSize);
+}
+
+/**
+ * Text-left main-axis flex basis: meta + gap + media (no DOM read).
+ * @param {number} cap row width cap
+ */
+function computeTextLeftMainPx(
+  tile,
+  key,
+  rem,
+  imageSize,
+  textSize,
+  factor,
+  aspect,
+  metaMetricsByKey,
+  cap,
+) {
+  const gap = assetTileColumnGapPx(rem);
+  const metaW = resolveTextLeftMetaWidthPx(
+    key,
+    tile,
+    rem,
+    textSize,
+    metaMetricsByKey,
+  );
+  const mediaW = textLeftMediaMainWidthPx(
+    tile,
+    rem,
+    imageSize,
+    textSize,
+    factor,
+    aspect,
+  );
+  const pairGap = metaW > 0 && mediaW > 0 ? gap : 0;
+  return Math.min(Math.max(0, metaW + mediaW + pairGap), cap);
 }
 
 /**
@@ -760,8 +853,6 @@ export function useJsFlexStrip({
   /** @type {import("react").MutableRefObject<Map<string, number>>} intrinsic width/height ratio per strip tile key */
   const mediaAspectByKeyRef = useRef(new Map());
   const aspectMeasureRafRef = useRef(0);
-  /** @type {import("react").MutableRefObject<Map<string, { sig: string, mainPx: number }>>} */
-  const textLeftMainCacheRef = useRef(new Map());
   /**
    * Stacked text tiles: `crossPx` is copy-block height only; `estimateStripTileCrossPx` adds meta + gap.
    * @type {import("react").MutableRefObject<Map<string, { sig: string, crossPx: number }>>}
@@ -771,6 +862,7 @@ export function useJsFlexStrip({
   const stripTileMetaMetricsRef = useRef(new Map());
   const factorResetRef = useRef({
     image: NaN,
+    textSize: NaN,
     tileLayout: "",
     sizeMode: "",
     rem: NaN,
@@ -851,7 +943,6 @@ export function useJsFlexStrip({
       /* Keep `mediaAspectByKeyRef` on ref-callback `null` (new inline fn each parent render, Strict
        * Mode remounts). Otherwise intrinsic ratio is wiped after first decode and never re-reported. */
       stripTileMetaMetricsRef.current.delete(key);
-      textLeftMainCacheRef.current.delete(key);
       stackedTextCrossCacheRef.current.delete(key);
       stripSketchByKeyRef.current.delete(key);
     }
@@ -1004,22 +1095,24 @@ export function useJsFlexStrip({
       ) || 16;
 
     const r = factorResetRef.current;
-    if (
-      r.image !== effImageSize
-      || r.tileLayout !== effTileLayout
+    const layoutInputsChanged =
+      r.tileLayout !== effTileLayout
       || r.sizeMode !== sizeMode
       || r.rem !== rem
       || r.layoutMode !== layoutMode
-    ) {
+      || r.textSize !== effTextSize;
+    if (r.image !== effImageSize || layoutInputsChanged) {
       tileSizeApi.resetLayoutExtraSteps();
-      textLeftMainCacheRef.current.clear();
+      r.image = effImageSize;
+    }
+    if (layoutInputsChanged) {
       stackedTextCrossCacheRef.current.clear();
       stripTileMetaMetricsRef.current.clear();
-      r.image = effImageSize;
       r.tileLayout = effTileLayout;
       r.sizeMode = sizeMode;
       r.rem = rem;
       r.layoutMode = layoutMode;
+      r.textSize = effTextSize;
     }
 
     const containerAlignItems = stripAlignItemsFromLayoutMode(layoutMode);
@@ -1046,9 +1139,6 @@ export function useJsFlexStrip({
       }
       for (const k of mediaAspectByKeyRef.current.keys()) {
         if (!nextKeys.has(k)) mediaAspectByKeyRef.current.delete(k);
-      }
-      for (const k of textLeftMainCacheRef.current.keys()) {
-        if (!nextKeys.has(k)) textLeftMainCacheRef.current.delete(k);
       }
       for (const k of stackedTextCrossCacheRef.current.keys()) {
         if (!nextKeys.has(k)) stackedTextCrossCacheRef.current.delete(k);
@@ -1125,40 +1215,21 @@ export function useJsFlexStrip({
           flexBasisMain = 16 * rem * effImageSize * factor;
           maxMain = 26 * rem * effImageSize * factor;
         } else if (effTileLayout === TILE_LAYOUT_TEXT_LEFT) {
-          // Text-left historically behaved as fit-content up to full row width.
-          // Do not apply the 26rem media cap used by stacked tiles.
-          // Blanks: same article layout as other text-left tiles (10rem media height in CSS).
+          // Text-left: fit-content row width = meta + gap + media (media height from CSS formula).
           const cap = containerSize.w;
           maxMain = cap;
-          if (el) {
-            const baseSig = stripTileLayoutContentSig(
-              tile,
-              effTileLayout,
-              effTextSize,
-              effImageSize,
-              rem,
-            );
-            const sig = `${baseSig}\0tlw\0${cap}\0${factor}`;
-            const cached = textLeftMainCacheRef.current.get(key);
-            if (cached && cached.sig === sig) {
-              flexBasisMain = cached.mainPx;
-            } else {
-              const pw = el.style.width;
-              const pm = el.style.maxWidth;
-              const pb = el.style.boxSizing;
-              el.style.boxSizing = "border-box";
-              el.style.maxWidth = "none";
-              el.style.width = "auto";
-              flexBasisMain = measureTextLeftMainSize(el, cap);
-              el.style.width = pw;
-              el.style.maxWidth = pm;
-              el.style.boxSizing = pb;
-              textLeftMainCacheRef.current.set(key, { sig, mainPx: flexBasisMain });
-            }
-          } else {
-            flexBasisMain = 16 * rem * effImageSize * factor;
-          }
-          flexBasisMain = Math.min(flexBasisMain, cap);
+          const aspectNow = mediaAspectByKeyRef.current.get(key) ?? 0;
+          flexBasisMain = computeTextLeftMainPx(
+            tile,
+            key,
+            rem,
+            effImageSize,
+            effTextSize,
+            factor,
+            aspectNow,
+            stripTileMetaMetricsRef.current,
+            cap,
+          );
           // Match prior CSS behavior for text-left tiles (`flex: 0 0 auto`):
           // keep intrinsic measured width and do not shrink below it.
           minMain = flexBasisMain;

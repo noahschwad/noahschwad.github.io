@@ -723,6 +723,7 @@ export function App() {
                     project={tile.project}
                     asset={tile.asset}
                     tileLayout={tileLayout}
+                    narrowViewport={imageSizeViewportNarrow}
                     stripListIndex={assetStripOrdinalByIndex[i] ?? 0}
                     stripTileKey={tileKey}
                     registerStripMediaAspect={registerStripMediaAspect}

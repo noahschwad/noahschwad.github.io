@@ -17,18 +17,30 @@ import {
 /** Max combined fatal `NETWORK_ERROR` / `MEDIA_ERROR` recoveries per Hls instance before surfacing `onError`. */
 const HLS_FATAL_RECOVERY_BUDGET = 3;
 
+/** Viewport width below this uses mobile Mux resolution caps (matches `App.jsx`). */
+export const MUX_PLAYBACK_NARROW_VIEWPORT_MQ = "(max-width: 599px)";
+
 /**
  * Mux HLS URL (public or signed via `tokens.playback` JWT).
- * `min_resolution` + `rendition_order=desc` bias the master playlist toward high
- * rungs so display size / layout changes do not lock playback to tiny renditions.
+ * Desktop / lightbox: `min_resolution=720p` + `rendition_order=desc` so layout
+ * changes do not lock playback to tiny renditions. Strip on narrow viewports:
+ * 360p–720p band (`narrowViewport` on `MuxStripHlsVideo` only).
  * @see https://docs.mux.com/guides/control-playback-resolution
+ * @param {string} playbackId
+ * @param {{ playback?: string } | undefined} tokens
+ * @param {{ narrowViewport?: boolean }} [opts]
  */
-export function muxPlaybackM3u8Url(playbackId, tokens) {
+export function muxPlaybackM3u8Url(playbackId, tokens, opts = {}) {
   const id = typeof playbackId === "string" ? playbackId.trim() : "";
   if (!id) return "";
   const base = `https://stream.mux.com/${id}.m3u8`;
   const params = new URLSearchParams();
-  params.set("min_resolution", "720p");
+  if (opts.narrowViewport === true) {
+    params.set("min_resolution", "360p");
+    params.set("max_resolution", "720p");
+  } else {
+    params.set("min_resolution", "720p");
+  }
   params.set("rendition_order", "desc");
   const jwt =
     typeof tokens?.playback === "string" ? tokens.playback.trim() : "";
@@ -73,6 +85,7 @@ const muxHlsDefaultCompare = (prev, next) =>
   prev.className === next.className &&
   prev.playbackId === next.playbackId &&
   prev.tokens === next.tokens &&
+  prev.narrowViewport === next.narrowViewport &&
   prev.onError === next.onError &&
   prev.stripLoadOrder === next.stripLoadOrder &&
   prev.onThumbnailNaturalSize === next.onThumbnailNaturalSize;
@@ -101,6 +114,7 @@ export const MuxHlsVideo = memo(
       onLoadedData,
       onLoadedMetadata,
       onThumbnailNaturalSize,
+      narrowViewport = false,
       playbackId,
       tokens,
     },
@@ -130,12 +144,16 @@ export const MuxHlsVideo = memo(
     );
     const tokenPlayback =
       typeof tokens?.playback === "string" ? tokens.playback : "";
+    const playbackOpts = useMemo(
+      () => ({ narrowViewport: narrowViewport === true }),
+      [narrowViewport],
+    );
     const src = useMemo(() => {
-      if (!tokenPlayback) {
-        return muxPlaybackM3u8Url(playbackId, undefined);
-      }
-      return muxPlaybackM3u8Url(playbackId, { playback: tokenPlayback });
-    }, [playbackId, tokenPlayback]);
+      const tokenPayload = tokenPlayback
+        ? { playback: tokenPlayback }
+        : undefined;
+      return muxPlaybackM3u8Url(playbackId, tokenPayload, playbackOpts);
+    }, [playbackId, tokenPlayback, playbackOpts]);
     const posterUrl = useMemo(
       () =>
         muxThumbnailUrl(playbackId, tokens, {
@@ -414,6 +432,7 @@ export const MuxHlsVideo = memo(
     prev.style === next.style &&
     prev.playbackId === next.playbackId &&
     prev.tokens === next.tokens &&
+    prev.narrowViewport === next.narrowViewport &&
     prev.onError === next.onError &&
     prev.onLoadedData === next.onLoadedData &&
     prev.onLoadedMetadata === next.onLoadedMetadata &&
@@ -427,6 +446,7 @@ export const MuxHlsVideo = memo(
 export const MuxStripHlsVideo = memo(
   function MuxStripHlsVideo({
     className,
+    narrowViewport = false,
     onError,
     onLoadedMetadata,
     onThumbnailNaturalSize,
@@ -438,6 +458,7 @@ export const MuxStripHlsVideo = memo(
       <MuxHlsVideo
         className={className}
         deferMount
+        narrowViewport={narrowViewport}
         stripLoadOrder={stripLoadOrder}
         stripPlaybackManaged
         wrapClassName="asset-tile__mux-wrap"
