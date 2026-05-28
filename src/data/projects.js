@@ -324,7 +324,7 @@ export const projects = [
   {
     id: "bloomberg-climate",
     title: "Bloomberg Climate",
-    category: "Web",
+    category: "Interactive",
     year: 2025,
     assets: [
       {

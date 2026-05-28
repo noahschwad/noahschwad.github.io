@@ -444,7 +444,7 @@ export function App() {
   /**
    * Live strip layout during main image bar drag — bypasses React state for
    * `imageSize` (avoids per-frame re-renders). Layout uses `quantizeImageSizeStripLive`
-   * (0.02) so flex passes run ~50–140× per range, not every 0.001 slider tick;
+   * (0.01) so flex passes run at most ~1/10 the rate of raw 0.001 slider ticks;
    * the range input stays uncontrolled at fine step so the thumb does not stick.
    * Tenth-cross shuffle still sees the full slider value. On release, `handleImageSize`
    * commits the precise value to React state.

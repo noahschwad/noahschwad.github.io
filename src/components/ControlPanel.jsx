@@ -30,7 +30,7 @@ export function roundImageSizeMainBarStep(n) {
  * Coarser grid for live strip layout while dragging. The main bar slider UI keeps
  * `imageSizeMainBarStep` (0.001); only layout math uses this quantum.
  */
-export const imageSizeStripLiveQuantum = 0.02;
+export const imageSizeStripLiveQuantum = 0.01;
 
 /**
  * @param {number} n
