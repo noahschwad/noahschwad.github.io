@@ -4,6 +4,15 @@
  * Requires SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY (never VITE_* secrets).
  */
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { WebSocket as WsWebSocket } from "ws";
+
+// supabase-js constructs a Realtime client at createClient() time, which requires
+// a global WebSocket constructor to exist. Netlify's Functions runtime (Node 20)
+// has no native WebSocket, so supply one. We never open a realtime connection.
+const globalWithWs = globalThis as unknown as { WebSocket?: unknown };
+if (typeof globalWithWs.WebSocket === "undefined") {
+  globalWithWs.WebSocket = WsWebSocket;
+}
 
 let cached: SupabaseClient | null = null;
 
