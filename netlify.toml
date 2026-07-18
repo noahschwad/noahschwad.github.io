@@ -3,8 +3,8 @@
   publish = "dist"
 
 [build.environment]
-  # Sharp has prebuilds; Node 20 matches local tooling.
-  NODE_VERSION = "20"
+  # Node 22+ required by @supabase/supabase-js (native WebSocket).
+  NODE_VERSION = "22"
 
 [functions]
   directory = "netlify/functions"
