@@ -579,19 +579,19 @@ export const projects = [
       },
     ],
   },
-  {
-    id: "russi",
-    title: "The Russi Hive Podcast",
-    category: "Brand System",
-    year: 2026,
-    assets: [
-      {
-        id: "russi-brand-system",
-        kind: "video",
-        src: "/project-assets/russi/08-brand_system.mp4",
-      },
-    ],
-  },
+  // {
+  //   id: "russi",
+  //   title: "The Russi Hive Podcast",
+  //   category: "Brand System",
+  //   year: 2026,
+  //   assets: [
+  //     {
+  //       id: "russi-brand-system",
+  //       kind: "video",
+  //       src: "/project-assets/russi/08-brand_system.mp4",
+  //     },
+  //   ],
+  // },
   {
     id: "copyright",
     staticSiteFooter: true,

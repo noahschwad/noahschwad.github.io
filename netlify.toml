@@ -5,3 +5,24 @@
 [build.environment]
   # Sharp has prebuilds; Node 20 matches local tooling.
   NODE_VERSION = "20"
+
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
+
+# Pretty API aliases (optional). Functions also remain at /.netlify/functions/*.
+[[redirects]]
+  from = "/api/create-checkout-session"
+  to = "/.netlify/functions/create-checkout-session"
+  status = 200
+
+[[redirects]]
+  from = "/api/stripe-webhook"
+  to = "/.netlify/functions/stripe-webhook"
+  status = 200
+
+# SPA fallback for React Router (must stay after function redirects).
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
