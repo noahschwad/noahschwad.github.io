@@ -60,7 +60,7 @@ export const handler: Handler = async (event) => {
     let query = supabase
       .from("products")
       .select(
-        "id, slug, title, published, inventory, stripe_price_id, shipping_required",
+        "id, slug, title, description, price_cents, currency, published, inventory, shipping_required",
       );
 
     if (validated.productId) {
@@ -74,7 +74,32 @@ export const handler: Handler = async (event) => {
       return jsonResponse(500, { error: "Unable to load product." });
     }
 
-    const ready = assertProductReadyForCheckout(data as TrustedProduct | null);
+    let product = data as TrustedProduct | null;
+    if (product) {
+      const { data: image, error: imageError } = await supabase
+        .from("product_images")
+        .select("storage_path")
+        .eq("product_id", product.id)
+        .order("sort_order", { ascending: true })
+        .limit(1)
+        .maybeSingle();
+
+      if (imageError) {
+        return jsonResponse(500, { error: "Unable to load product." });
+      }
+
+      if (image?.storage_path) {
+        const { data: publicImage } = supabase.storage
+          .from("product-images")
+          .getPublicUrl(image.storage_path);
+        product = {
+          ...product,
+          product_image_url: publicImage.publicUrl,
+        };
+      }
+    }
+
+    const ready = assertProductReadyForCheckout(product);
     if (!ready.ok) {
       return jsonResponse(ready.status, { error: ready.error });
     }
@@ -90,8 +115,7 @@ export const handler: Handler = async (event) => {
       // Keep payment intent metadata aligned for later refunds / ops.
       payment_intent_data: {
         metadata: {
-          supabase_product_id: ready.product.id,
-          product_slug: ready.product.slug,
+          product_id: ready.product.id,
         },
       },
     });
@@ -101,7 +125,12 @@ export const handler: Handler = async (event) => {
     }
 
     return jsonResponse(200, { url: session.url });
-  } catch {
+  } catch (err) {
+    // Log only the error type/message (no payment data or PII) to aid debugging.
+    const message =
+      err instanceof Error ? err.message : "Unknown checkout error.";
+    const type = (err as { type?: string } | null)?.type;
+    console.error("create-checkout-session failed:", type || "", message);
     return jsonResponse(500, { error: "Unable to start checkout." });
   }
 };

@@ -23,7 +23,7 @@ export type RefundOutcome =
   | { status: "not_needed" };
 
 export function extractCheckoutFulfillmentInput(session: Stripe.Checkout.Session) {
-  const productId = session.metadata?.supabase_product_id || null;
+  const productId = session.metadata?.product_id || null;
   const paymentIntent =
     typeof session.payment_intent === "string"
       ? session.payment_intent

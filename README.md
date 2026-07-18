@@ -49,15 +49,13 @@ The migration enables RLS:
 
 Uploads and inventory edits are done in the Supabase dashboard (or with the service role). Do not put the service role key in any `VITE_*` variable.
 
-## 7. Create a Stripe test Product and Price
+## 7. Create a Stripe shipping rate
 
-In Stripe Dashboard (test mode): Products → Add product → add a Price. Copy the Price ID (`price_...`).
+Products and prices are sourced from Supabase and sent to Stripe Checkout as
+inline `price_data`; no Stripe Product or Price needs to be created manually.
 
-Create a domestic flat shipping rate and copy its ID (`shr_...`) into `STRIPE_SHIPPING_RATE_ID`.
-
-## 8. Add Stripe IDs to Supabase
-
-In the `products` table, set `stripe_price_id` (and optionally `stripe_product_id`) on the row. The browser never supplies these.
+For physical products, create a domestic flat shipping rate in Stripe and copy
+its ID (`shr_...`) into `STRIPE_SHIPPING_RATE_ID`.
 
 ## 9. Local environment variables
 
@@ -96,7 +94,10 @@ Subscribe to `checkout.session.completed`. Copy the signing secret into Netlify 
 
 ## 13. Add and publish a product
 
-In Supabase Table Editor → `products`, insert a row with `slug`, `title`, `price_cents`, `inventory`, `stripe_price_id`, and set `published = true` when ready. There is no custom admin UI.
+In Supabase Table Editor → `products`, insert a row with `slug`, `title`,
+`price_cents`, and `inventory`, then set `published = true` when ready. Currency
+defaults to `usd` and `shipping_required` defaults to `true`. There is no custom
+admin UI.
 
 ## 14. Upload and order product images
 
@@ -122,16 +123,18 @@ If `refund_status = refund_failed`, refund manually in Stripe using the `stripe_
 
 Replace `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, and `STRIPE_SHIPPING_RATE_ID` with **live** values. Register a live webhook endpoint.
 
-## 19. Test vs live Product and Price IDs
+## 19. Test vs live Stripe configuration
 
-Stripe test and live Product/Price IDs are separate. After going live, create live Prices and update `stripe_price_id` (and shipping rate IDs) in Supabase / env.
+No Product or Price IDs need to be migrated. Stripe test and live shipping-rate
+IDs are separate, so create a live shipping rate and update
+`STRIPE_SHIPPING_RATE_ID` when going live.
 
 ## 20. Manual steps (no admin app)
 
 You must manually:
 
 - Create Supabase project, run migrations, configure storage
-- Create Stripe products, prices, shipping rates, webhooks
+- Create Stripe shipping rates and webhooks
 - Set Netlify env vars
 - Insert/publish products and images in Supabase
 - Handle rare failed refunds in Stripe + Supabase

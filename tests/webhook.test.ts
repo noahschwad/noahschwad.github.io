@@ -79,6 +79,18 @@ describe("stripe-webhook signature handling", () => {
 });
 
 describe("missing Stripe product metadata", () => {
+  it("extracts the Supabase product id from Checkout metadata", () => {
+    const extracted = extractCheckoutFulfillmentInput({
+      id: "cs_test",
+      metadata: {
+        product_id: "11111111-1111-4111-8111-111111111111",
+      },
+    } as never);
+    expect(extracted.productId).toBe(
+      "11111111-1111-4111-8111-111111111111",
+    );
+  });
+
   it("extracts null product id when metadata is missing", () => {
     const extracted = extractCheckoutFulfillmentInput({
       id: "cs_test",

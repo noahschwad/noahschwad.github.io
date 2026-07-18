@@ -113,9 +113,11 @@ describe("assertProductReadyForCheckout", () => {
     id: "11111111-1111-4111-8111-111111111111",
     slug: "print-01",
     title: "Print 01",
+    description: "A print",
+    price_cents: 4500,
+    currency: "usd",
     published: true,
     inventory: 1,
-    stripe_price_id: "price_test",
     shipping_required: true,
   };
 
@@ -131,6 +133,16 @@ describe("assertProductReadyForCheckout", () => {
     expect(result.status).toBe(409);
   });
 
+  it("rejects a non-integer price", () => {
+    const result = assertProductReadyForCheckout({
+      ...product,
+      price_cents: 45.5,
+    });
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.status).toBe(422);
+  });
+
   it("hides unpublished products", () => {
     const result = assertProductReadyForCheckout({
       ...product,
@@ -143,26 +155,40 @@ describe("assertProductReadyForCheckout", () => {
 });
 
 describe("buildCheckoutSessionParams", () => {
-  it("uses server price id and quantity 1", () => {
+  it("uses trusted Supabase product data and quantity 1", () => {
     process.env.STRIPE_SHIPPING_RATE_ID = "shr_domestic";
     const params = buildCheckoutSessionParams({
       product: {
         id: "11111111-1111-4111-8111-111111111111",
         slug: "print-01",
         title: "Print 01",
+        description: "A print",
+        price_cents: 4500,
+        currency: "usd",
         published: true,
         inventory: 1,
-        stripe_price_id: "price_server",
         shipping_required: true,
+        product_image_url: "https://cdn.test/print-01.jpg",
       },
       siteUrl: "https://example.com",
     });
     expect(params.line_items).toEqual([
-      { price: "price_server", quantity: 1 },
+      {
+        price_data: {
+          currency: "usd",
+          product_data: {
+            name: "Print 01",
+            description: "A print",
+            images: ["https://cdn.test/print-01.jpg"],
+          },
+          unit_amount: 4500,
+        },
+        quantity: 1,
+      },
     ]);
     expect(params.success_url).toContain("/shop/success?session_id=");
     expect(params.cancel_url).toBe("https://example.com/shop/print-01");
-    expect(params.metadata.supabase_product_id).toBe(
+    expect(params.metadata.product_id).toBe(
       "11111111-1111-4111-8111-111111111111",
     );
     expect(params.shipping_options?.[0].shipping_rate).toBe("shr_domestic");
@@ -175,9 +201,11 @@ describe("buildCheckoutSessionParams", () => {
         id: "11111111-1111-4111-8111-111111111111",
         slug: "digital",
         title: "Digital",
+        description: null,
+        price_cents: 1200,
+        currency: "usd",
         published: true,
         inventory: 1,
-        stripe_price_id: "price_server",
         shipping_required: false,
       },
       siteUrl: "https://example.com",

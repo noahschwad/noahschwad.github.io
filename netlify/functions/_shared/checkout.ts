@@ -22,10 +22,13 @@ export type TrustedProduct = {
   id: string;
   slug: string;
   title: string;
+  description: string | null;
+  price_cents: number;
+  currency: string;
   published: boolean;
   inventory: number;
-  stripe_price_id: string | null;
   shipping_required: boolean;
+  product_image_url?: string;
 };
 
 export type CheckoutValidationError = {
@@ -116,11 +119,14 @@ export function assertProductReadyForCheckout(
   if (!(product.inventory > 0)) {
     return { ok: false, status: 409, error: "Sold out." };
   }
-  if (!product.stripe_price_id) {
+  if (
+    !Number.isSafeInteger(product.price_cents) ||
+    product.price_cents < 0
+  ) {
     return {
       ok: false,
-      status: 503,
-      error: "Product is not available for checkout.",
+      status: 422,
+      error: "Product has an invalid price.",
     };
   }
   return { ok: true, product };
@@ -155,7 +161,18 @@ export function buildCheckoutSessionParams(input: {
   successPath?: string;
 }): {
   mode: "payment";
-  line_items: Array<{ price: string; quantity: number }>;
+  line_items: Array<{
+    price_data: {
+      currency: string;
+      product_data: {
+        name: string;
+        description?: string;
+        images?: string[];
+      };
+      unit_amount: number;
+    };
+    quantity: number;
+  }>;
   success_url: string;
   cancel_url: string;
   metadata: Record<string, string>;
@@ -170,15 +187,24 @@ export function buildCheckoutSessionParams(input: {
     mode: "payment",
     line_items: [
       {
-        price: product.stripe_price_id as string,
+        price_data: {
+          currency: product.currency || "usd",
+          product_data: {
+            name: product.title,
+            description: product.description || undefined,
+            images: product.product_image_url
+              ? [product.product_image_url]
+              : undefined,
+          },
+          unit_amount: product.price_cents,
+        },
         quantity: 1,
       },
     ],
     success_url: `${base}${successPath}?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${base}/shop/${encodeURIComponent(product.slug)}`,
     metadata: {
-      supabase_product_id: product.id,
-      product_slug: product.slug,
+      product_id: product.id,
     },
   };
 

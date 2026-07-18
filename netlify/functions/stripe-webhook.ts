@@ -55,7 +55,7 @@ export const handler: Handler = async (event) => {
     return jsonResponse(200, { received: true, unpaid: true });
   }
 
-  const productId = session.metadata?.supabase_product_id;
+  const productId = session.metadata?.product_id;
   if (!productId) {
     // Missing trusted metadata — record conflict path via fulfillment with null product
     // still requires a product uuid in RPC; handle as explicit error requiring refund attempt.
