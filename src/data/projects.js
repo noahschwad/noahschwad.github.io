@@ -57,7 +57,7 @@ export const projects = [
         selected: true,
         textLarge: false,
         text:
-          "Recognition & Engagements: <br>ADC Silver — Branding 2025<br>Creative Innovation Award — Creative Review 2025<br>What Comes Next: Lecture at Parsons<br>AIGA NY Portfolio Review – 2025<br>Young Ones Silver — Branding 2024",
+          "Recognition & Engagements: <br>D&AD Graphite Pencil — Branding 2025<br>Art Director's Club Silver Cube — Branding 2025<br>Creative Innovation Award — Creative Review 2025<br>What Comes Next — a Lecture at Parsons<br>AIGA NY Portfolio Review – 2025<br>Young Ones Silver — Branding 2024",
       },
       {
         id: "contact",
@@ -580,6 +580,19 @@ export const projects = [
     ],
   },
   {
+    id: "russi",
+    title: "The Russi Hive Podcast",
+    category: "Brand System",
+    year: 2026,
+    assets: [
+      {
+        id: "russi-brand-system",
+        kind: "video",
+        src: "/project-assets/russi/08-brand_system.mp4",
+      },
+    ],
+  },
+  {
     id: "copyright",
     staticSiteFooter: true,
     // title: "Copyright",
@@ -593,7 +606,7 @@ export const projects = [
         textLarge: false,
         textHtml: true,
         text:
-          "© 2026 Noah Schwadron. All rights reserved. Work shown is a combination of independent and collaborative projects developed across studios, clients, and personal practice; all materials are presented for portfolio purposes only and remain the property of their respective owners where applicable. Design and development by Noah Schwadron. Set in your default system font 😂",
+          "© 2026 Noah Schwadron. All rights reserved. Work shown is a combination of independent and collaborative projects developed across studios, clients, and personal practice; all materials are presented for portfolio purposes only and remain the property of their respective owners where applicable. Design and development by Noah Schwadron.",
       },
     ],
   },
