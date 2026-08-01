@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import {
   DISPLAY_MODE_OPTIONS,
   LAYOUT_MODE_OPTIONS,
@@ -186,7 +186,8 @@ function DebugPanel({
 }
 
 /**
- * Top chrome: full-width image size bar (1–100) + debug panel.
+ * Manual sticky chrome: in document flow under `SiteIntro` until scroll reaches it,
+ * then `position: fixed` at the viewport top. Stays under the lightbox (lower z-index).
  */
 export function ControlPanel({
   textSize,
@@ -215,6 +216,10 @@ export function ControlPanel({
   onStripRowHeightDebug = () => {},
 }) {
   const imageBarRef = useRef(null);
+  const slotRef = useRef(null);
+  const chromeRef = useRef(null);
+  const [pinned, setPinned] = useState(false);
+  const [chromeHeight, setChromeHeight] = useState(0);
   const liveMainImageStrip =
     typeof onImageSizeStripLive === "function";
 
@@ -224,88 +229,147 @@ export function ControlPanel({
     if (el) el.value = String(imageSize);
   }, [imageSize, liveMainImageStrip, imageSliderGrabbedRef]);
 
+  useLayoutEffect(() => {
+    const chrome = chromeRef.current;
+    if (!chrome) return undefined;
+    const applyHeight = () => {
+      const h = chrome.getBoundingClientRect().height;
+      if (h > 0) setChromeHeight(h);
+    };
+    applyHeight();
+    if (typeof ResizeObserver === "undefined") return undefined;
+    const ro = new ResizeObserver(applyHeight);
+    ro.observe(chrome);
+    return () => ro.disconnect();
+  }, [showDebugPanel, pinned]);
+
+  useLayoutEffect(() => {
+    let raf = 0;
+    const sync = () => {
+      const slot = slotRef.current;
+      if (!slot) return;
+      const top = slot.getBoundingClientRect().top;
+      const next = top <= 0;
+      setPinned((prev) => (prev === next ? prev : next));
+    };
+    const onScrollOrResize = () => {
+      if (raf !== 0) return;
+      raf = requestAnimationFrame(() => {
+        raf = 0;
+        sync();
+      });
+    };
+    sync();
+    window.addEventListener("scroll", onScrollOrResize, { passive: true });
+    window.addEventListener("resize", onScrollOrResize);
+    return () => {
+      if (raf !== 0) cancelAnimationFrame(raf);
+      window.removeEventListener("scroll", onScrollOrResize);
+      window.removeEventListener("resize", onScrollOrResize);
+    };
+  }, [showDebugPanel]);
+
   return (
-    <div className="top-chrome">
-      <div className="control-bar">
-        <div className="control-bar__slider-wrap">
-          <input
-            ref={imageBarRef}
-            className="control-bar__input"
-            type="range"
-            aria-label="Image size"
-            min={imageSizeRange.min}
-            max={imageSizeRange.max}
-            step={imageSizeMainBarStep}
-            {...(liveMainImageStrip
-              ? {
-                  defaultValue: imageSize,
-                  onInput: (e) => {
-                    const raw = Number(e.currentTarget.value);
-                    const clamped = Math.min(
-                      imageSizeRange.max,
-                      Math.max(imageSizeRange.min, raw),
-                    );
-                    onImageSizeStripLive(clamped);
-                  },
-                  onPointerUp: (e) => {
-                    onImageSizeGrabEnd?.();
-                    const raw = Number(e.currentTarget.value);
-                    const clamped = Math.min(
-                      imageSizeRange.max,
-                      Math.max(imageSizeRange.min, raw),
-                    );
-                    onImageSize(roundImageSizeMainBarStep(clamped));
-                  },
-                  onPointerCancel: (e) => {
-                    onImageSizeGrabEnd?.();
-                    const raw = Number(e.currentTarget.value);
-                    const clamped = Math.min(
-                      imageSizeRange.max,
-                      Math.max(imageSizeRange.min, raw),
-                    );
-                    onImageSize(roundImageSizeMainBarStep(clamped));
-                  },
-                  onBlur: (e) => {
-                    onImageSizeGrabEnd?.();
-                    const raw = Number(e.currentTarget.value);
-                    const clamped = Math.min(
-                      imageSizeRange.max,
-                      Math.max(imageSizeRange.min, raw),
-                    );
-                    onImageSize(roundImageSizeMainBarStep(clamped));
-                  },
-                }
-              : {
-                  value: imageSize,
-                  onChange: (e) => onImageSize(Number(e.target.value)),
-                  onPointerUp: onImageSizeGrabEnd,
-                  onPointerCancel: onImageSizeGrabEnd,
-                  onBlur: onImageSizeGrabEnd,
-                })}
-            onPointerDown={onImageSizeGrabStart}
-          />
-        </div>
-      </div>
-      {showDebugPanel ? (
-        <DebugPanel
-          textSize={textSize}
-          onTextSize={onTextSize}
-          imageSize={imageSize}
-          onDebugImageSize={onDebugImageSize}
-          imageSizeRange={imageSizeRange}
-          blankTilesPercent={blankTilesPercent}
-          blankTilesPercentMax={blankTilesPercentMax}
-          onBlankTilesPercent={onBlankTilesPercent}
-          displayMode={displayMode}
-          onDisplayMode={onDisplayMode}
-          sizeMode={sizeMode}
-          onSizeMode={onSizeMode}
-          layoutMode={layoutMode}
-          onLayoutMode={onLayoutMode}
-          stripRowHeightDebug={stripRowHeightDebug}
-          onStripRowHeightDebug={onStripRowHeightDebug}
+    <div ref={slotRef} className="top-chrome-slot">
+      {pinned ? (
+        <div
+          className="top-chrome-anchor"
+          style={{
+            height:
+              chromeHeight > 0
+                ? chromeHeight
+                : showDebugPanel
+                  ? "calc(var(--control-panel-h) + var(--debug-panel-h))"
+                  : "var(--control-panel-h)",
+          }}
+          aria-hidden="true"
         />
       ) : null}
+      <div
+        ref={chromeRef}
+        className={pinned ? "top-chrome top-chrome--pinned" : "top-chrome"}
+      >
+        <div className="control-bar">
+          <div className="control-bar__slider-wrap">
+            <input
+              ref={imageBarRef}
+              className="control-bar__input"
+              type="range"
+              aria-label="Image size"
+              min={imageSizeRange.min}
+              max={imageSizeRange.max}
+              step={imageSizeMainBarStep}
+              {...(liveMainImageStrip
+                ? {
+                    defaultValue: imageSize,
+                    onInput: (e) => {
+                      const raw = Number(e.currentTarget.value);
+                      const clamped = Math.min(
+                        imageSizeRange.max,
+                        Math.max(imageSizeRange.min, raw),
+                      );
+                      onImageSizeStripLive(clamped);
+                    },
+                    onPointerUp: (e) => {
+                      onImageSizeGrabEnd?.();
+                      const raw = Number(e.currentTarget.value);
+                      const clamped = Math.min(
+                        imageSizeRange.max,
+                        Math.max(imageSizeRange.min, raw),
+                      );
+                      onImageSize(roundImageSizeMainBarStep(clamped));
+                    },
+                    onPointerCancel: (e) => {
+                      onImageSizeGrabEnd?.();
+                      const raw = Number(e.currentTarget.value);
+                      const clamped = Math.min(
+                        imageSizeRange.max,
+                        Math.max(imageSizeRange.min, raw),
+                      );
+                      onImageSize(roundImageSizeMainBarStep(clamped));
+                    },
+                    onBlur: (e) => {
+                      onImageSizeGrabEnd?.();
+                      const raw = Number(e.currentTarget.value);
+                      const clamped = Math.min(
+                        imageSizeRange.max,
+                        Math.max(imageSizeRange.min, raw),
+                      );
+                      onImageSize(roundImageSizeMainBarStep(clamped));
+                    },
+                  }
+                : {
+                    value: imageSize,
+                    onChange: (e) => onImageSize(Number(e.target.value)),
+                    onPointerUp: onImageSizeGrabEnd,
+                    onPointerCancel: onImageSizeGrabEnd,
+                    onBlur: onImageSizeGrabEnd,
+                  })}
+              onPointerDown={onImageSizeGrabStart}
+            />
+          </div>
+        </div>
+        {showDebugPanel ? (
+          <DebugPanel
+            textSize={textSize}
+            onTextSize={onTextSize}
+            imageSize={imageSize}
+            onDebugImageSize={onDebugImageSize}
+            imageSizeRange={imageSizeRange}
+            blankTilesPercent={blankTilesPercent}
+            blankTilesPercentMax={blankTilesPercentMax}
+            onBlankTilesPercent={onBlankTilesPercent}
+            displayMode={displayMode}
+            onDisplayMode={onDisplayMode}
+            sizeMode={sizeMode}
+            onSizeMode={onSizeMode}
+            layoutMode={layoutMode}
+            onLayoutMode={onLayoutMode}
+            stripRowHeightDebug={stripRowHeightDebug}
+            onStripRowHeightDebug={onStripRowHeightDebug}
+          />
+        ) : null}
+      </div>
     </div>
   );
 }

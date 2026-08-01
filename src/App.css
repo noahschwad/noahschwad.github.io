@@ -1,30 +1,68 @@
-.app-root {
-  --panel-text-size: 1;
-  --panel-image-size: 1;
+/* On :root so portaled `.top-chrome` (on `document.body`) still resolves these. */
+:root {
+  font-size: 16px;
   --control-panel-scale: 0.5;
-  /* Slider row (main control) + former control strip (debug) */
-  /* --control-bar-h: calc(1.1rem * var(--control-panel-scale) + 1.35rem + 2.5rem); */
   --debug-panel-h: calc(4.75rem * var(--control-panel-scale));
   /* Main image slider: never smaller than former fixed sizes; can grow with vw from there. */
   --control-bar-track-h: max(24px, 3vw);
   --control-bar-thumb-webkit: max(52px, calc(52px * 3vw / 24px));
   --control-bar-thumb-moz: max(42px, calc(42px * 3vw / 24px));
-  /* Top padding for fixed chrome; grows when thumb grows past 52px */
   --control-panel-h: max(80px, calc(var(--control-bar-thumb-webkit) + 28px));
 }
 
+.app-root {
+  --panel-text-size: 1;
+  --panel-image-size: 1;
+}
+
+@media (max-width: 600px) {
+  :root {
+    font-size: 13px;
+  }
+}
+
+@media (min-width: 1800px) {
+  :root {
+    font-size: 19px;
+  }
+}
+
+
+
+
+.top-chrome-slot {
+  flex: 0 0 auto;
+  width: 100%;
+}
+
 .top-chrome {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  width: calc(100% + 2 * var(--space));
+  max-width: none;
+  margin-left: calc(-1 * var(--space));
+  margin-right: calc(-1 * var(--space));
+  box-sizing: border-box;
+  background: transparent;
+  z-index: 50;
+}
+
+.top-chrome--pinned {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
+  /* Below `.lightbox` (z-index 200). */
   z-index: 50;
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
   width: 100%;
-  /* background: var(--bg); */
-  box-sizing: border-box;
+  margin: 0;
+}
+
+.top-chrome-anchor {
+  flex: 0 0 auto;
+  width: 100%;
+  pointer-events: none;
 }
 
 .control-bar {
@@ -190,7 +228,6 @@
 .app {
   min-height: 100dvh;
   padding: var(--space);
-  padding-top: var(--control-panel-h);
   display: flex;
   flex-direction: column;
   align-items: stretch;
@@ -198,43 +235,53 @@
 
 /* Static site intro: not affected by --panel-text-size / strip layout. */
 .site-intro {
+  --site-intro-link-decoration: underline dashed 0.8px;
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
-  margin-bottom: calc(1.5rem + 0.5 * var(--space, 1rem));
+  margin-bottom: .5rem;
   color: var(--fg);
   font-size: 0.875rem;
   line-height: 1.45;
 }
 
-.site-intro a {
-  color: inherit;
-  text-decoration: underline;
+.site-intro a,
+.site-intro__email-btn {
+  color: #0000ff;
+  text-decoration: var(--site-intro-link-decoration);
   text-underline-offset: 0.1em;
 }
 
 .site-intro__email-row {
-  display: inline;
-  white-space: normal;
+  position: relative;
+  display: block;
+  flex: 0 0 auto;
+  align-self: flex-start;
+  width: max-content;
+  white-space: nowrap;
+  overflow: visible;
 }
 
 .site-intro__email-btn {
+  position: relative;
+  z-index: 1;
   display: inline;
   margin: 0;
   padding: 0;
   border: none;
   background: none;
   font: inherit;
+  letter-spacing: inherit;
   line-height: inherit;
-  color: inherit;
-  text-decoration: underline;
+  color: #0000ff;
+  text-decoration: var(--site-intro-link-decoration);
   text-underline-offset: 0.1em;
   cursor: pointer;
 }
 
 .site-intro__email-btn:hover,
 .site-intro__email-btn:focus-visible {
-  text-decoration-thickness: 0.07em;
+  text-decoration: var(--site-intro-link-decoration);
 }
 
 .site-intro__email-btn:focus-visible {
@@ -243,25 +290,39 @@
 }
 
 .site-intro__email-copied {
-  display: inline;
-  margin-left: 0.35em;
+  position: absolute;
+  left: 50%;
+  top: 0;
+  z-index: 0;
+  margin: 0;
+  font-size: 0.75em;
   font-style: italic;
+  pointer-events: none;
   opacity: 0;
-  animation: site-intro-email-copied-fade 2.1s ease forwards;
+  transform: translate(-50%, 0) rotate(0deg);
+  animation: site-intro-email-copied 1.5s forwards;
 }
 
-@keyframes site-intro-email-copied-fade {
+/* 0.6s rotate + drop (ease-in-out) → 0.5s hold → 0.4s fade out */
+@keyframes site-intro-email-copied {
   0% {
     opacity: 0;
+    transform: translate(-50%, 0) rotate(0deg);
+    animation-timing-function: ease-in-out;
   }
-  12% {
+  40% {
     opacity: 1;
+    transform: translate(-50%, 1.5em) rotate(-369deg);
+    animation-timing-function: linear;
   }
-  58% {
+  73.333% {
     opacity: 1;
+    transform: translate(-50%, 1.5em) rotate(-369deg);
+    animation-timing-function: ease;
   }
   100% {
     opacity: 0;
+    transform: translate(-50%, 1.5em) rotate(-369deg);
   }
 }
 
@@ -272,40 +333,122 @@
 }
 
 .site-intro__bio--large {
-  font-size: max(1.2rem, 2.2vw);
-  line-height: 1.2;
-  margin-top: -0.15em;
+  font-size: max(1.5rem, 3.5vw);
+  font-weight: 500;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  margin-top: -0.07em;
+}
+
+@media (max-width: 699px) {
+  .site-intro__bio--large {
+    font-size: max(1.5rem, 5.5vw);
+  }
+}
+
+.site-intro__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.25rem 2rem;
+  margin-top: 1.5rem;
+  align-items: flex-start;
+}
+
+.site-intro__meta-links {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: max(0.5rem, 1vw);
+  box-sizing: border-box;
+  overflow: visible;
+}
+
+/* Only the contact HTML wrapper — not `.site-intro__email-row` (needs a box for “copied”). */
+.site-intro__meta-links > span:not(.site-intro__email-row) {
+  display: contents;
+}
+
+.site-intro__meta-blurbs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.25rem 2rem;
+  flex: 0 1 auto;
+  align-items: flex-start;
+  width: fit-content;
+  max-width: 100%;
+}
+
+.site-intro__meta-blurbs > * {
+  flex: 0 1 24rem;
+  width: 24rem;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.site-intro__meta-links--large {
+  font-size: 2rem;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+}
+
+@media (max-width: 1399px) {
+  .site-intro__meta-links--large {
+    font-size: 1.5rem;
+  }
+}
+
+
+.site-intro__blurb {
+  min-width: 0;
+  font-size: 1rem;
+  line-height: 1.55;
+}
+
+.site-intro__blurb-heading {
+  margin: 0 0 0.8em;
+  font-size: 0.6rem;
+}
+
+.site-intro__blurb-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  letter-spacing: -.01em;
+}
+
+.site-intro__blurb-item {
+  margin: 0;
+}
+
+.site-intro__blurb-year {
+  font-size: 0.6em;
+  /* opacity: 0.5; */
+  padding-left: 0.2em;
+}
+
+.site-intro__blurb-item a {
+  color: inherit;
+  text-decoration: var(--site-intro-link-decoration);
+  text-underline-offset: 0.1em;
 }
 
 /* Static footer: full-width row below the work strip; not affected by panel controls. */
 .site-footer {
   width: 100%;
-  max-width: 100%;
   box-sizing: border-box;
-  margin-top: auto;
+  margin-top: 15vh;
   padding-top: var(--space);
   color: var(--fg);
-  font-size: 0.75rem;
-  line-height: 1.55;
+  font-size: 1rem;
+  line-height: 1.2;
   max-width: 400px;
-}
-
-.site-footer__stack {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: 1.25rem;
-  min-width: 0;
-}
-
-.site-footer__blurb-inner {
-  margin: 0;
-  min-width: 0;
 }
 
 .site-footer__inner {
   margin: 0;
   min-width: 0;
+  font-size: 0.75rem;
 }
 
 .site-footer a {
@@ -317,6 +460,7 @@
 .selected-strip {
   list-style: none;
   margin: 0;
+  margin-top: 1rem;
   padding: 0;
   /* Keep wrapping width stable whether scrollbar is visible or not. */
   width: calc(100vw - (2 * var(--space)));

@@ -11,7 +11,9 @@
  * optional `textLarge: false` for 1em copy relative to the tile, omit or `true` for 1.5em (default);
  * optional `textHtml: true` to render `text` as HTML (for links, etc.); only use with trusted copy.
  * `stripLead: true` keeps this project’s selected tiles first in the strip for every order mode (default / chronological / random).
- * `staticSiteIntro: true` — copy is not shown as tiles; bio is in `SiteIntro` above the strip; contact + recognition render in `SiteFooter` above copyright (ignores control panel).
+ * `staticSiteIntro: true` — copy is not shown as tiles; bio is in `SiteIntro` above the strip; contact, `kind: "recognition"`, and CV sit in a meta row beneath the bio (ignores control panel).
+ * Recognition / CV assets: `heading` plus `items: [{ title, link?, year? }]`; `link` opens in a new tab when set.
+ * Optional `hideBelow600: true` hides that blurb on viewports narrower than 600px.
  * `staticSiteFooter: true` — same idea: rendered in `SiteFooter` below the work strip, full-width row (ignores control panel).
  */
 export function getSelectedAssets(project) {
@@ -49,15 +51,65 @@ export const projects = [
         selected: true,
         textLarge: true,
         text:
-          "Noah is a graphic designer specialized in branding, digital experiences, and using code as a design tool. His work is driven by a commitment to specificity and capturing the nuanced overlap of contexts that shape a subject. He is currently a Designer/Coder at Cotton Design, and is living in Brooklyn, New York. Always open for projects and collaborations.",
+          "Noah is a graphic designer with demonstrated computer literacy. He lives in Brooklyn, New York and works at Cotton Design. Freelance books open for projects and collaborations.",
       },
       {
         id: "recognition",
-        kind: "text",
-        selected: true,
-        textLarge: false,
-        text:
-          "Recognition & Engagements: <br>D&AD Graphite Pencil — Branding 2025<br>Art Director's Club Silver Cube — Branding 2025<br>Creative Innovation Award — Creative Review 2025<br>What Comes Next — a Lecture at Parsons<br>AIGA NY Portfolio Review – 2025<br>Young Ones Silver — Branding 2024",
+        kind: "recognition",
+        heading: "Recognition & Engagements",
+        items: [
+          {
+            title: "D&AD Graphite Pencil • Branding",
+            year: 2025,
+            link: "https://www.dandad.org/work/d-ad-awards-archive/eternal-research",
+          },
+          {
+            title: "Art Director's Club Silver Cube • Branding",
+            year: 2025,
+          },
+          {
+            title: "Creative Review's Innovation Award",
+            year: 2025,
+          },
+          {
+            title: "What Comes Next • a Lecture at Parsons",
+            link: "https://www.instagram.com/p/DJFcbLiRzNH/?img_index=1",
+          },
+          {
+            title: "AIGA NY Portfolio Review",
+            year: 2025,
+            link: "https://aigany.org/events/aiga-ny-portfolio-reviewers-2025/",
+          },
+          {
+            title: "Young Ones Silver • Branding",
+            year: 2024,
+            link: "https://www.oneclub.org/awards/youngones/-award/53852/data-driven-wine-identities/",
+          },
+        ],
+      },
+      {
+        id: "cv",
+        kind: "recognition",
+        heading: "Curriculum Vitae",
+        hideBelow600: true,
+        items: [
+          {
+            title: "Sr Designer & Creative Technologist • Cotton",
+            year: "26",
+          },
+          {
+            title: "Designer & Creative Technologist • Cotton",
+            year: "22–26",
+          },
+          {
+            title: "AAS Communication Design • Parsons",
+            year: "22",
+          },
+          {
+            title: "Graphic Designer • Pit Viper",
+            year: "20–21",
+          },
+        ],
       },
       {
         id: "contact",
@@ -65,10 +117,10 @@ export const projects = [
         selected: true,
         textHtml: true,
         textLarge: false,
-        /** Shown in `SiteFooter` as a copy-to-clipboard control; not used when this asset is a strip tile. */
+        /** Meta row in `SiteIntro`; `copyEmail` is a copy-to-clipboard control. */
         copyEmail: "noah.schwadron@gmail.com",
         text:
-          "<a href=\"https://www.instagram.com/noah_oclock_/\" target=\"_blank\" rel=\"noopener noreferrer\">instagram</a><br><a href=\"https://www.linkedin.com/in/nschwadron/\" target=\"_blank\" rel=\"noopener noreferrer\">linkedin</a>",
+          "<a href=\"https://www.instagram.com/noah.schwad/\" target=\"_blank\" rel=\"noopener noreferrer\">instagram</a><a href=\"https://www.linkedin.com/in/nschwadron/\" target=\"_blank\" rel=\"noopener noreferrer\">linkedin</a>",
       },
     ],
   },
@@ -606,7 +658,7 @@ export const projects = [
         textLarge: false,
         textHtml: true,
         text:
-          "© 2026 Noah Schwadron. All rights reserved. Work shown is a combination of independent and collaborative projects developed across studios, clients, and personal practice; all materials are presented for portfolio purposes only and remain the property of their respective owners where applicable. Design and development by Noah Schwadron.",
+          "© 2026 Noah Schwadron. All rights reserved. Work shown is a combination of independent and collaborative projects developed across studios, clients, and personal practice. Design and development by Noah Schwadron. Typeface is ABC Diatype by Dinamo.",
       },
     ],
   },

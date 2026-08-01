@@ -607,32 +607,32 @@ export function App() {
         "--panel-image-size": String(imageSize),
       }}
     >
-      <ControlPanel
-        textSize={textSize}
-        onTextSize={setTextSize}
-        imageSize={imageSize}
-        imageSizeRange={imageSizeRange}
-        onImageSize={handleImageSize}
-        onDebugImageSize={handleDebugImageSize}
-        blankTilesPercent={blankTilesPercent}
-        blankTilesPercentMax={maxBlankForImageSize}
-        onBlankTilesPercent={setBlankTilesPercent}
-        displayMode={displayMode}
-        onDisplayMode={setDisplayMode}
-        sizeMode={sizeMode}
-        onSizeMode={setSizeMode}
-        layoutMode={layoutMode}
-        onLayoutMode={setLayoutMode}
-        onImageSizeGrabStart={handleImageSizeGrabStart}
-        onImageSizeGrabEnd={handleImageSizeGrabEnd}
-        onImageSizeStripLive={handleImageSizeStripLive}
-        imageSliderGrabbedRef={imageSliderGrabbedRef}
-        showDebugPanel={showDebugPanel}
-        stripRowHeightDebug={stripRowHeightDebug}
-        onStripRowHeightDebug={setStripRowHeightDebug}
-      />
       <main id="main" className="app">
         <SiteIntro project={projects.find((p) => p.staticSiteIntro)} />
+        <ControlPanel
+          textSize={textSize}
+          onTextSize={setTextSize}
+          imageSize={imageSize}
+          imageSizeRange={imageSizeRange}
+          onImageSize={handleImageSize}
+          onDebugImageSize={handleDebugImageSize}
+          blankTilesPercent={blankTilesPercent}
+          blankTilesPercentMax={maxBlankForImageSize}
+          onBlankTilesPercent={setBlankTilesPercent}
+          displayMode={displayMode}
+          onDisplayMode={setDisplayMode}
+          sizeMode={sizeMode}
+          onSizeMode={setSizeMode}
+          layoutMode={layoutMode}
+          onLayoutMode={setLayoutMode}
+          onImageSizeGrabStart={handleImageSizeGrabStart}
+          onImageSizeGrabEnd={handleImageSizeGrabEnd}
+          onImageSizeStripLive={handleImageSizeStripLive}
+          imageSliderGrabbedRef={imageSliderGrabbedRef}
+          showDebugPanel={showDebugPanel}
+          stripRowHeightDebug={stripRowHeightDebug}
+          onStripRowHeightDebug={setStripRowHeightDebug}
+        />
         <ul
           className="selected-strip selected-strip--js-flex"
           aria-label="Selected work"
@@ -761,7 +761,6 @@ export function App() {
         </ul>
         <SiteFooter
           project={projects.find((p) => p.staticSiteFooter)}
-          introProject={projects.find((p) => p.staticSiteIntro)}
         />
       </main>
       {lightbox && (
