@@ -380,8 +380,8 @@
 }
 
 .site-intro__meta-blurbs > * {
-  flex: 0 1 24rem;
-  width: 24rem;
+  flex: 0 1 21rem;
+  width: 21rem;
   max-width: 100%;
   box-sizing: border-box;
 }
